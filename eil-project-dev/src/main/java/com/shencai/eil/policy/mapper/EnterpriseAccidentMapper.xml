@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.policy.mapper.EnterpriseAccidentMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.policy.entity.EnterpriseAccident">
+        <id column="id" property="id" />
+        <result column="happen_time" property="happenTime" />
+        <result column="disposed" property="disposed" />
+        <result column="ent_id" property="entId" />
+        <result column="level" property="level" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+    <select id="listEnterpriseAccident" resultType="com.shencai.eil.policy.model.EnterpriseAccidentVO"
+            parameterType="com.shencai.eil.policy.model.EnterpriseAccidentQueryParam">
+        select
+        ea.id,
+        ea.happen_time happenTime,
+        sd.name levelName,
+        ea.disposed
+        from enterprise_accident ea
+        left join sys_dictionary sd on (sd.type_code='accident_rank'and ea.level=sd.code and sd.valid=1)
+        where
+        <if test="enterpriseId != null and enterpriseId != ''">
+            ea.ent_id = #{enterpriseId} and
+        </if>
+        ea.valid=1
+        ORDER by ea.happen_time
+    </select>
+</mapper>

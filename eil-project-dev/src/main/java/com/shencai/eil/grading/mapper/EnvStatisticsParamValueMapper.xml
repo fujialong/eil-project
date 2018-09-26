@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.grading.mapper.EnvStatisticsParamValueMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.grading.entity.EnvStatisticsParamValue">
+        <id column="id" property="id" />
+        <result column="param_id" property="paramId" />
+        <result column="env_statistics_id" property="envStatisticsId" />
+        <result column="value" property="value" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+    <select id="listEnvStatisticsParamValue"
+            resultType="com.shencai.eil.grading.model.EnvStatisticsParamValueVO"
+            parameterType="com.shencai.eil.grading.model.EnvStatisticsParamValueQueryParam">
+        select
+        espv.param_id paramId,
+        espv.value
+        from env_statistics_param_value espv
+        left join template_mapping_param tmp on (tmp.param_id=espv.param_id and tmp.valid=1)
+        left join param_template_category ptc on (ptc.param_template_id=tmp.template_id and ptc.valid=1)
+        where
+        <if test="envStatisticsId != null and envStatisticsId != ''">
+            espv.env_statistics_id = #{envStatisticsId} and
+        </if>
+        <if test="templateType != null and templateType != ''">
+            ptc.type = #{templateType} and
+        </if>
+        espv.valid=1
+    </select>
+</mapper>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.grading.mapper.EntRiskAssessResultMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.grading.entity.EntRiskAssessResult">
+        <id column="id" property="id"/>
+        <result column="ent_id" property="entId"/>
+        <result column="target_weight_id" property="targetWeightId"/>
+        <result column="assess_value" property="assessValue"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="valid" property="valid"/>
+        <result column="create_user_id" property="createUserId"/>
+    </resultMap>
+
+    <select id="listRootTargetResult" resultType="com.shencai.eil.grading.model.TargetResult"
+            parameterType="com.shencai.eil.grading.model.EntRiskAssessResultQueryParam">
+        select
+        tw.id targetId,
+        erar.assess_value targetResult
+        from ent_risk_assess_result erar
+        left join target_weight tw on (tw.id=erar.target_weight_id and tw.valid=1)
+        where
+        erar.ent_id = #{enterpriseId} and tw.type='root' and erar.valid=1
+        ORDER by tw.code
+    </select>
+
+    <select id="listEntRiskAssessResult" resultType="com.shencai.eil.grading.model.EntRiskAssessResultVO"
+            parameterType="com.shencai.eil.grading.model.EntRiskAssessResultQueryParam">
+        select
+        tw.id targetId,
+        tw.parent_id parentId,
+        tw.code targetCode,
+        tw.name targetName,
+        erar.assess_value targetResult
+        from ent_risk_assess_result erar
+        left join target_weight tw on (tw.id=erar.target_weight_id and tw.valid=1)
+        where
+        <if test="parentIdList != null and parentIdList.size > 0">
+            tw.parent_id in
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            and
+        </if>
+        <if test="targetType != null and targetType != ''">
+            tw.type = #{targetType}
+            and
+        </if>
+        <if test="enterpriseId != null and enterpriseId != ''">
+            erar.ent_id = #{enterpriseId}
+            and
+        </if>
+        erar.valid=1
+        ORDER by tw.code
+    </select>
+</mapper>

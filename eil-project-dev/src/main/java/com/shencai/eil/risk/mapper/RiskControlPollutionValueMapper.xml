@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.risk.mapper.RiskControlPollutionValueMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shencai.eil.risk.entity.RiskControlPollutionValue">
+        <id column="id" property="id" />
+        <result column="area_name" property="areaName" />
+        <result column="area_code" property="areaCode" />
+        <result column="land_pollution_index" property="landPollutionIndex" />
+        <result column="risk_control" property="riskControl" />
+        <result column="enforcement_intensity" property="enforcementIntensity" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+</mapper>

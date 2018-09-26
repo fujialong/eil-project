@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.login.mapper.SystemBaseUserMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shencai.eil.login.entity.SystemBaseUser">
+        <id column="id" property="id"/>
+        <result column="userId" property="userId"/>
+        <result column="userName" property="userName"/>
+        <result column="password" property="password"/>
+        <result column="tel" property="tel"/>
+        <result column="email" property="email"/>
+        <result column="userType" property="userType"/>
+        <result column="tenantId" property="tenantId"/>
+        <result column="busiStatus" property="busiStatus"/>
+        <result column="remark" property="remark"/>
+        <result column="createTime" property="createTime"/>
+        <result column="createBy" property="createBy"/>
+        <result column="editTime" property="editTime"/>
+        <result column="editBy" property="editBy"/>
+        <result column="deleteFlag" property="deleteFlag"/>
+    </resultMap>
+    <select id="menuList" resultType="com.shencai.eil.login.model.UserMenuVO">
+ SELECT DISTINCT
+        me.menuName,
+        me.menuUrl,
+        me.remark menuEnglishName
+        FROM
+        system_menu me
+        INNER  JOIN system_right_menu rm ON me.menuCode = rm.menuCode and rm.deleteFlag = 0 and me.deleteFlag =0
+        INNER JOIN system_right_user ru ON rm.roleCode = ru.roleCode AND ru.deleteFlag = 0
+        INNER  JOIN system_base_user bu ON ru.userid = bu.userId
+        WHERE
+        bu.userid = #{userId}
+        AND me.parentMenuCode = 'eil'
+        AND me.leaf = 1;
+    </select>
+
+</mapper>

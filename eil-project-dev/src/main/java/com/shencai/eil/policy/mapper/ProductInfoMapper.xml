@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.policy.mapper.ProductInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.policy.entity.ProductInfo">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="code" property="code" />
+        <result column="prod_class_id" property="prodClassId" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+    <select id="listProduct" resultType="com.shencai.eil.policy.model.ProductVO"
+            parameterType="com.shencai.eil.policy.model.ProductInfoQueryParam">
+        select
+        id,
+        name
+        from
+        product_info
+        where
+        <if test="prodClassId != null and prodClassId != ''">
+            prod_class_id = #{prodClassId} and
+        </if>
+        valid=1
+    </select>
+</mapper>

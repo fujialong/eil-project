@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.grading.mapper.RiskMaterialMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.grading.entity.RiskMaterial">
+        <id column="id" property="id" />
+        <result column="chinese_generic_name" property="chineseGenericName" />
+        <result column="alias_name" property="aliasName" />
+        <result column="english_name" property="englishName" />
+        <result column="cas" property="cas" />
+        <result column="einecs" property="einecs" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+    <select id="listRiskMaterial" resultType="com.shencai.eil.grading.model.RiskMaterialVO"
+            parameterType="com.shencai.eil.grading.model.RiskMaterialQueryParam">
+        select
+        rmpv.value,
+        rm.chinese_generic_name name,
+        param.name templateParamName
+        from risk_material rm
+        left join risk_material_param_value rmpv on (rmpv.material_id=rm.id and rmpv.valid=1)
+        left join param on (param.id=rmpv.param_id and param.valid=1)
+        left join template_mapping_param tmp on (tmp.param_id=param.id and tmp.valid=1)
+        left join param_template pt on (pt.id=tmp.template_id and pt.valid=1)
+        left join param_template_category ptc on (ptc.param_template_id=pt.id and ptc.valid=1)
+        where
+        <if test="riskMaterialNameList != null and riskMaterialNameList.size > 0">
+            rm.chinese_generic_name in
+            <foreach collection="riskMaterialNameList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            and
+        </if>
+        <if test="templateType != null and templateType != ''">
+            ptc.type = #{templateType}
+            and
+        </if>
+        rm.valid=1
+    </select>
+</mapper>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.grading.mapper.EnvStatisticsMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.grading.entity.EnvStatistics">
+        <id column="id" property="id" />
+        <result column="province_canton_code" property="provinceCantonCode" />
+        <result column="industry_id" property="industryId" />
+        <result column="technique_code" property="techniqueCode" />
+        <result column="product_id" property="productId" />
+        <result column="ent_scale" property="entScale" />
+        <result column="industrial_output" property="industrialOutput" />
+        <result column="main_product_qty" property="mainProductQty" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+        <result column="emission_mode_type_code" property="emissionModeTypeCode" />
+    </resultMap>
+
+</mapper>

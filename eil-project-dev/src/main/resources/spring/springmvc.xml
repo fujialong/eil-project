@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+   <!-- <mvc:resources mapping="/doc/**" location="/doc/"/>-->
+    <!-- scan bean -->
+    <context:component-scan base-package="com.shencai.eil" use-default-filters="true">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+    </context:component-scan>
+    <mvc:annotation-driven/>
+    <!-- start @AspectJ support-->
+    <aop:aspectj-autoproxy/>
+    <!--aop-->
+    <bean id="sysLogAspect" class="com.shencai.eil.aspect.SysLogAspect"></bean>
+
+    <bean id="conversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
+        <property name="converters">
+            <set>
+                <bean class="com.shencai.eil.resolver.DateConverter"/>
+            </set>
+        </property>
+    </bean>
+
+    <!--interceptor-->
+    <mvc:interceptors>
+        <!--Multiple interceptors, executed sequentially-->
+        <mvc:interceptor>
+            <!--Matching multistage path-->
+            <mvc:mapping path="/**"/>
+            <!--Login permission interceptor-->
+            <bean class="com.shencai.eil.base.LoginInterceptor"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+    <mvc:annotation-driven conversion-service="conversionService">
+        <mvc:argument-resolvers>
+            <bean class="com.shencai.eil.base.CurrentUserArgumentResolver"/>
+        </mvc:argument-resolvers>
+    </mvc:annotation-driven>
+
+
+    <!--viw  -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/"></property>
+        <property name="suffix" value=".jsp"></property>
+    </bean>
+</beans>

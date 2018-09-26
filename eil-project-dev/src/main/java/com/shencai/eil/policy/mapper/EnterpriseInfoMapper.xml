@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.policy.mapper.EnterpriseInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.policy.entity.EnterpriseInfo">
+        <id column="id" property="id"/>
+        <result column="category" property="category"/>
+        <result column="type" property="type"/>
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="canton_code" property="cantonCode"/>
+        <result column="industry_id" property="industryId"/>
+        <result column="social_credit_code" property="socialCreditCode"/>
+        <result column="address" property="address"/>
+        <result column="has_risks_report" property="hasRisksReport"/>
+        <result column="link_phone" property="linkPhone"/>
+        <result column="yield" property="yield"/>
+        <result column="income" property="income"/>
+        <result column="employees_number" property="employeesNumber"/>
+        <result column="remark" property="remark"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="valid" property="valid"/>
+        <result column="postcode" property="postcode"/>
+        <result column="longitude" property="longitude"/>
+        <result column="latitude" property="latitude"/>
+        <result column="branch_code" property="branchCode"/>
+        <result column="scale" property="scale"/>
+        <result column="start_time" property="startTime"/>
+        <result column="emission_mode_id" property="emissionModeId"/>
+    </resultMap>
+
+    <select id="pageEnterpriseInfo" resultType="com.shencai.eil.policy.model.PolicyVO"
+            parameterType="com.shencai.eil.policy.model.PolicyQueryParam">
+        select
+        ei.id,
+        ei.name enterpriseName,
+        ei.status,
+        (select name from sys_dictionary where type_code='ent_status' and code=ei.status and valid=1)statusName,
+        ei.social_credit_code socialCreditCode,
+        ei.link_phone linkPhone,
+        ic.name industryCategoryName,
+        ei.has_risks_report hasRisksReport,
+        t.name techniqueName,
+        sd.name cityName
+        from enterprise_info ei
+        left join industry_category ic on (ei.industry_id=ic.id and ic.valid=1)
+        left join enterprise_mapping_technique emt on (ei.id=emt.ent_id and emt.valid=1)
+        left join technique t on (emt.tech_id=t.id and t.valid=1)
+        left join sys_dictionary sd on (sd.type_code = 'canton' and ei.canton_code = sd.code and sd.valid=1)
+        where ei.valid=1
+        ORDER by ei.update_time desc
+    </select>
+
+    <select id="getPolicy" resultType="com.shencai.eil.policy.model.PolicyVO"
+            parameterType="com.shencai.eil.policy.model.PolicyQueryParam">
+        select
+        ei.id,
+        ei.name enterpriseName,
+        ei.social_credit_code socialCreditCode,
+        (select name from industry_category where id = ic.level_one_id and valid=1) industryCategoryName,
+        (select name from industry_category where id = ic.level_two_id and valid=1) industryLargeCategoryName,
+        (select name from industry_category where id = ic.level_three_id and valid=1) industrySmallCategoryName,
+        ic.name industryName,
+        t.name techniqueName,
+        ei.link_phone linkPhone,
+        ei.postcode,
+        (select name from sys_dictionary where type_code='canton' and code=sd.parent_code and valid=1)provinceName,
+        sd.name cityName,
+        ei.address,
+        ei.yield,
+        ei.income,
+        ei.employees_number employeesNumber,
+        ei.start_time startTime,
+        em.name emissionModeName,
+        ei.has_risks_report hasRisksReport,
+        (select name from sys_dictionary where type_code='ent_scale' and code=ei.scale and valid=1)scaleName,
+        ei.status,
+        (select name from sys_dictionary where type_code='ent_status' and code=ei.status and valid=1)statusName
+        from enterprise_info ei
+        left join industry_category ic on (ei.industry_id=ic.id and ic.valid=1)
+        left join enterprise_mapping_technique emt on (ei.id=emt.ent_id and emt.valid=1)
+        left join technique t on (emt.tech_id=t.id and t.valid=1)
+        left join sys_dictionary sd on (sd.type_code = 'canton' and ei.canton_code = sd.code and sd.valid=1)
+        left join emission_mode em on (em.id = ei.emission_mode_id and em.valid = 1)
+        where ei.id = #{enterpriseId} and ei.valid=1
+    </select>
+
+    <select id="getEnterprise" resultType="com.shencai.eil.policy.model.EnterpriseVO"
+            parameterType="com.shencai.eil.policy.model.EnterpriseQueryParam">
+        select
+        ei.id,
+        ei.name,
+        ei.status,
+        (select name from sys_dictionary where type_code='ent_status' and code=ei.status and valid=1)statusName,
+        concat(left(ei.canton_code,2),'0000')provinceCode,
+        ei.scale,
+        pi.id mainProductId,
+        pi.type mainProductType,
+        pi.name mainProductName,
+        emt.tech_id techniqueId,
+        t.code techniqueCode,
+        em.type emissionModeTypeCode,
+        ei.yield,
+        ei.industry_id industryId,
+        ei.start_time startTime,
+        ei.social_credit_code socialCreditCode,
+        ei.canton_code cantonCode
+        from enterprise_info ei
+        left join enterprise_mapping_product emp on (emp.ent_id=ei.id and emp.is_main_product=1 and emp.valid=1)
+        left join product_info pi on (pi.id=emp.prod_id and pi.valid=1)
+        left join enterprise_mapping_technique emt on (ei.id=emt.ent_id and emt.valid=1)
+        left join technique t on (t.id=emt.tech_id and t.valid=1)
+        left join emission_mode em on (em.id = ei.emission_mode_id and em.valid = 1)
+        where ei.id = #{enterpriseId} and ei.valid=1
+    </select>
+</mapper>

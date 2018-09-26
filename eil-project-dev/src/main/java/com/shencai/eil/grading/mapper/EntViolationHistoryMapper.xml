@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.grading.mapper.EntViolationHistoryMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.grading.entity.EntViolationHistory">
+        <id column="id" property="id" />
+        <result column="ent_name" property="entName" />
+        <result column="social_credit_code" property="socialCreditCode" />
+        <result column="industry_small_class" property="industrySmallClass" />
+        <result column="province_canton_code" property="provinceCantonCode" />
+        <result column="water_related_violation_qty" property="waterRelatedViolationQty" />
+        <result column="gas_related_violation_qty" property="gasRelatedViolationQty" />
+        <result column="soil_related_violation_qty" property="soilRelatedViolationQty" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+</mapper>

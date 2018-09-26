@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.policy.mapper.EnterpriseMappingProductMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shencai.eil.policy.entity.EnterpriseMappingProduct">
+        <id column="id" property="id" />
+        <result column="prod_id" property="prodId" />
+        <result column="ent_id" property="entId" />
+        <result column="ingredients" property="ingredients" />
+        <result column="waste_water" property="wasteWater" />
+        <result column="heavy_metal" property="heavyMetal" />
+        <result column="waste_gas" property="wasteGas" />
+        <result column="waste_qty" property="wasteQty" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+        <result column="is_main_product" property="isMainProduct" />
+    </resultMap>
+
+    <select id="listProduct" resultType="com.shencai.eil.policy.model.ProductVO"
+            parameterType="com.shencai.eil.policy.model.EnterpriseMappingProductQueryParam">
+        select
+        emp.ent_id enterpriseId,
+        pc.name smallClassName,
+        (select name from product_class where id = pc.parent_id and valid=true)largeClassName,
+        pi.name
+        from
+        product_info pi
+        inner join enterprise_mapping_product emp on emp.prod_id = pi.id
+        inner join product_class pc on pi.prod_class_id = pc.id
+        where
+        <if test="enterpriseIdList != null and enterpriseIdList.size > 0">
+            emp.ent_id in
+            <foreach collection="enterpriseIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            and
+        </if>
+        <if test="isMainProduct != null and isMainProduct != ''">
+            emp.is_main_product = #{isMainProduct} and
+        </if>
+        <if test="enterpriseId != null and enterpriseId != ''">
+            emp.ent_id = #{enterpriseId} and
+        </if>
+        emp.valid=1 and pi.valid=1 and pc.valid=1
+    </select>
+</mapper>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.grading.mapper.TargetWeightMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.grading.entity.TargetWeight">
+        <id column="id" property="id"/>
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="weight" property="weight"/>
+        <result column="type" property="type"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="valid" property="valid"/>
+        <result column="create_user_id" property="createUserId"/>
+    </resultMap>
+
+    <select id="listRootTarget" resultType="com.shencai.eil.grading.model.TargetResult">
+        select
+        tw.id targetId,
+        tw.code targetCode,
+        concat(tw.name, tw.code) targetName
+        from target_weight tw
+        where
+        tw.type='root' and tw.valid=1
+        ORDER by tw.code
+    </select>
+
+    <select id="listChildTarget" resultType="com.shencai.eil.grading.model.EntRiskAssessResultVO"
+            parameterType="com.shencai.eil.grading.model.EntRiskAssessResultQueryParam">
+        select
+        tw.id targetId,
+        tw.parent_id parentId,
+        tw.code targetCode,
+        tw.name targetName
+        from target_weight tw
+        where
+        <if test="parentIdList != null and parentIdList.size > 0">
+            tw.parent_id in
+            <foreach collection="parentIdList" item="item" open="(" separator=","
+                     close=")">
+                #{item}
+            </foreach>
+            and
+        </if>
+        <if test="targetType != null and targetType != ''">
+            tw.type = #{targetType}
+            and
+        </if>
+        tw.valid=1
+        ORDER by tw.code
+    </select>
+
+</mapper>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.system.mapper.BaseFileuploadMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.system.entity.BaseFileupload">
+        <id column="id" property="id" />
+        <result column="source_id" property="sourceId" />
+        <result column="stype" property="stype" />
+        <result column="file_name" property="fileName" />
+        <result column="file_desc" property="fileDesc" />
+        <result column="flag" property="flag" />
+        <result column="file_type" property="fileType" />
+        <result column="file_adress" property="fileAdress" />
+        <result column="filere_lcode" property="filereLcode" />
+        <result column="deal_state" property="dealState" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+</mapper>

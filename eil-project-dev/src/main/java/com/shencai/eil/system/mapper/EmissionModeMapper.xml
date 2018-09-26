@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.system.mapper.EmissionModeMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.system.entity.EmissionMode">
+        <id column="id" property="id" />
+        <result column="code" property="code" />
+        <result column="name" property="name" />
+        <result column="type" property="type" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+    <select id="listEmissionMode" resultType="com.shencai.eil.system.model.EmissionModeVO"
+            parameterType="com.shencai.eil.system.model.EmissionModeQueryParam">
+        select
+        id,
+        code,
+        name,
+        type
+        from
+        emission_mode
+        where
+        <if test="type != null and type != ''">
+            type = #{type} and
+        </if>
+        valid=1
+        order by code
+    </select>
+</mapper>

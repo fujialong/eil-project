@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.grading.mapper.EntRiskParamValueMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.grading.entity.EntRiskParamValue">
+        <id column="id" property="id" />
+        <result column="param_id" property="paramId" />
+        <result column="enterprise_id" property="enterpriseId" />
+        <result column="value" property="value" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+    <select id="listEntRiskParamValue"
+            resultType="com.shencai.eil.grading.model.EntRiskParamValueVO"
+            parameterType="com.shencai.eil.grading.model.EntRiskParamValueQueryParam">
+        select
+        erpv.value,
+        param.name,
+        param.remark
+        from ent_risk_param_value erpv
+        inner join param on (param.id=erpv.param_id and param.valid=1)
+        inner join template_mapping_param tmp on (tmp.param_id=param.id and tmp.valid=1)
+        inner join param_template pt on (pt.id=tmp.template_id and pt.valid=1)
+        inner join param_template_category ptc on (ptc.param_template_id = pt.id and ptc.valid = 1)
+        where
+        <if test="enterpriseId != null and enterpriseId != ''">
+            erpv.enterprise_id = #{enterpriseId} and
+        </if>
+        <if test="templateType != null and templateType != ''">
+            ptc.type = #{templateType} and
+        </if>
+        erpv.valid=1
+    </select>
+
+    <select id="countGradualRiskParams" parameterType="com.shencai.eil.grading.model.EntRiskParamValueQueryParam" resultType="int">
+        select sum(total) from (
+            SELECT count(p.id) AS total FROM product_info p
+                INNER JOIN risk_material rm ON p.`name` = rm.chinese_generic_name
+                INNER JOIN enterprise_mapping_product emp ON emp.prod_id = p.id AND emp.is_main_product = 1
+                AND emp.ent_id = #{enterpriseId}
+                INNER JOIN risk_material_param_value rmpv ON rmpv.material_id = rm.id
+                INNER JOIN template_mapping_param tmp ON tmp.param_id = rmpv.param_id
+                INNER JOIN param_template_category ptc ON ptc.param_template_id = tmp.template_id AND ptc.type = 'stability'
+            where rmpv.`value` = '1'
+            UNION ALL
+            select  count(p.id) AS total from param p
+                INNER JOIN template_mapping_param tmp ON tmp.param_id = p.id
+                INNER JOIN ent_risk_param_value erpv ON erpv.param_id = p.id AND erpv.enterprise_id = #{enterpriseId}
+                INNER JOIN param_template_category ptc ON ptc.param_template_id = tmp.template_id AND ptc.type = 'gradual_risk'
+                INNER JOIN risk_material rm ON p.`name` = rm.chinese_generic_name
+                INNER JOIN risk_material_param_value rmpv ON rmpv.material_id = rm.id
+                INNER JOIN template_mapping_param tmp2 ON tmp2.param_id = rmpv.param_id
+                INNER JOIN param_template_category ptc2 ON ptc2.param_template_id = tmp2.template_id AND ptc2.type = 'stability'
+            where rmpv.`value` = '1'
+        ) a
+    </select>
+</mapper>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.system.mapper.SysDictionaryMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.system.entity.SysDictionary">
+        <id column="id" property="id" />
+        <result column="code" property="code" />
+        <result column="parent_code" property="parentCode" />
+        <result column="name" property="name" />
+        <result column="type_code" property="typeCode" />
+        <result column="sort_num" property="sortNum" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+        <result column="level" property="level" />
+    </resultMap>
+
+    <select id="listSysDictionary" resultType="com.shencai.eil.system.model.DictionaryVO"
+            parameterType="com.shencai.eil.system.model.DictionaryQueryParam">
+        select
+        id,
+        code,
+        name,
+        parent_code parentCode
+        from
+        sys_dictionary
+        where
+        <if test="dictionaryTypeCode != null and dictionaryTypeCode != ''">
+            type_code = #{dictionaryTypeCode} and
+        </if>
+        <if test="parentCode != null and parentCode != ''">
+            parent_code = #{parentCode} and
+        </if>
+        <if test="parentCode == null or parentCode == ''">
+            (parent_code is null or parent_code = '') and
+        </if>
+        valid=1
+        order by sort_num
+    </select>
+</mapper>
