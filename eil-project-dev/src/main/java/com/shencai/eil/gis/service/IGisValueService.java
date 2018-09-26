@@ -1,7 +1,7 @@
 package com.shencai.eil.gis.service;
 
-import com.shencai.eil.gis.entity.GisValue;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.shencai.eil.gis.entity.GisValue;
 import com.shencai.eil.gis.model.GisValueParam;
 
 /**
@@ -20,4 +20,5 @@ public interface IGisValueService extends IService<GisValue> {
      * @param requestParam request param
      */
     void saveGisValue(GisValueParam requestParam);
+
 }

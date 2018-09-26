@@ -116,4 +116,20 @@
         left join emission_mode em on (em.id = ei.emission_mode_id and em.valid = 1)
         where ei.id = #{enterpriseId} and ei.valid=1
     </select>
+
+    <select id="getEntLocation" resultType="com.shencai.eil.gis.model.GisValueVO">
+        select id entId, latitude, longitude
+        from enterprise_info
+        where id = #{entId} and valid =1
+    </select>
+    <select id="listOtherEntLocation" resultType="com.shencai.eil.gis.model.GisValueVO">
+         select id entId, latitude, longitude
+        from enterprise_info
+        where id != #{entId} and valid =1
+    </select>
+    <select id="listAllEntLocation" resultType="com.shencai.eil.gis.model.GisValueVO">
+          select id entId, latitude, longitude
+        from enterprise_info
+        where valid =1
+    </select>
 </mapper>

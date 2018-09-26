@@ -21,6 +21,7 @@ import com.shencai.eil.risk.service.IRiskControlPollutionValueService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.util.*;
@@ -80,6 +81,7 @@ public class GradingServiceImpl implements IGradingService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public GradingVO getGradingResult(GradingQueryParam queryParam) {
         EnterpriseVO enterpriseInfo = getEnterpriseInfo(queryParam.getEnterpriseId());
 
@@ -184,8 +186,10 @@ public class GradingServiceImpl implements IGradingService {
 
     private void disposeEnterpriseRiskProfileData(EnterpriseVO enterprise) {
         EnvStatistics envStatistics = getEnvironmentStatistics(enterprise);
+        setMainProductQty(enterprise, envStatistics);
         insertEnterpriseMappingEnvironmentStatistics(enterprise, envStatistics);
-        List<EnvStatisticsParamValueVO> envStatisticsParamValueList = listEnvStatisticsParamValue(envStatistics);
+        List<EnvStatisticsParamValueVO> envStatisticsParamValueList =
+                listEnvStatisticsParamValue(envStatistics, TemplateCategory.ENV_BASE_TEMPLE.getCode());
         insertEnterpriseRiskParamValues(enterprise, envStatisticsParamValueList);
     }
 
@@ -349,6 +353,13 @@ public class GradingServiceImpl implements IGradingService {
                 saveEntRiskAssessResult(enterpriseVO, targetWeightIds, result);
             }
         }
+    }
+
+    private void setMainProductQty(EnterpriseVO enterprise, EnvStatistics envStatistics) {
+        List<EnvStatisticsParamValueVO> envStatisticsParamValueOfMainProduct =
+                listEnvStatisticsParamValue(envStatistics, TemplateCategory.PRODUCTION.getCode());
+        String mainProductOutput = envStatisticsParamValueOfMainProduct.get(0).getValue();
+        enterprise.setMainProductQty(Double.valueOf(mainProductOutput));
     }
 
     private List<EntRiskParamValueVO> listEnterpriseRiskParamValue(EnterpriseVO enterprise, String templateCategoryCode) {
@@ -545,10 +556,10 @@ public class GradingServiceImpl implements IGradingService {
      * calculate progressive/sudden R1.2
      */
     private Double calculateOnePointTwoSecondaryIndicatorsOfRiskFactors(EnterpriseVO enterprise) {
-        List<EntRiskParamValueVO> envRiskParamValueList = listEnterpriseRiskParamValue(enterprise
+        List<EntRiskParamValueVO> entRiskParamValueList = listEnterpriseRiskParamValue(enterprise
                 , TemplateCategory.EMISSIONS_INTENSITY.getCode());
         List<String> pollutionCategoryNameList = new ArrayList<>();
-        for (EntRiskParamValueVO envRiskParamValueVO : envRiskParamValueList) {
+        for (EntRiskParamValueVO envRiskParamValueVO : entRiskParamValueList) {
             if (!pollutionCategoryNameList.contains(envRiskParamValueVO.getRemark())) {
                 pollutionCategoryNameList.add(envRiskParamValueVO.getRemark());
             }
@@ -568,10 +579,10 @@ public class GradingServiceImpl implements IGradingService {
             }
         }
         Double r = 0.0;
-        for (EntRiskParamValueVO envRiskParamValueVO : envRiskParamValueList) {
-            Double value = emissionMap.get(envRiskParamValueVO.getRemark());
+        for (EntRiskParamValueVO entRiskParamValueVO : entRiskParamValueList) {
+            Double value = emissionMap.get(entRiskParamValueVO.getRemark());
             if (value != null && value.doubleValue() != 0) {
-                r += envRiskParamValueVO.getValue() * enterprise.getYield() / value;
+                r += entRiskParamValueVO.getValue() * enterprise.getYield() / value;
             }
         }
         return r;
@@ -592,40 +603,57 @@ public class GradingServiceImpl implements IGradingService {
     }
 
     private void insertEnterpriseMappingEnvironmentStatistics(EnterpriseVO enterprise, EnvStatistics envStatistics) {
-        EntMappingEnvStatistics entMappingEnvStatistics = new EntMappingEnvStatistics();
-        entMappingEnvStatistics.setId(StringUtil.getUUID());
-        entMappingEnvStatistics.setEntId(enterprise.getId());
-        entMappingEnvStatistics.setEnvStatisticsId(envStatistics.getId());
-        entMappingEnvStatistics.setCreateTime(DateUtil.getNowTimestamp());
-        entMappingEnvStatistics.setUpdateTime(DateUtil.getNowTimestamp());
-        entMappingEnvStatistics.setValid((Integer) BaseEnum.VALID_YES.getCode());
-        entMappingEnvStatisticsMapper.insert(entMappingEnvStatistics);
+        Integer count = entMappingEnvStatisticsMapper.selectCount(new QueryWrapper<EntMappingEnvStatistics>()
+                .eq("ent_id", enterprise.getId())
+                .eq("env_statistics_id", envStatistics.getId())
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+        if (count == 0) {
+            EntMappingEnvStatistics entMappingEnvStatistics = new EntMappingEnvStatistics();
+            entMappingEnvStatistics.setId(StringUtil.getUUID());
+            entMappingEnvStatistics.setEntId(enterprise.getId());
+            entMappingEnvStatistics.setEnvStatisticsId(envStatistics.getId());
+            entMappingEnvStatistics.setCreateTime(DateUtil.getNowTimestamp());
+            entMappingEnvStatistics.setUpdateTime(DateUtil.getNowTimestamp());
+            entMappingEnvStatistics.setValid((Integer) BaseEnum.VALID_YES.getCode());
+            entMappingEnvStatisticsMapper.insert(entMappingEnvStatistics);
+        }
     }
 
     private void insertEnterpriseRiskParamValues(EnterpriseVO enterprise,
                                                  List<EnvStatisticsParamValueVO> envStatisticsParamValueList) {
-        List<EntRiskParamValue> envRiskParamValueList = new ArrayList<>();
-        for (EnvStatisticsParamValueVO envStatisticsParamValue : envStatisticsParamValueList) {
-            EntRiskParamValue envRiskParamValue = new EntRiskParamValue();
-            envRiskParamValue.setId(StringUtil.getUUID());
-            envRiskParamValue.setParamId(envStatisticsParamValue.getParamId());
-            envRiskParamValue.setEnterpriseId(enterprise.getId());
-            envRiskParamValue.setValue(envStatisticsParamValue.getValue());
-            envRiskParamValue.setCreateTime(DateUtil.getNowTimestamp());
-            envRiskParamValue.setUpdateTime(DateUtil.getNowTimestamp());
-            envRiskParamValue.setValid((Integer) BaseEnum.VALID_YES.getCode());
-            envRiskParamValueList.add(envRiskParamValue);
-        }
-        if (!CollectionUtils.isEmpty(envRiskParamValueList)) {
-            entRiskParamValueService.saveBatch(envRiskParamValueList);
+        Integer count = entRiskParamValueMapper.selectCount(new QueryWrapper<EntRiskParamValue>()
+                .eq("enterprise_id", enterprise.getId())
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+        if (count == 0) {
+            List<EntRiskParamValue> envRiskParamValueList = new ArrayList<>();
+            for (EnvStatisticsParamValueVO envStatisticsParamValue : envStatisticsParamValueList) {
+                EntRiskParamValue entRiskParamValue = new EntRiskParamValue();
+                entRiskParamValue.setId(StringUtil.getUUID());
+                entRiskParamValue.setParamId(envStatisticsParamValue.getParamId());
+                entRiskParamValue.setEnterpriseId(enterprise.getId());
+                entRiskParamValue.setValue(envStatisticsParamValue.getValue());
+                entRiskParamValue.setCreateTime(DateUtil.getNowTimestamp());
+                entRiskParamValue.setUpdateTime(DateUtil.getNowTimestamp());
+                entRiskParamValue.setValid((Integer) BaseEnum.VALID_YES.getCode());
+                envRiskParamValueList.add(entRiskParamValue);
+            }
+            if (!CollectionUtils.isEmpty(envRiskParamValueList)) {
+                entRiskParamValueService.saveBatch(envRiskParamValueList);
+            }
         }
     }
 
-    private List<EnvStatisticsParamValueVO> listEnvStatisticsParamValue(EnvStatistics envStatistics) {
+    private List<EnvStatisticsParamValueVO> listEnvStatisticsParamValue(EnvStatistics envStatistics,
+                                                                        String templateType) {
         EnvStatisticsParamValueQueryParam queryParam = new EnvStatisticsParamValueQueryParam();
         queryParam.setEnvStatisticsId(envStatistics.getId());
-        queryParam.setTemplateType(TemplateCategory.ENV_BASE_TEMPLE.getCode());
-        return envStatisticsParamValueMapper.listEnvStatisticsParamValue(queryParam);
+        queryParam.setTemplateType(templateType);
+        List<EnvStatisticsParamValueVO> envStatisticsParamValueVOS =
+                envStatisticsParamValueMapper.listEnvStatisticsParamValue(queryParam);
+        if (CollectionUtils.isEmpty(envStatisticsParamValueVOS)) {
+            throw new BusinessException("The matching environment statistics parameter value data was not queried!");
+        }
+        return envStatisticsParamValueVOS;
     }
 
     private EnvStatistics getEnvironmentStatistics(EnterpriseVO enterprise) {
@@ -640,8 +668,6 @@ public class GradingServiceImpl implements IGradingService {
         if (ObjectUtils.isEmpty(envStatistics)) {
             throw new BusinessException("The enterprise has no matching environmental statistics!");
         }
-        //TODO
-        enterprise.setMainProductQty(envStatistics.getMainProductQty());
         return envStatistics;
     }
 
@@ -747,10 +773,9 @@ public class GradingServiceImpl implements IGradingService {
                         .eq("area_code", enterprise.getCantonCode())
                         .eq("valid", BaseEnum.VALID_YES.getCode()));
         if (!ObjectUtils.isEmpty(riskControlPollutionValue)
-                && riskControlPollutionValue.getEnforcementIntensity() != null
-                && riskControlPollutionValue.getEnforcementIntensity().doubleValue() != 0) {
-
-            double result = maxViolationQty / riskControlPollutionValue.getEnforcementIntensity();
+                && riskControlPollutionValue.getRiskControl() != null
+                && riskControlPollutionValue.getRiskControl().doubleValue() != 0) {
+            double result = maxViolationQty * riskControlPollutionValue.getRiskControl();
             return result;
         }
         return maxViolationQty;

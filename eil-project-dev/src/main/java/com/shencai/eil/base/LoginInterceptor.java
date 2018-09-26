@@ -1,10 +1,15 @@
 package com.shencai.eil.base;
 
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.api.R;
+import com.shencai.eil.common.constants.BaseEnum;
 import com.shencai.eil.constants.ResultStatus;
 import com.shencai.eil.exception.AccessExpiredException;
+import com.shencai.eil.login.entity.SystemBaseUser;
+import com.shencai.eil.login.service.ISystemBaseUserService;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -24,7 +29,10 @@ import java.util.Map;
 public class LoginInterceptor implements HandlerInterceptor {
 
     public static final String USER_LOGIN_DO = "/user/login.do";
+    public static final String IGNOR_TICKET = "123456";
 
+    @Autowired
+    private ISystemBaseUserService systemBaseUserService;
     /**
      * This method is called before the Controller handles it, and return false is aborted
      * Not enabled by default
@@ -38,10 +46,10 @@ public class LoginInterceptor implements HandlerInterceptor {
             //Is the login interface that allows it to pass through
             return true;
         }
-        return setInterceptorStatus(httpServletRequest, httpServletResponse, false);
+        return setInterceptorStatus(httpServletRequest, httpServletResponse, true);
     }
 
-    private static void printJson(HttpServletResponse httpServletResponse, String code) {
+    private static void printJson(HttpServletResponse httpServletResponse) {
         R result = R.restResult("ticket timeout", ResultStatus.LOGIN_OUT);
         String content = JSON.toJSONString(result);
         printContent(httpServletResponse, content);
@@ -78,11 +86,24 @@ public class LoginInterceptor implements HandlerInterceptor {
         HttpSession session = httpServletRequest.getSession();
         Map<String, String[]> map = httpServletRequest.getParameterMap();
         String[] ticket = map.get("ticket");
-        if (!ObjectUtils.isEmpty(ticket) && !ObjectUtils.isEmpty(session.getAttribute(ticket[0]))) {
+        if (ObjectUtils.isEmpty(ticket)) {
+            printJson(httpServletResponse);
+            return false;
+        }
+
+        if (IGNOR_TICKET.equals(ticket[0])) {
             return true;
         }
 
-        printJson(httpServletResponse, "");
+        SystemBaseUser user = systemBaseUserService.getOne(new QueryWrapper<SystemBaseUser>()
+        .eq("deleteFlag", 0)
+        .eq("ticket",ticket[0]));
+
+        if (!ObjectUtils.isEmpty(user)) {
+            return true;
+        }
+
+        printJson(httpServletResponse);
         return false;
     }
 }

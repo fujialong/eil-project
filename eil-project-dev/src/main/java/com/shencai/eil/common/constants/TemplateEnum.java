@@ -17,7 +17,7 @@ public enum TemplateEnum {
     /**
      * A6
      */
-    CRITICAL_QUANTITY("A6", "b（吨）"),
+    CRITICAL_QUANTITY("A6", "临界量"),
 
     /**
      * A1

@@ -15,7 +15,7 @@ public enum TemplateCategory {
     STABILITY("stability", "渐进性判断-稳定性"),
 
     /**
-     * Archive all data templates
+     * Archive all data
      */
     ENV_BASE_TEMPLE("env_base", "环统档案所有数据模板"),
 
@@ -30,9 +30,14 @@ public enum TemplateCategory {
     FAST_GRADING("fast_grading", "快速分级模板"),
 
     /**
-     * Raw and auxiliary material input coefficient template
+     * Raw and auxiliary material input coefficient
      */
-    RAW_MATERIAL("raw_material", "原辅料投入系数模板");
+    RAW_MATERIAL("raw_material", "原辅料投入系数模板"),
+
+    /**
+     * Production status of main products
+     */
+    PRODUCTION("production", "主要产品生产情况模板");
 
     private String code;
     private String name;

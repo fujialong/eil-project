@@ -29,6 +29,7 @@ import java.util.List;
 @Slf4j
 public class GisValueServiceImpl extends ServiceImpl<GisValueMapper, GisValue> implements IGisValueService {
 
+
     @Override
     public void saveGisValue(GisValueParam requestParam) {
         List<GisValue> preList = new ArrayList<>();
@@ -39,24 +40,26 @@ public class GisValueServiceImpl extends ServiceImpl<GisValueMapper, GisValue> i
             return;
         }
 
-        for (ContainsCodeValue codeValue : containsCodeValues) {
-            saveEntityToList(preList, requestParam, codeValue);
+        for (ContainsCodeValue codeAndValue : containsCodeValues) {
+            saveEntityToList(preList, requestParam, codeAndValue);
         }
 
         this.saveBatch(preList);
     }
 
-    private void saveEntityToList(List<GisValue> preList, GisValueParam requestParam, ContainsCodeValue codeValue) {
-        GisValue gisValue = new GisValue();
 
+    private void saveEntityToList(List<GisValue> preList, GisValueParam requestParam, ContainsCodeValue codeAndValue) {
+        GisValue gisValue = new GisValue();
         Date date = DateUtil.getNowTimestamp();
+
         gisValue.setEntId(requestParam.getEntId());
         gisValue.setCreateTime(date);
         gisValue.setId(StringUtil.getUUID());
         gisValue.setValid((Integer) BaseEnum.VALID_YES.getCode());
         gisValue.setUpdateTime(date);
-        gisValue.setCode(codeValue.getCode());
-        gisValue.setValue(codeValue.getValue());
+        gisValue.setCode(codeAndValue.getCode());
+        gisValue.setValue(codeAndValue.getValue());
+
         preList.add(gisValue);
     }
 }

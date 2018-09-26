@@ -2,11 +2,12 @@ package com.shencai.eil.login.entity;
 
 import com.baomidou.mybatisplus.extension.activerecord.Model;
 import com.baomidou.mybatisplus.annotation.TableField;
+
 import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fujl
@@ -29,6 +30,8 @@ public class SystemBaseUser extends Model<SystemBaseUser> {
     private String tel;
 
     private String email;
+
+    private String ticket;
 
     @TableField("userType")
     private String userType;
@@ -177,6 +180,14 @@ public class SystemBaseUser extends Model<SystemBaseUser> {
         this.deleteFlag = deleteFlag;
     }
 
+    public String getTicket() {
+        return ticket;
+    }
+
+    public void setTicket(String ticket) {
+        this.ticket = ticket;
+    }
+
     @Override
     protected Serializable pkVal() {
         return this.id;
@@ -185,21 +196,22 @@ public class SystemBaseUser extends Model<SystemBaseUser> {
     @Override
     public String toString() {
         return "SystemBaseUser{" +
-        "id=" + id +
-        ", userId=" + userId +
-        ", userName=" + userName +
-        ", password=" + password +
-        ", tel=" + tel +
-        ", email=" + email +
-        ", userType=" + userType +
-        ", tenantId=" + tenantId +
-        ", busiStatus=" + busiStatus +
-        ", remark=" + remark +
-        ", createTime=" + createTime +
-        ", createBy=" + createBy +
-        ", editTime=" + editTime +
-        ", editBy=" + editBy +
-        ", deleteFlag=" + deleteFlag +
-        "}";
+                "id=" + id +
+                ", userId=" + userId +
+                ", userName=" + userName +
+                ", password=" + password +
+                ", tel=" + tel +
+                ", email=" + email +
+                ", userType=" + userType +
+                ", tenantId=" + tenantId +
+                ", busiStatus=" + busiStatus +
+                ", remark=" + remark +
+                ", ticket=" + ticket +
+                ", createTime=" + createTime +
+                ", createBy=" + createBy +
+                ", editTime=" + editTime +
+                ", editBy=" + editBy +
+                ", deleteFlag=" + deleteFlag +
+                "}";
     }
 }

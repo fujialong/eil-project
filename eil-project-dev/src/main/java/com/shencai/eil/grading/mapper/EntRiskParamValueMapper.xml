@@ -25,8 +25,7 @@
         from ent_risk_param_value erpv
         inner join param on (param.id=erpv.param_id and param.valid=1)
         inner join template_mapping_param tmp on (tmp.param_id=param.id and tmp.valid=1)
-        inner join param_template pt on (pt.id=tmp.template_id and pt.valid=1)
-        inner join param_template_category ptc on (ptc.param_template_id = pt.id and ptc.valid = 1)
+        inner join param_template_category ptc on (ptc.param_template_id = tmp.template_id and ptc.valid = 1)
         where
         <if test="enterpriseId != null and enterpriseId != ''">
             erpv.enterprise_id = #{enterpriseId} and

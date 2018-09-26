@@ -3,6 +3,8 @@ package com.shencai.eil.gis.mapper;
 import com.shencai.eil.gis.entity.GisValue;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
+import java.util.Map;
+
 /**
  * <p>
  *  Mapper 接口

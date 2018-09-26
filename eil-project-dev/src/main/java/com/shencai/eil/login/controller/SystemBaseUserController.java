@@ -53,15 +53,23 @@ public class SystemBaseUserController {
                 .build();
 
         map.put("tokenEntity", tokenEntity);
+        user.setTicket(tokenEntity.getTicket());
+        systemBaseUserService.updateById(user);
 
-        saveUserToSession(tokenEntity, httpServletRequest);
         return Result.ok(map);
     }
 
+    /**
+     * save token to session
+     *
+     * @param user
+     * @param httpServletRequest
+     */
     private void saveUserToSession(TokenEntity user, HttpServletRequest httpServletRequest) {
         HttpSession session = httpServletRequest.getSession();
         session.setAttribute(user.getTicket(),user);
     }
+
 
     @RequestMapping("/menuList")
     @ResponseBody
