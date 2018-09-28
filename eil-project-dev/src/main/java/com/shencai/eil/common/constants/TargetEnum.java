@@ -67,6 +67,51 @@ public enum TargetEnum {
     R_THREE_THREE("R3.3", "周边环境", "surroundings"),
 
     /**
+     * R4.1
+     */
+    R_FOUR_ONE("R4.1", "第三者人身损害", "R4.1"),
+
+    /**
+     * R4.1.1
+     */
+    R_FOUR_ONE_ONE("R4.1.1", "R4_1_1_w", "R4_1_1_w"),
+
+    /**
+     * R4.1.2
+     */
+    R_FOUR_ONE_TWO("R4.1.2", "R4_1_2_w", "R4_1_2_w"),
+
+    /**
+     * R4.2
+     */
+    R_FOUR_TWO("R4.2", "第三者财产损失", "R4.2"),
+
+    /**
+     * R4.2.1
+     */
+    R_FOUR_TWO_ONE("R4.2.1", "R4.2.1w", "R4.2.1"),
+
+    /**
+     * R4.2.2
+     */
+    R_FOUR_TWO_TWO("R4.2.2", "R4.2.2_w", "R4.2.2_w"),
+
+    /**
+     * R4.3
+     */
+    R_FOUR_THREE("R4.3", "生态环境损害", "R4.3"),
+
+    /**
+     * R4.4
+     */
+    R_FOUR_FOUR("R4.4", "应急处置与清污费用（地表水）", "R4.4"),
+
+    /**
+     * R4.5
+     */
+    R_FOUR_FIVE("R4.5", "应急处置与清污费用（地表水）", "R4.5"),
+
+    /**
      * R1.1
      */
     SECONDARY_INDICATORS_OF_RISK_FACTORS("R1.1", "风险因子二级指标R1.1", "R1.1"),

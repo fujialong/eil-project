@@ -26,8 +26,16 @@ public interface TargetWeightMapper extends BaseMapper<TargetWeight> {
 
     /**
      *Lis target weight type and weight
+     *
      * @param code
      * @return
      */
     List<CodeAndValueUseDouble> lisTargetWeightTypeAndWight(String code);
+
+    /**
+     * get all code and wight
+     *
+     * @return
+     */
+    List<CodeAndValueUseDouble> getAllCodeAndWight();
 }

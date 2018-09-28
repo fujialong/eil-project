@@ -53,5 +53,8 @@
     <select id="lisTargetWeightTypeAndWight" resultType="com.shencai.eil.grading.model.CodeAndValueUseDouble">
         select type codeResult ,weight valueResult from target_weight where valid = 1 and code = #{code}
     </select>
+    <select id="getAllCodeAndWight" resultType="com.shencai.eil.grading.model.CodeAndValueUseDouble">
+        select type codeResult ,weight valueResult from target_weight where valid = 1
+    </select>
 
 </mapper>

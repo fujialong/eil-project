@@ -95,6 +95,16 @@ public enum ComputeConstantEnum {
     R_THREE_THREE_TWO_MAX("R3_3_2_max","R3.3.2极差法标准化最大值","R3_3_2_max"),
 
     /**
+     * he
+     */
+    R_HE("he","医院和教育机构总数量","he"),
+
+    /**
+     * ws
+     */
+    R_WS("ws","水源地的总数量","ws"),
+
+    /**
      * k1
      */
     K_ONE("k1","贮存系数","k1");

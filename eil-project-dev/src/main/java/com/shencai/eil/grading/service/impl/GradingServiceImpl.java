@@ -349,8 +349,6 @@ public class GradingServiceImpl implements IGradingService {
      * Calculate  cluster effect
      */
     private double calculateThreePointThree(EnterpriseVO enterprise, List<String> riskType) {
-        double result = 0;
-
 
         List<CodeAndValueUseDouble> containsCodeValues = computeConstantService.listCodeValue();
         Map<String, Double> computeMap = CommonsUtil.castListToMap(containsCodeValues);
@@ -409,24 +407,298 @@ public class GradingServiceImpl implements IGradingService {
         double suddenValue = r33Value * targetWeightTypeMap.get(TargetEnum.SUDDEN_RISK.getCode());
         double progressiveValue = r33Value * targetWeightTypeMap.get(TargetEnum.PROGRESSIVE_RISK.getCode());
 
-        List<EntRiskAssessResult> riskAssessResultList = new ArrayList<>();
+        List<String> targetWeightIds = listTargetWeightId(targetWeightList);
+        //obtain the existing R3.3 calculation results of the enterprise
+        List<EntRiskAssessResult> riskAssessResultList = listEntRiskAssessResults(enterprise, targetWeightIds);
+        List<EntRiskAssessResult> preSaveList = new ArrayList<>();
         for (TargetWeight targetWeight : targetWeightList) {
             if (targetWeight.getCode().equals(TargetEnum.SUDDEN_RISK.getCode())) {
-                riskAssessResultList.add(buildEntRiskAssessResult(enterprise.getId(), suddenValue, targetWeight.getId()));
+                preSaveList.add(buildEntRiskAssessResult(enterprise.getId(), suddenValue, targetWeight.getId()));
             }
             if (targetWeight.getCode().equals(TargetEnum.PROGRESSIVE_RISK.getCode())) {
-                riskAssessResultList.add(buildEntRiskAssessResult(enterprise.getId(), progressiveValue, targetWeight.getId()));
+                preSaveList.add(buildEntRiskAssessResult(enterprise.getId(), progressiveValue, targetWeight.getId()));
             }
         }
 
         if (CollectionUtils.isEmpty(riskAssessResultList)) {
-            saveRiskAssessResults(riskAssessResultList);
+            saveRiskAssessResults(preSaveList);
         }
 
-        return result;
+        return r33Value;
+    }
+
+    /**
+     * R4 R4.1*R4_1_w+R4.2*R4_2_w+R4.3*R4_3_w+R4.4*R4_4_w+R4.5*R4_5_w
+     */
+    private double calculateRFour(EnterpriseVO enterprise, List<String> riskType) {
+
+        List<CodeAndValueUseDouble> targetList = targetWeightService.getAllCodeAndWeight();
+        Map<String, Double> targetWeightMap = CommonsUtil.castListToMap(targetList);
+
+        double r41w = targetWeightMap.get(TargetEnum.R_FOUR_ONE.getCode());
+        double r42w = targetWeightMap.get(TargetEnum.R_FOUR_TWO.getCode());
+        double r43w = targetWeightMap.get(TargetEnum.R_FOUR_THREE.getCode());
+        double r44w = targetWeightMap.get(TargetEnum.R_FOUR_FOUR.getCode());
+        double r45w = targetWeightMap.get(TargetEnum.R_FOUR_FIVE.getCode());
+
+
+        double r41 = calculateRFourOne(enterprise, riskType, targetWeightMap);
+
+        double r42 = calculateRFourTwo(enterprise, riskType, targetWeightMap);
+
+        double r43 = calculateRFourThree(enterprise, riskType, targetWeightMap);
+
+        double r44 = calculateRFourFour(enterprise, riskType, targetWeightMap);
+
+        double r45 = calculateRfourFive(enterprise, riskType, targetWeightMap);
+
+
+        return r41 * r41w + r42 * r42w + r43 * r43w + r44 * r44w + r45 * r45w;
+    }
+
+    private double calculateRfourFive(EnterpriseVO enterprise, List<String> riskType, Map<String, Double> targetWeightMap) {
+        return 0;
+    }
+
+    /**
+     * R4.3 >> R4_3_01*sw1+R4_3_02*sw2+R4_3_03*sw3
+     *
+     * @param enterprise
+     * @param riskType
+     * @param targetWeightMap
+     * @return
+     */
+    private double calculateRFourThree(EnterpriseVO enterprise, List<String> riskType, Map<String, Double> targetWeightMap) {
+        List<CodeAndValueUseDouble> containsCodeValues = computeConstantService.listCodeValue();
+        Map<String, Double> computeMap = CommonsUtil.castListToMap(containsCodeValues);
+
+        List<CodeAndValueUseDouble> gisCodeValueList = gisValueService.getCodeValueByEntId(enterprise.getId());
+        Map<String, Double> codeAndValueMap = CommonsUtil.castListToMap(gisCodeValueList);
+
+        double sw1 = computeMap.get(ComputeConstantEnum.S_W_ONE.getCode());
+        double sw2 = computeMap.get(ComputeConstantEnum.S_W_TWO.getCode());
+        double sw3 = computeMap.get(ComputeConstantEnum.S_W_THREE.getCode());
+
+        double r4301Value = codeAndValueMap.get(GisValueEnum.R_FOUR_THREE_ZERO_ONE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_THREE_ZERO_ONE.getCode());
+        double r4302Value = codeAndValueMap.get(GisValueEnum.R_FOUR_THREE_ZERO_TWO.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_THREE_ZERO_TWO.getCode());
+        double r4303Value = codeAndValueMap.get(GisValueEnum.R_FOUR_THREE_ZERO_THREE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_THREE_ZERO_THREE.getCode());
+
+        double r43Value = r4301Value * sw1 + r4302Value * sw2 + r4303Value * sw3;
+        List<TargetWeight> targetWeightList = obtainTargetWeight(riskType, TargetEnum.R_FOUR_TWO.getCode());
+
+
+        List<String> targetWeightIds = listTargetWeightId(targetWeightList);
+        //obtain the existing R4.3 calculation results of the enterprise
+        List<EntRiskAssessResult> riskAssessResultList = listEntRiskAssessResults(enterprise, targetWeightIds);
+        List<EntRiskAssessResult> preSaveList = new ArrayList<>();
+
+        for (TargetWeight targetWeight : targetWeightList) {
+            preSaveList.add(buildEntRiskAssessResult(enterprise.getId(), r43Value, targetWeight.getId()));
+        }
+
+        if (CollectionUtils.isEmpty(riskAssessResultList)) {
+            saveRiskAssessResults(preSaveList);
+        }
+
+
+        return r43Value;
+    }
+
+    /**
+     * R4.4 >> R4.4
+     *
+     * @param enterprise
+     * @param riskType
+     * @param targetWeightMap
+     * @return
+     */
+    private double calculateRFourFour(EnterpriseVO enterprise, List<String> riskType, Map<String, Double> targetWeightMap) {
+        List<CodeAndValueUseDouble> gisCodeValueList = gisValueService.getCodeValueByEntId(enterprise.getId());
+        Map<String, Double> codeAndValueMap = CommonsUtil.castListToMap(gisCodeValueList);
+
+        double r44Value = codeAndValueMap.get(GisValueEnum.R_FOUR_FOUR.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_FOUR.getCode());
+
+        List<TargetWeight> targetWeightList = obtainTargetWeight(riskType, TargetEnum.R_FOUR_FOUR.getCode());
+
+
+        List<String> targetWeightIds = listTargetWeightId(targetWeightList);
+        //obtain the existing R4.4 calculation results of the enterprise
+        List<EntRiskAssessResult> riskAssessResultList = listEntRiskAssessResults(enterprise, targetWeightIds);
+        List<EntRiskAssessResult> preSaveList = new ArrayList<>();
+
+        for (TargetWeight targetWeight : targetWeightList) {
+            preSaveList.add(buildEntRiskAssessResult(enterprise.getId(), r44Value, targetWeight.getId()));
+        }
+
+        if (CollectionUtils.isEmpty(riskAssessResultList)) {
+            saveRiskAssessResults(preSaveList);
+        }
+
+        return r44Value;
+    }
+
+    /**
+     * R4.2 >> R4.2.1*R4_2_1_w+R4.2.2*R4_2_2_w
+     *
+     * @param enterprise
+     * @param riskType
+     * @param targetWeightMap
+     * @return
+     */
+    private double calculateRFourTwo(EnterpriseVO enterprise, List<String> riskType, Map<String, Double> targetWeightMap) {
+        List<CodeAndValueUseDouble> containsCodeValues = computeConstantService.listCodeValue();
+        Map<String, Double> computeMap = CommonsUtil.castListToMap(containsCodeValues);
+
+        List<CodeAndValueUseDouble> gisCodeValueList = gisValueService.getCodeValueByEntId(enterprise.getId());
+        Map<String, Double> codeAndValueMap = CommonsUtil.castListToMap(gisCodeValueList);
+
+        double r4201Value = codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ZERO_ONE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ZERO_ONE.getCode());
+        double r4202Value = codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ZERO_TWO.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ZERO_TWO.getCode());
+        double r4203Value = codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ZERO_THREE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ZERO_THREE.getCode());
+
+        double r42101Value = codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ONE_ZERO_ONE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ONE_ZERO_ONE.getCode());
+        double r42102Value = codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ONE_ZERO_TWO.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ONE_ZERO_TWO.getCode());
+        double r42103Value = codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ONE_ZERO_THREE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ONE_ZERO_THREE.getCode());
+
+        double r42201Value = codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_TWO_ZERO_ONE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_TWO_ZERO_ONE.getCode());
+        double r42202Value = codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_TWO_ZERO_TWO.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_TWO_ZERO_TWO.getCode());
+        double r42203Value = codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_TWO_ZERO_THREE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_TWO_ZERO_THREE.getCode());
+
+
+        double sw1 = computeMap.get(ComputeConstantEnum.S_W_ONE.getCode());
+        double sw2 = computeMap.get(ComputeConstantEnum.S_W_TWO.getCode());
+        double sw3 = computeMap.get(ComputeConstantEnum.S_W_THREE.getCode());
+        double he = computeMap.get(ComputeConstantEnum.R_HE.getCode());
+        double ws = computeMap.get(ComputeConstantEnum.R_WS.getCode());
+        double ba3 = computeMap.get(ComputeConstantEnum.B_A_THREE.getCode());
+
+        //gdp >> R4_2_01*sw1+R4_2_02*sw2+R4_2_03*sw3
+        double gdp = r4201Value * sw1 + r4202Value * sw2 + r4203Value * sw3;
+
+        //R4.2.1 >> gdp*(R4_2_1_01*sw1+R4_2_1_02*sw2+R4_2_1_03*sw3)/ba3
+        double r421Value = gdp * (r42101Value * sw1 + r42102Value * sw2 + r42103Value * sw3) / ba3;
+        //R4.2.2 = gdp*(R4_2_2_01*sw1+R4_2_2_02*sw2+R4_2_2_03*sw3)/ws
+        double r422Value = gdp * (r42201Value * sw1 + r42202Value * sw2 + r42203Value * sw3) / ws;
+
+        //R4.2 = R4.2.1*R4_2_1_w+R4.2.2*R4_2_2_w
+        double r421 = r421Value * targetWeightMap.get(TargetEnum.R_FOUR_TWO_ONE.getCode());
+        double r422 = r422Value * targetWeightMap.get(TargetEnum.R_FOUR_TWO_TWO.getCode());
+        double r42Value = r421 + r422;
+
+        List<TargetWeight> targetWeightList = obtainTargetWeight(riskType, TargetEnum.R_FOUR_TWO.getCode());
+
+
+        List<String> targetWeightIds = listTargetWeightId(targetWeightList);
+        //obtain the existing R4.2 calculation results of the enterprise
+        List<EntRiskAssessResult> riskAssessResultList = listEntRiskAssessResults(enterprise, targetWeightIds);
+        List<EntRiskAssessResult> preSaveList = new ArrayList<>();
+
+        for (TargetWeight targetWeight : targetWeightList) {
+            preSaveList.add(buildEntRiskAssessResult(enterprise.getId(), r42Value, targetWeight.getId()));
+        }
+
+        if (CollectionUtils.isEmpty(riskAssessResultList)) {
+            saveRiskAssessResults(preSaveList);
+        }
+
+        return r42Value;
+    }
+
+    /**
+     * R4.1
+     *
+     * @param enterprise
+     * @param riskType
+     * @param targetWeightMap
+     * @return
+     */
+    private double calculateRFourOne(EnterpriseVO enterprise, List<String> riskType, Map<String, Double> targetWeightMap) {
+
+
+        List<CodeAndValueUseDouble> containsCodeValues = computeConstantService.listCodeValue();
+        Map<String, Double> computeMap = CommonsUtil.castListToMap(containsCodeValues);
+
+        List<CodeAndValueUseDouble> gisCodeValueList = gisValueService.getCodeValueByEntId(enterprise.getId());
+        Map<String, Double> codeAndValueMap = CommonsUtil.castListToMap(gisCodeValueList);
+
+        double r4101Value = codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ZERO_ONE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ZERO_ONE.getCode());
+        double r4102Value = codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ZERO_TWO.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ZERO_TWO.getCode());
+        double r4103Value = codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ZERO_THREE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ZERO_THREE.getCode());
+
+        double r41101Value = codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ONE_ZERO_ONE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ONE_ZERO_ONE.getCode());
+        double r41102Value = codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ONE_ZERO_TWO.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ONE_ZERO_TWO.getCode());
+        double r41103Value = codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ONE_ZERO_THREE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ONE_ZERO_THREE.getCode());
+
+        double r41201Value = codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_TWO_ZERO_ONE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_TWO_ZERO_ONE.getCode());
+        double r41202Value = codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_TWO_ZERO_TWO.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_TWO_ZERO_TWO.getCode());
+        double r41203Value = codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_TWO_ZERO_THREE.getCode()) == null ? 0
+                : codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_TWO_ZERO_THREE.getCode());
+
+
+        double sw1 = computeMap.get(ComputeConstantEnum.S_W_ONE.getCode());
+        double sw2 = computeMap.get(ComputeConstantEnum.S_W_TWO.getCode());
+        double sw3 = computeMap.get(ComputeConstantEnum.S_W_THREE.getCode());
+        double he = computeMap.get(ComputeConstantEnum.R_HE.getCode());
+        double ws = computeMap.get(ComputeConstantEnum.R_WS.getCode());
+
+        //pop=R4_1_01*sw1+R4_1_02*sw2+R4_1_03sw3
+        double pop = r4101Value * sw1 + r4102Value * sw2 + r4103Value * sw3;
+
+        //R4.1.1 =  pop*(R4_1_1_01*sw1+R4_1_1_02*sw2+R4_1_1_03*sw3)/he
+        double r411Value = pop * (r41101Value * sw1 + r41102Value * sw2 + r41103Value * sw3) / he;
+        //R4.1.2 = pop*(R4_1_2_01*sw1+R4_1_2_02*sw2+R4_1_2_03sw3)/ws
+        double r412Value = pop * (r41201Value * sw1 + r41202Value * sw2 + r41203Value * sw3) / ws;
+
+        //R4.1 = R4.1.1*R4_1_1_w+R4.1.2*R4_1_2_w
+        double r411 = r411Value * targetWeightMap.get(TargetEnum.R_FOUR_ONE_ONE.getCode());
+        double r412 = r412Value * targetWeightMap.get(TargetEnum.R_FOUR_ONE_TWO.getCode());
+        double r41Value = r411 + r412;
+
+        List<TargetWeight> targetWeightList = obtainTargetWeight(riskType, TargetEnum.R_FOUR_ONE.getCode());
+
+
+        List<String> targetWeightIds = listTargetWeightId(targetWeightList);
+        //obtain the existing R4.1 calculation results of the enterprise
+        List<EntRiskAssessResult> riskAssessResultList = listEntRiskAssessResults(enterprise, targetWeightIds);
+        List<EntRiskAssessResult> preSaveList = new ArrayList<>();
+
+        for (TargetWeight targetWeight : targetWeightList) {
+            preSaveList.add(buildEntRiskAssessResult(enterprise.getId(), r41Value, targetWeight.getId()));
+        }
+
+        if (CollectionUtils.isEmpty(riskAssessResultList)) {
+            saveRiskAssessResults(preSaveList);
+        }
+
+        return r41Value;
     }
 
 
+    /**
+     * @param enterprise
+     * @return
+     */
     private Map<String, Double> getTargetAssessResultMap(EnterpriseVO enterprise) {
         List<TargetResultVO> targetResultVOS = targetWeightService.listCodeTypeAndAssessResult(enterprise.getId());
         Map<String, Double> map = new HashMap<>(targetResultVOS.size());
