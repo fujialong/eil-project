@@ -13,4 +13,8 @@ public class PolicyQueryParam extends PageParam implements Serializable {
 
     private String enterpriseId;
 
+    private String status;
+
+    private String comparatorFlag;
+
 }

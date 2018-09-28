@@ -8,15 +8,14 @@ import com.shencai.eil.model.Result;
 import com.shencai.eil.policy.service.IEnterpriseInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
 
 /**
- * <p>
- * About Gis Controller
- * </p>
+ * About gis controller
  *
  * @author fujl
  * @since 2018-09-22
@@ -37,7 +36,7 @@ public class GisValueController {
      */
     @RequestMapping("/saveGisValue")
     @ResponseBody
-    public Result saveGisValue(GisValueParam requestParam) {
+    public Result saveGisValue(@RequestBody GisValueParam requestParam) {
         gisValueService.saveGisValue(requestParam);
 
         return Result.ok();
@@ -62,7 +61,7 @@ public class GisValueController {
      * Excluding the self enterprise
      *
      * @param entId
-     * @return Result<List < GisValueVO>>
+     * @return Result
      */
     @RequestMapping("/listOtherEntLocation")
     @ResponseBody
@@ -75,7 +74,7 @@ public class GisValueController {
     /**
      * Gets the coordinates of all existing enterprises in the system
      *
-     * @return Result<List < GisValueVO>>
+     * @return Result
      */
     @RequestMapping("/listAllEntLocation")
     @ResponseBody

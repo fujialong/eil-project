@@ -23,4 +23,6 @@ public class TokenEntity {
     private Date updateTime;
 
     private String userName;
+
+    private String roleCode;
 }

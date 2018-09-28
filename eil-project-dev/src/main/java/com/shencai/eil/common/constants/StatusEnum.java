@@ -7,12 +7,17 @@ public enum StatusEnum {
     /**
      * Provided
      */
-    PROVIDED("provided", "已填报"),
+    PROVIDED("1010", "已填报"),
+
+    /**
+     * Checked
+     */
+    REJECTED("1020", "已驳回"),
 
     /**
      * Verified
      */
-    VERIFIED("verified", "已核实"),
+    VERIFIED("1030", "已核实"),
 
     /**
      * Checked

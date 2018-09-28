@@ -24,4 +24,6 @@ public class EntRiskParamValueVO implements Serializable {
 
     private Double carcinogenicity;
 
+    private Double stability;
+
 }

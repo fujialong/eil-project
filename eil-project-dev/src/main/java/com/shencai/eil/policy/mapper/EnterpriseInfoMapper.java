@@ -8,6 +8,7 @@ import com.shencai.eil.policy.model.EnterpriseQueryParam;
 import com.shencai.eil.policy.model.EnterpriseVO;
 import com.shencai.eil.policy.model.PolicyQueryParam;
 import com.shencai.eil.policy.model.PolicyVO;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -17,7 +18,7 @@ import java.util.List;
  */
 public interface EnterpriseInfoMapper extends BaseMapper<EnterpriseInfo> {
 
-    List<PolicyVO> pageEnterpriseInfo(Page<PolicyVO> page, PolicyQueryParam queryParam);
+    List<PolicyVO> pageEnterpriseInfo(Page<PolicyVO> page, @Param("queryParam") PolicyQueryParam queryParam);
 
     PolicyVO getPolicy(PolicyQueryParam queryParam);
 

@@ -33,7 +33,11 @@
         WHERE
         bu.userid = #{userId}
         AND me.parentMenuCode = 'eil'
-        AND me.leaf = 1;
+        AND me.leaf = 1
+        ORDER BY me.menuOrder DESC
+    </select>
+    <select id="getRoleCode" resultType="java.lang.String">
+        select roleCode from system_right_user where userid = #{userId}
     </select>
 
 </mapper>

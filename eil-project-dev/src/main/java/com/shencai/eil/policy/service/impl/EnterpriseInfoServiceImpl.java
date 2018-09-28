@@ -1,12 +1,19 @@
 package com.shencai.eil.policy.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.shencai.eil.common.utils.DateUtil;
 import com.shencai.eil.gis.model.GisValueVO;
+import com.shencai.eil.gis.service.IGisValueClassService;
+import com.shencai.eil.gis.service.IGisValueService;
 import com.shencai.eil.policy.entity.EnterpriseInfo;
 import com.shencai.eil.policy.mapper.EnterpriseInfoMapper;
 import com.shencai.eil.policy.service.IEnterpriseInfoService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,14 +23,32 @@ import java.util.List;
 @Service
 public class EnterpriseInfoServiceImpl extends ServiceImpl<EnterpriseInfoMapper, EnterpriseInfo> implements IEnterpriseInfoService {
 
+    @Autowired
+    private IGisValueService gisValueService;
+
+    @Autowired
+    private IGisValueClassService gisValueClassService;
+
+
     @Override
     public void saveEnterpriseInfo(EnterpriseInfo param) {
+        param.setUpdateTime(DateUtil.getNowTimestamp());
         this.updateById(param);
     }
 
     @Override
     public GisValueVO getEntLocation(String entId) {
-        return this.baseMapper.getEntLocation(entId);
+        //This code category has been saved
+        List<String> codes = gisValueService.getCodesByEntId(entId);
+
+
+        List<String> classCodes = CollectionUtils.isEmpty(codes) ? new ArrayList<>() : gisValueClassService.getClassCodesByCodes(codes);
+        GisValueVO gisValueVO = this.baseMapper.getEntLocation(entId);
+
+        if (!ObjectUtils.isEmpty(gisValueVO)) {
+            gisValueVO.setHasSavedParamList(classCodes);
+        }
+        return gisValueVO;
     }
 
     @Override

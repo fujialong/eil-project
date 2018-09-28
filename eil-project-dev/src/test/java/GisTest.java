@@ -1,10 +1,12 @@
 import com.shencai.eil.gis.model.GisValueVO;
+import com.shencai.eil.gis.service.IGisValueClassService;
 import com.shencai.eil.gis.service.IGisValueService;
 import com.shencai.eil.policy.service.IEnterpriseInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -20,16 +22,27 @@ public class GisTest extends BaseTest {
     @Autowired
     private IEnterpriseInfoService enterpriseInfoService;
 
+    @Autowired
+    private IGisValueClassService gisValueClassService;
+
 
     @Test
     public void testGetEntLocation() {
-        GisValueVO map = enterpriseInfoService.getEntLocation("24ef051cc42048d0b17472c54c1ce8fb");
-       log.info(map.toString());
+        GisValueVO map = enterpriseInfoService.getEntLocation("28834d513efc4758ad6ea2defc95b7fe");
+        log.info(map.toString());
     }
 
     @Test
     public void testListOtherEntLocation() {
         List<GisValueVO> list = enterpriseInfoService.listOtherEntLocation("24ef051cc42048d0b17472c54c1ce8fb");
-        System.out.println(list);
+        log.info(list.toString());
     }
+
+    @Test
+    public void testClassCodesByCodes() {
+        List<String> codes = Arrays.asList("R3_3_1_03","R4_1_1_04");
+        List<String> classCodes = gisValueClassService.getClassCodesByCodes(codes);
+        log.info("testClassCodesByCodes:"+classCodes.toString());
+    }
+
 }

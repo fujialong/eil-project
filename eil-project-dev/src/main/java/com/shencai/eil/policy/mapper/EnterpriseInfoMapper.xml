@@ -30,6 +30,7 @@
         <result column="scale" property="scale"/>
         <result column="start_time" property="startTime"/>
         <result column="emission_mode_id" property="emissionModeId"/>
+        <result column="status" property="status"/>
     </resultMap>
 
     <select id="pageEnterpriseInfo" resultType="com.shencai.eil.policy.model.PolicyVO"
@@ -50,7 +51,20 @@
         left join enterprise_mapping_technique emt on (ei.id=emt.ent_id and emt.valid=1)
         left join technique t on (emt.tech_id=t.id and t.valid=1)
         left join sys_dictionary sd on (sd.type_code = 'canton' and ei.canton_code = sd.code and sd.valid=1)
-        where ei.valid=1
+        where
+        <if test="queryParam.comparatorFlag == 'lt'
+                 and queryParam.status != null and queryParam.status != ''">
+            ei.status &lt; #{queryParam.status} and
+        </if>
+        <if test="queryParam.comparatorFlag == 'eq'
+                 and queryParam.status != null and queryParam.status != ''">
+            ei.status = #{queryParam.status} and
+        </if>
+        <if test="queryParam.comparatorFlag == 'gt'
+                 and queryParam.status != null and queryParam.status != ''">
+            ei.status &gt; #{queryParam.status} and
+        </if>
+        ei.valid=1
         ORDER by ei.update_time desc
     </select>
 
@@ -64,17 +78,25 @@
         (select name from industry_category where id = ic.level_two_id and valid=1) industryLargeCategoryName,
         (select name from industry_category where id = ic.level_three_id and valid=1) industrySmallCategoryName,
         ic.name industryName,
+        ic.level_one_id industryCategoryId,
+        ic.level_two_id industryLargeCategoryId,
+        ic.level_three_id industrySmallCategoryId,
+        ei.industry_id industryId,
         t.name techniqueName,
+        emt.tech_id techniqueId,
         ei.link_phone linkPhone,
         ei.postcode,
         (select name from sys_dictionary where type_code='canton' and code=sd.parent_code and valid=1)provinceName,
         sd.name cityName,
+        concat(left(ei.canton_code,2),'0000')provinceCode,
+        ei.canton_code cityCode,
         ei.address,
         ei.yield,
         ei.income,
         ei.employees_number employeesNumber,
         ei.start_time startTime,
         em.name emissionModeName,
+        ei.emission_mode_id emissionModeId,
         ei.has_risks_report hasRisksReport,
         (select name from sys_dictionary where type_code='ent_scale' and code=ei.scale and valid=1)scaleName,
         ei.status,
@@ -125,11 +147,11 @@
     <select id="listOtherEntLocation" resultType="com.shencai.eil.gis.model.GisValueVO">
          select id entId, latitude, longitude
         from enterprise_info
-        where id != #{entId} and valid =1
+        where id != #{entId} and valid =1 and latitude is not null and longitude is not null
     </select>
     <select id="listAllEntLocation" resultType="com.shencai.eil.gis.model.GisValueVO">
           select id entId, latitude, longitude
         from enterprise_info
-        where valid =1
+        where valid =1  and latitude is not null and longitude is not null
     </select>
 </mapper>

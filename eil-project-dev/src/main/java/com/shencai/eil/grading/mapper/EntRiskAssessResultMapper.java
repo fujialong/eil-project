@@ -4,7 +4,7 @@ import com.shencai.eil.grading.entity.EntRiskAssessResult;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.shencai.eil.grading.model.EntRiskAssessResultQueryParam;
 import com.shencai.eil.grading.model.EntRiskAssessResultVO;
-import com.shencai.eil.grading.model.TargetResult;
+import com.shencai.eil.grading.model.TargetResultVO;
 
 import java.util.List;
 
@@ -14,7 +14,7 @@ import java.util.List;
  */
 public interface EntRiskAssessResultMapper extends BaseMapper<EntRiskAssessResult> {
 
-    List<TargetResult> listRootTargetResult(EntRiskAssessResultQueryParam queryParam);
+    List<TargetResultVO> listRootTargetResult(EntRiskAssessResultQueryParam queryParam);
 
     List<EntRiskAssessResultVO> listEntRiskAssessResult(EntRiskAssessResultQueryParam queryParam);
 }

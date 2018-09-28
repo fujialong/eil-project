@@ -18,14 +18,19 @@
     <select id="listProduct" resultType="com.shencai.eil.policy.model.ProductVO"
             parameterType="com.shencai.eil.policy.model.ProductInfoQueryParam">
         select
-        id,
-        name
+        pi.id,
+        pi.name,
+        pi.prod_class_id parentId
         from
-        product_info
+        product_info pi
+        left join product_class pc on (pc.id=pi.prod_class_id and pc.valid=1)
         where
         <if test="prodClassId != null and prodClassId != ''">
-            prod_class_id = #{prodClassId} and
+            pi.prod_class_id = #{prodClassId} and
         </if>
-        valid=1
+        <if test="industryId != null and industryId != ''">
+            pc.industry_id = #{industryId} and
+        </if>
+        pi.valid=1
     </select>
 </mapper>

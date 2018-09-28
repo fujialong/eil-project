@@ -8,10 +8,6 @@ import com.shencai.eil.policy.model.ProductVO;
 import java.util.List;
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
- *
  * @author zhoujx
  * @since 2018-09-13
  */

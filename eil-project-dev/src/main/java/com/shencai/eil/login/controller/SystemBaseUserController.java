@@ -12,6 +12,7 @@ import com.shencai.eil.model.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -36,6 +37,7 @@ public class SystemBaseUserController {
     @Autowired
     private ISystemBaseUserService systemBaseUserService;
 
+
     @RequestMapping(value = "/login")
     @ResponseBody
     private Result login(UserParam userParam, HttpServletRequest httpServletRequest) {
@@ -46,16 +48,23 @@ public class SystemBaseUserController {
             throw new LoginException("login failed");
         }
 
+        String roleCode = systemBaseUserService.getRoleCode(user.getUserId());
+
         tokenEntity = TokenEntity.builder()
-                .ticket(StringUtil.getUUID())
                 .userId(user.getUserId())
                 .userName(user.getUserName())
+                .roleCode(roleCode)
                 .build();
 
-        map.put("tokenEntity", tokenEntity);
-        user.setTicket(tokenEntity.getTicket());
-        systemBaseUserService.updateById(user);
+        if (StringUtils.isEmpty(user.getTicket())) {
+            tokenEntity.setTicket(StringUtil.getUUID());
+            user.setTicket(tokenEntity.getTicket());
+            systemBaseUserService.updateById(user);
+        } else {
+            tokenEntity.setTicket(user.getTicket());
+        }
 
+        map.put("tokenEntity", tokenEntity);
         return Result.ok(map);
     }
 
@@ -67,7 +76,7 @@ public class SystemBaseUserController {
      */
     private void saveUserToSession(TokenEntity user, HttpServletRequest httpServletRequest) {
         HttpSession session = httpServletRequest.getSession();
-        session.setAttribute(user.getTicket(),user);
+        session.setAttribute(user.getTicket(), user);
     }
 
 

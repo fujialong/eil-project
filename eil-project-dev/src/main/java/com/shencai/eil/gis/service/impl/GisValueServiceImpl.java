@@ -9,6 +9,7 @@ import com.shencai.eil.gis.mapper.GisValueMapper;
 import com.shencai.eil.gis.model.ContainsCodeValue;
 import com.shencai.eil.gis.model.GisValueParam;
 import com.shencai.eil.gis.service.IGisValueService;
+import com.shencai.eil.grading.model.CodeAndValueUseDouble;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -45,6 +46,21 @@ public class GisValueServiceImpl extends ServiceImpl<GisValueMapper, GisValue> i
         }
 
         this.saveBatch(preList);
+    }
+
+    @Override
+    public List<String> getCodesByEntId(String entId) {
+        return this.baseMapper.getCodesByEntId(entId);
+    }
+
+    @Override
+    public double getValueByEntIdAndCode(String entId, String code) {
+        return this.baseMapper.getValueByEntIdAndCode(entId,code);
+    }
+
+    @Override
+    public List<CodeAndValueUseDouble> getCodeValueByEntId(String entId) {
+        return this.baseMapper.getCodeValueByEntId(entId);
     }
 
 

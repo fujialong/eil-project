@@ -40,4 +40,22 @@
         valid=1
         order by sort_num
     </select>
+
+    <select id="listTreeDictionary" resultType="com.shencai.eil.system.model.DictionaryVO"
+            parameterType="com.shencai.eil.system.model.DictionaryQueryParam">
+        select
+        id,
+        code,
+        name,
+        parent_code parentCode
+        from
+        sys_dictionary
+        where
+        <if test="dictionaryTypeCode != null and dictionaryTypeCode != ''">
+            type_code = #{dictionaryTypeCode} and
+        </if>
+        valid=1
+        order by sort_num
+    </select>
+
 </mapper>

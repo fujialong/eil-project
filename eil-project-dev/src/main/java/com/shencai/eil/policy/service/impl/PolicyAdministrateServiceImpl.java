@@ -54,18 +54,23 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
     public void savePolicy(PolicyParam param) {
         checkData(param);
         computeEnterpriseScale(param);
-        EnterpriseInfo enterpriseInfo = insertEnterpriseInfo(param);
-        insertFileupload(param, enterpriseInfo);
-        insertEnterpriseMappingTechnique(param, enterpriseInfo);
-        insertEnterpriseMappingProducts(param, enterpriseInfo);
-        insertEnterpriseAccidents(param, enterpriseInfo);
+        String enterpriseId = saveEnterpriseInfo(param);
+        saveFileupload(param, enterpriseId);
+        saveEnterpriseMappingTechnique(param, enterpriseId);
+        saveEnterpriseMappingProducts(param, enterpriseId);
+        saveEnterpriseAccidents(param, enterpriseId);
     }
 
-    private void insertFileupload(PolicyParam param, EnterpriseInfo enterpriseInfo) {
+    private void saveFileupload(PolicyParam param, String enterpriseId) {
+        logicDeleteOldFile(enterpriseId);
+        insertFileUpload(param, enterpriseId);
+    }
+
+    private void insertFileUpload(PolicyParam param, String enterpriseId) {
         List<BaseFileupload> attachmentList = param.getAttachmentList();
         for (BaseFileupload attachment : attachmentList) {
             attachment.setId(StringUtil.getUUID());
-            attachment.setSourceId(enterpriseInfo.getId());
+            attachment.setSourceId(enterpriseId);
             attachment.setCreateTime(DateUtil.getNowTimestamp());
             attachment.setUpdateTime(DateUtil.getNowTimestamp());
             attachment.setValid((Integer) BaseEnum.VALID_YES.getCode());
@@ -75,11 +80,24 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         }
     }
 
-    private void insertEnterpriseAccidents(PolicyParam param, EnterpriseInfo enterpriseInfo) {
+    private void logicDeleteOldFile(String enterpriseId) {
+        BaseFileupload updateParam = new BaseFileupload();
+        updateParam.setValid((Integer) BaseEnum.VALID_NO.getCode());
+        fileuploadService.update(updateParam, new QueryWrapper<BaseFileupload>()
+                .eq("source_id", enterpriseId)
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+    }
+
+    private void saveEnterpriseAccidents(PolicyParam param, String enterpriseId) {
+        logicDeleteOldAccidents(enterpriseId);
+        insertAccidents(param, enterpriseId);
+    }
+
+    private void insertAccidents(PolicyParam param, String enterpriseId) {
         List<EnterpriseAccident> enterpriseAccidentList = param.getEnterpriseAccidentList();
         for (EnterpriseAccident enterpriseAccident : enterpriseAccidentList) {
             enterpriseAccident.setId(StringUtil.getUUID());
-            enterpriseAccident.setEntId(enterpriseInfo.getId());
+            enterpriseAccident.setEntId(enterpriseId);
             enterpriseAccident.setCreateTime(DateUtil.getNowTimestamp());
             enterpriseAccident.setUpdateTime(DateUtil.getNowTimestamp());
             enterpriseAccident.setValid((Integer) BaseEnum.VALID_YES.getCode());
@@ -87,6 +105,14 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         if (!CollectionUtils.isEmpty(enterpriseAccidentList)) {
             enterpriseAccidentService.saveBatch(enterpriseAccidentList);
         }
+    }
+
+    private void logicDeleteOldAccidents(String enterpriseId) {
+        EnterpriseAccident updateParam = new EnterpriseAccident();
+        updateParam.setValid((Integer) BaseEnum.VALID_NO.getCode());
+        enterpriseAccidentService.update(updateParam, new QueryWrapper<EnterpriseAccident>()
+                .eq("ent_id", enterpriseId)
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
     }
 
     private void computeEnterpriseScale(PolicyParam param) {
@@ -104,6 +130,14 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
     }
 
     private void checkData(PolicyParam param) {
+        if (!ObjectUtils.isEmpty(param.getEnterpriseId())) {
+            updateCheck(param);
+        } else {
+            insertCheck(param);
+        }
+    }
+
+    private void insertCheck(PolicyParam param) {
         Integer count = enterpriseInfoMapper.selectCount(new QueryWrapper<EnterpriseInfo>()
                 .eq("social_credit_code", param.getSocialCreditCode())
                 .eq("valid", BaseEnum.VALID_YES.getCode()));
@@ -112,10 +146,35 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         }
     }
 
-    private void insertEnterpriseMappingTechnique(PolicyParam param, EnterpriseInfo enterpriseInfo) {
+    private void updateCheck(PolicyParam param) {
+        EnterpriseInfo enterpriseInfo = enterpriseInfoMapper.selectOne(new QueryWrapper<EnterpriseInfo>()
+                .eq("id", param.getEnterpriseId())
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+        if (ObjectUtils.isEmpty(enterpriseInfo)) {
+            throw new BusinessException("The enterprise has been removed!");
+        }
+        if (!StatusEnum.PROVIDED.getCode().equals(enterpriseInfo.getStatus())
+                && !StatusEnum.REJECTED.getCode().equals(enterpriseInfo.getStatus())) {
+            throw new BusinessException("The policy status has been changed and cannot be changed!");
+        }
+        Integer socialCreditCodeCount = enterpriseInfoMapper.selectCount(new QueryWrapper<EnterpriseInfo>()
+                .eq("social_credit_code", param.getSocialCreditCode())
+                .ne("id", param.getEnterpriseId())
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+        if (socialCreditCodeCount > 0) {
+            throw new BusinessException("The enterprise organization code already exists!");
+        }
+    }
+
+    private void saveEnterpriseMappingTechnique(PolicyParam param, String enterpriseId) {
+        logicDeleteOldEnterpriseMappingTechnique(enterpriseId);
+        insertEnterpriseMappingTechnique(param, enterpriseId);
+    }
+
+    private void insertEnterpriseMappingTechnique(PolicyParam param, String enterpriseId) {
         EnterpriseMappingTechnique enterpriseMappingTechnique = new EnterpriseMappingTechnique();
         enterpriseMappingTechnique.setId(StringUtil.getUUID());
-        enterpriseMappingTechnique.setEntId(enterpriseInfo.getId());
+        enterpriseMappingTechnique.setEntId(enterpriseId);
         enterpriseMappingTechnique.setTechId(param.getTechniqueId());
         enterpriseMappingTechnique.setCreateTime(DateUtil.getNowTimestamp());
         enterpriseMappingTechnique.setUpdateTime(DateUtil.getNowTimestamp());
@@ -123,19 +182,33 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         enterpriseMappingTechniqueMapper.insert(enterpriseMappingTechnique);
     }
 
-    private void insertEnterpriseMappingProducts(PolicyParam param, EnterpriseInfo enterpriseInfo) {
+    private void logicDeleteOldEnterpriseMappingTechnique(String enterpriseId) {
+        EnterpriseMappingTechnique updateParam = new EnterpriseMappingTechnique();
+        updateParam.setValid((Integer) BaseEnum.VALID_NO.getCode());
+        enterpriseMappingTechniqueMapper.update(updateParam, new QueryWrapper<EnterpriseMappingTechnique>()
+                .eq("ent_id", enterpriseId)
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+    }
+
+    private void saveEnterpriseMappingProducts(PolicyParam param, String enterpriseId) {
+        logicDeleteOleEnterpriseMappingProducts(enterpriseId);
+        insertEnterpriseMappingProducts(param, enterpriseId);
+    }
+
+    private void insertEnterpriseMappingProducts(PolicyParam param, String enterpriseId) {
         List<String> productionIdList = param.getProductionIdList();
         List<EnterpriseMappingProduct> enterpriseMappingProductList = new ArrayList<>();
         for (String productionId : productionIdList) {
             EnterpriseMappingProduct enterpriseMappingProduct = new EnterpriseMappingProduct();
             enterpriseMappingProduct.setId(StringUtil.getUUID());
-            enterpriseMappingProduct.setEntId(enterpriseInfo.getId());
+            enterpriseMappingProduct.setEntId(enterpriseId);
             enterpriseMappingProduct.setProdId(productionId);
             if (ObjectUtils.isEmpty(enterpriseMappingProductList)) {
                 enterpriseMappingProduct.setIsMainProduct((Integer) BaseEnum.IS_MAIN_PRODUCT_YES.getCode());
             } else {
                 enterpriseMappingProduct.setIsMainProduct((Integer) BaseEnum.IS_MAIN_PRODUCT_NO.getCode());
             }
+            enterpriseMappingProduct.setSortNum(productionIdList.indexOf(productionId) + 1);
             enterpriseMappingProduct.setCreateTime(DateUtil.getNowTimestamp());
             enterpriseMappingProduct.setUpdateTime(DateUtil.getNowTimestamp());
             enterpriseMappingProduct.setValid((Integer) BaseEnum.VALID_YES.getCode());
@@ -146,9 +219,16 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         }
     }
 
-    private EnterpriseInfo insertEnterpriseInfo(PolicyParam param) {
+    private void logicDeleteOleEnterpriseMappingProducts(String enterpriseId) {
+        EnterpriseMappingProduct updateParam = new EnterpriseMappingProduct();
+        updateParam.setValid((Integer) BaseEnum.VALID_NO.getCode());
+        enterpriseMappingProductService.update(updateParam, new QueryWrapper<EnterpriseMappingProduct>()
+                .eq("ent_id", enterpriseId)
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+    }
+
+    private String saveEnterpriseInfo(PolicyParam param) {
         EnterpriseInfo enterpriseInfo = new EnterpriseInfo();
-        enterpriseInfo.setId(StringUtil.getUUID());
         enterpriseInfo.setName(param.getEnterpriseName());
         enterpriseInfo.setIndustryId(param.getIndustryId());
         enterpriseInfo.setSocialCreditCode(param.getSocialCreditCode());
@@ -169,8 +249,14 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         enterpriseInfo.setEmissionModeId(param.getEmissionModeId());
         enterpriseInfo.setStartTime(param.getStartTime());
         enterpriseInfo.setStatus(StatusEnum.PROVIDED.getCode());
-        enterpriseInfoMapper.insert(enterpriseInfo);
-        return enterpriseInfo;
+        if (ObjectUtils.isEmpty(param.getEnterpriseId())) {
+            enterpriseInfo.setId(StringUtil.getUUID());
+            enterpriseInfoMapper.insert(enterpriseInfo);
+        } else {
+            enterpriseInfo.setId(param.getEnterpriseId());
+            enterpriseInfoMapper.updateById(enterpriseInfo);
+        }
+        return enterpriseInfo.getId();
     }
 
     @Override
@@ -184,12 +270,30 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
     @Override
     public PolicyVO getPolicy(PolicyQueryParam queryParam) {
         PolicyVO policyVO = getPolicyVO(queryParam);
+        setHierarchicalIndustryCategoryId(policyVO);
+        setHierarchicalCantonCode(policyVO);
         setIndustryName(policyVO);
         setProductNameList(queryParam, policyVO);
         setCantonName(policyVO);
         setEnterpriseAccidentList(queryParam, policyVO);
         setAttachmentList(queryParam, policyVO);
         return policyVO;
+    }
+
+    private void setHierarchicalCantonCode(PolicyVO policyVO) {
+        List<String> cantonCodeDefault = new ArrayList<>();
+        cantonCodeDefault.add(policyVO.getProvinceCode());
+        cantonCodeDefault.add(policyVO.getCityCode());
+        policyVO.setCantonCodeDefault(cantonCodeDefault);
+    }
+
+    private void setHierarchicalIndustryCategoryId(PolicyVO policyVO) {
+        List<String> industryIdDefault = new ArrayList<>();
+        industryIdDefault.add(policyVO.getIndustryCategoryId());
+        industryIdDefault.add(policyVO.getIndustryLargeCategoryId());
+        industryIdDefault.add(policyVO.getIndustrySmallCategoryId());
+        industryIdDefault.add(policyVO.getIndustryId());
+        policyVO.setIndustryIdDefault(industryIdDefault);
     }
 
     private void setAttachmentList(PolicyQueryParam queryParam, PolicyVO policyVO) {
@@ -205,6 +309,12 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         List<EnterpriseAccidentVO> enterpriseAccidentList =
                 enterpriseAccidentService.listEnterpriseAccident(enterpriseAccidentQueryParam);
         policyVO.setEnterpriseAccidentList(enterpriseAccidentList);
+        policyVO.setEnterpriseAccidentCount(enterpriseAccidentList.size());
+        if (CollectionUtils.isEmpty(enterpriseAccidentList)) {
+            policyVO.setHasDamageEvent((Integer) BaseEnum.NO.getCode());
+        } else {
+            policyVO.setHasDamageEvent((Integer) BaseEnum.YES.getCode());
+        }
     }
 
     private void setCantonName(PolicyVO policyVO) {
@@ -227,8 +337,14 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
             productNameList.add(productVO.getLargeClassName() + "/"
                     + productVO.getSmallClassName() + "/"
                     + productVO.getName());
+            List<String> productId = new ArrayList<>();
+            productId.add(productVO.getLargeClassId());
+            productId.add(productVO.getSmallClassId());
+            productId.add(productVO.getId());
+            productVO.setProductIdForVue(productId);
         }
         policyVO.setProductNameList(productNameList);
+        policyVO.setProductList(productList);
     }
 
     private PolicyVO getPolicyVO(PolicyQueryParam queryParam) {

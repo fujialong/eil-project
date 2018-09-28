@@ -21,6 +21,7 @@
         select
         erpv.value,
         param.name,
+        param.code,
         param.remark
         from ent_risk_param_value erpv
         inner join param on (param.id=erpv.param_id and param.valid=1)
@@ -49,7 +50,7 @@
             UNION ALL
             select  count(p.id) AS total from param p
                 INNER JOIN template_mapping_param tmp ON tmp.param_id = p.id
-                INNER JOIN ent_risk_param_value erpv ON erpv.param_id = p.id AND erpv.enterprise_id = #{enterpriseId}
+                INNER JOIN ent_risk_param_value erpv ON erpv.param_id = p.id AND erpv.enterprise_id = #{enterpriseId} and erpv.value != 0
                 INNER JOIN param_template_category ptc ON ptc.param_template_id = tmp.template_id AND ptc.type = 'gradual_risk'
                 INNER JOIN risk_material rm ON p.`name` = rm.chinese_generic_name
                 INNER JOIN risk_material_param_value rmpv ON rmpv.material_id = rm.id

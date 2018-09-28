@@ -30,5 +30,13 @@ public class SysDictionaryController {
         List<DictionaryVO> dictionaryList = sysDictionaryService.listSysDictionary(queryParam);
         return Result.ok(dictionaryList);
     }
+
+    @ResponseBody
+    @RequestMapping("/listTreeDictionary")
+    public Result listTreeDictionary(DictionaryQueryParam queryParam) {
+        List<DictionaryVO> dictionaryList = sysDictionaryService.listTreeDictionary(queryParam);
+        return Result.ok(dictionaryList);
+    }
+
 }
 

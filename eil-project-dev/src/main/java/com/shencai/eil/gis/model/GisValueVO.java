@@ -2,6 +2,8 @@ package com.shencai.eil.gis.model;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * @program: eil-project
  * @description:
@@ -13,7 +15,9 @@ public class GisValueVO {
 
     private String entId;
 
-    private String latitude;
+    private Double latitude;
 
-    private String longitude;
+    private Double longitude;
+
+    private List<String> hasSavedParamList;
 }

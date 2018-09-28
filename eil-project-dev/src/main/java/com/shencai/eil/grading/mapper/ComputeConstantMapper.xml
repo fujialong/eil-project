@@ -3,15 +3,21 @@
 <mapper namespace="com.shencai.eil.grading.mapper.ComputeConstantMapper">
 
     <resultMap id="BaseResultMap" type="com.shencai.eil.grading.entity.ComputeConstant">
-        <id column="id" property="id" />
-        <result column="code" property="code" />
-        <result column="value" property="value" />
-        <result column="remark" property="remark" />
-        <result column="create_user_id" property="createUserId" />
-        <result column="create_time" property="createTime" />
-        <result column="update_user_id" property="updateUserId" />
-        <result column="update_time" property="updateTime" />
-        <result column="valid" property="valid" />
+        <id column="id" property="id"/>
+        <result column="code" property="code"/>
+        <result column="value" property="value"/>
+        <result column="remark" property="remark"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="valid" property="valid"/>
     </resultMap>
+    <select id="getValueByCode" resultType="java.lang.Double">
+        select value from compute_constant where code = #{code} and valid = 1
+    </select>
+    <select id="listCodeValue" resultType="com.shencai.eil.grading.model.CodeAndValueUseDouble">
+        select code codeResult ,value valueResult from compute_constant where valid = 1;
+    </select>
 
 </mapper>

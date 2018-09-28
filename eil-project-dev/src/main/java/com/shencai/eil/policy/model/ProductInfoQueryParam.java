@@ -12,4 +12,6 @@ public class ProductInfoQueryParam implements Serializable {
 
     private String prodClassId;
 
+    private String industryId;
+
 }

@@ -3,6 +3,7 @@ package com.shencai.eil.policy.model;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * Created by zhoujx on 2018/9/19.
@@ -12,7 +13,9 @@ public class EnterpriseAccidentVO implements Serializable {
 
     private String id;
 
-    private String happenTime;
+    private Date happenTime;
+
+    private String level;
 
     private String levelName;
 

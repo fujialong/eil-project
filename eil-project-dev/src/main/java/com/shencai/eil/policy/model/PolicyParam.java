@@ -14,6 +14,10 @@ import java.util.List;
 @Data
 public class PolicyParam implements Serializable {
 
+    private String enterpriseId;
+
+    private String status;
+
     private String enterpriseName;
 
     private String socialCreditCode;

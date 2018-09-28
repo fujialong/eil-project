@@ -4,6 +4,7 @@ import com.shencai.eil.system.entity.BaseFileupload;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -34,13 +35,25 @@ public class PolicyVO implements Serializable {
 
     private String industryName;
 
+    private String industryCategoryId;
+
+    private String industryLargeCategoryId;
+
+    private String industrySmallCategoryId;
+
+    private String industryId;
+
+    private List<String> industryIdDefault;
+
     private String techniqueName;
+
+    private String techniqueId;
 
     private List<ProductVO> productList;
 
     private String gradingResult;
 
-    private String hasRisksReport;
+    private Integer hasRisksReport;
 
     private String postcode;
 
@@ -56,15 +69,27 @@ public class PolicyVO implements Serializable {
 
     private String cityName;
 
+    private String provinceCode;
+
+    private String cityCode;
+
+    private List<String> cantonCodeDefault;
+
     private String cantonName;
 
-    private String startTime;
+    private Date startTime;
 
     private String emissionModeName;
+
+    private String emissionModeId;
 
     private List<String> productNameList;
 
     private List<EnterpriseAccidentVO> enterpriseAccidentList;
+
+    private Integer hasDamageEvent;
+
+    private Integer enterpriseAccidentCount;
 
     private List<BaseFileupload> attachmentList;
 

@@ -14,5 +14,14 @@
         <result column="update_time" property="updateTime"/>
         <result column="valid" property="valid"/>
     </resultMap>
+    <select id="getCodesByEntId" resultType="java.lang.String">
+        select distinct code from gis_value where ent_id=#{entId} and valid=1
+    </select>
+    <select id="getValueByEntIdAndCode" resultType="java.lang.Double">
+        select value from gis_value where ent_id = #{entId} and code = #{code} and valid = 1
+    </select>
+    <select id="getCodeValueByEntId" resultType="com.shencai.eil.grading.model.CodeAndValueUseDouble">
+        select code codeResult,value valueResult from gis_value where valid = 1 and ent_id = #{entId}
+    </select>
 
 </mapper>

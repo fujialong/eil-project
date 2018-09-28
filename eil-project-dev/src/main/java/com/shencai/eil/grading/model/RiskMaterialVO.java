@@ -12,8 +12,10 @@ public class RiskMaterialVO implements Serializable {
 
     private String name;
 
-    private Double value;
+    private String value;
 
     private String templateParamName;
+
+    private String templateParamCode;
 
 }

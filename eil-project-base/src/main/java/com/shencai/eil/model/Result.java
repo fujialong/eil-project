@@ -21,9 +21,12 @@ public class Result<T> implements Serializable{
 
     private String msg;
 
+    private long code;
+
     public static Result ok() {
         Result r = new Result();
         r.setStatus(ResultStatus.SUCCESS);
+        r.setCode(ResultStatus.SUCCESS.getCode());
         return r;
     }
 
@@ -31,6 +34,7 @@ public class Result<T> implements Serializable{
         Result r = new Result();
         r.setData(data);
         r.setStatus(ResultStatus.SUCCESS);
+        r.setCode(ResultStatus.SUCCESS.getCode());
         return r;
     }
 
@@ -73,5 +77,13 @@ public class Result<T> implements Serializable{
 
     public void setMsg(String msg) {
         this.msg = msg;
+    }
+
+    public long getCode() {
+        return code;
+    }
+
+    public void setCode(long code) {
+        this.code = code;
     }
 }

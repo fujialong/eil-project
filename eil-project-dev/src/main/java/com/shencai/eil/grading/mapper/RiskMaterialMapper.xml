@@ -21,7 +21,8 @@
         select
         rmpv.value,
         rm.chinese_generic_name name,
-        param.name templateParamName
+        param.name templateParamName,
+        param.code templateParamCode
         from risk_material rm
         left join risk_material_param_value rmpv on (rmpv.material_id=rm.id and rmpv.valid=1)
         left join param on (param.id=rmpv.param_id and param.valid=1)

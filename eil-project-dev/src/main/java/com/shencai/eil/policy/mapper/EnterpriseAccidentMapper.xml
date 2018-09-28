@@ -21,6 +21,7 @@
         select
         ea.id,
         ea.happen_time happenTime,
+        ea.level,
         sd.name levelName,
         ea.disposed
         from enterprise_accident ea

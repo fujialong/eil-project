@@ -1,7 +1,10 @@
 package com.shencai.eil.grading.service;
 
-import com.shencai.eil.grading.entity.ComputeConstant;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.shencai.eil.grading.entity.ComputeConstant;
+import com.shencai.eil.grading.model.CodeAndValueUseDouble;
+
+import java.util.List;
 
 /**
  * @author zhoujx
@@ -9,4 +12,17 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IComputeConstantService extends IService<ComputeConstant> {
 
+    /**
+     * get value by code
+     *
+     * @param code
+     * @return
+     */
+    double getValueByCode(String code);
+
+    /**
+     * list code value
+     * @return
+     */
+    List<CodeAndValueUseDouble> listCodeValue();
 }

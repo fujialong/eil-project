@@ -2,8 +2,9 @@ package com.shencai.eil.policy.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
-import java.util.Date;
+
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * @author zhoujx
@@ -51,6 +52,17 @@ public class EnterpriseMappingProduct extends Model<EnterpriseMappingProduct> {
 
     @TableField("is_main_product")
     private Integer isMainProduct;
+
+    @TableField("sort_num")
+    private Integer sortNum;
+
+    public Integer getSortNum() {
+        return sortNum;
+    }
+
+    public void setSortNum(Integer sortNum) {
+        this.sortNum = sortNum;
+    }
 
     public Integer getIsMainProduct() {
         return isMainProduct;
@@ -172,19 +184,19 @@ public class EnterpriseMappingProduct extends Model<EnterpriseMappingProduct> {
     @Override
     public String toString() {
         return "EnterpriseMappingProduct{" +
-        "id=" + id +
-        ", prodId=" + prodId +
-        ", entId=" + entId +
-        ", ingredients=" + ingredients +
-        ", wasteWater=" + wasteWater +
-        ", heavyMetal=" + heavyMetal +
-        ", wasteGas=" + wasteGas +
-        ", wasteQty=" + wasteQty +
-        ", createUserId=" + createUserId +
-        ", createTime=" + createTime +
-        ", updateUserId=" + updateUserId +
-        ", updateTime=" + updateTime +
-        ", valid=" + valid +
-        "}";
+                "id=" + id +
+                ", prodId=" + prodId +
+                ", entId=" + entId +
+                ", ingredients=" + ingredients +
+                ", wasteWater=" + wasteWater +
+                ", heavyMetal=" + heavyMetal +
+                ", wasteGas=" + wasteGas +
+                ", wasteQty=" + wasteQty +
+                ", createUserId=" + createUserId +
+                ", createTime=" + createTime +
+                ", updateUserId=" + updateUserId +
+                ", updateTime=" + updateTime +
+                ", valid=" + valid +
+                "}";
     }
 }

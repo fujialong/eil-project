@@ -15,4 +15,5 @@ public interface IPolicyAdministrateService {
     Page<PolicyVO> pagePolicy(PolicyQueryParam queryParam);
 
     PolicyVO getPolicy(PolicyQueryParam queryParam);
+
 }

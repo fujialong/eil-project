@@ -32,7 +32,12 @@ public enum TemplateEnum {
     /**
      * D5
      */
-    CARCINOGENICITY("D5", "致癌性");
+    CARCINOGENICITY("D5", "致癌性"),
+
+    /**
+     * A5
+     */
+    STABILITY("A5", "稳定性（是否稳定）");
 
     private String code;
     private String name;

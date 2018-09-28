@@ -11,6 +11,17 @@ public enum TargetEnum {
     RISK_FACTOR("R1", "风险因子", "Risk factors"),
 
     /**
+     * Sudden risk
+     */
+    SUDDEN_RISK("sudden_risk", "突发风险类型", "Sudden risk"),
+
+
+    /**
+     * Progressive risk
+     */
+    PROGRESSIVE_RISK("progressive_risk", "突发风险类型", "Progressive risk"),
+
+    /**
      * Primary control mechanism
      */
     PRIMARY_CONTROL_MECHANISM("R2", "初级控制机制", "Primary control mechanism"),
@@ -19,6 +30,11 @@ public enum TargetEnum {
      * Compliance capability
      */
     ENTERPRISE_COMPLIANCE("R2.1", "企业合规能力", "Compliance capability"),
+
+    /**
+     * R2.2
+     */
+    R_TWO_POINT_TWO("R2.2", "群发链发效应", "Cluster chain effect"),
 
     /**
      * Secondary control mechanism
@@ -36,14 +52,19 @@ public enum TargetEnum {
     GENERAL_COMMENT("Ru", "总评", "Overall rating"),
 
     /**
-     * Provincial and municipal risk control ability
+     * R3.1
      */
     R_THREE_ONE("R3.1", "省市风险管控能力", "Provincial and municipal risk control ability"),
 
     /**
-     * Regional environmental background level
+     * R3.2
      */
     R_THREE_TWO("R3.2", "区域环境背景水平", "Regional environmental background level"),
+
+    /**
+     * R3.3
+     */
+    R_THREE_THREE("R3.3", "周边环境", "surroundings"),
 
     /**
      * R1.1

@@ -2,9 +2,9 @@ package com.shencai.eil.grading.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.shencai.eil.grading.entity.TargetWeight;
+import com.shencai.eil.grading.model.CodeAndValueUseDouble;
 import com.shencai.eil.grading.model.EntRiskAssessResultQueryParam;
-import com.shencai.eil.grading.model.EntRiskAssessResultVO;
-import com.shencai.eil.grading.model.TargetResult;
+import com.shencai.eil.grading.model.TargetResultVO;
 
 import java.util.List;
 
@@ -14,7 +14,20 @@ import java.util.List;
  */
 public interface TargetWeightMapper extends BaseMapper<TargetWeight> {
 
-    List<TargetResult> listRootTarget();
+    List<TargetResultVO> listAllTarget(EntRiskAssessResultQueryParam queryParam);
 
-    List<EntRiskAssessResultVO> listChildTarget(EntRiskAssessResultQueryParam queryParam);
+    /**
+     * list Code Type And Assess Results
+     *
+     * @param entId
+     * @return
+     */
+    List<TargetResultVO> listCodeTypeAndAssessResult(String entId);
+
+    /**
+     *Lis target weight type and weight
+     * @param code
+     * @return
+     */
+    List<CodeAndValueUseDouble> lisTargetWeightTypeAndWight(String code);
 }

@@ -38,4 +38,21 @@
         valid=1
         order by code
     </select>
+
+    <select id="listAllProductClass" resultType="com.shencai.eil.policy.model.ProductVO"
+            parameterType="com.shencai.eil.policy.model.ProductClassQueryParam">
+        select
+        id,
+        name,
+        parent_id parentId
+        from
+        product_class
+        where
+        <if test="industryId != null and industryId != ''">
+            industry_id = #{industryId} and
+        </if>
+        valid=1
+        order by code
+    </select>
+
 </mapper>

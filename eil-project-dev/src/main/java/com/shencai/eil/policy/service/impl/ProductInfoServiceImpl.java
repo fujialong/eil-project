@@ -7,7 +7,9 @@ import com.shencai.eil.common.utils.DateUtil;
 import com.shencai.eil.common.utils.StringUtil;
 import com.shencai.eil.policy.entity.ProductClass;
 import com.shencai.eil.policy.entity.ProductInfo;
+import com.shencai.eil.policy.mapper.ProductClassMapper;
 import com.shencai.eil.policy.mapper.ProductInfoMapper;
+import com.shencai.eil.policy.model.ProductClassQueryParam;
 import com.shencai.eil.policy.model.ProductInfoParam;
 import com.shencai.eil.policy.model.ProductInfoQueryParam;
 import com.shencai.eil.policy.model.ProductVO;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,6 +32,8 @@ public class ProductInfoServiceImpl extends ServiceImpl<ProductInfoMapper, Produ
 
     @Autowired
     private IProductClassService productClassService;
+    @Autowired
+    private ProductClassMapper productClassMapper;
     @Autowired
     private ProductInfoMapper productInfoMapper;
 
@@ -44,8 +49,46 @@ public class ProductInfoServiceImpl extends ServiceImpl<ProductInfoMapper, Produ
 
     @Override
     public List<ProductVO> listProduct(ProductInfoQueryParam queryParam) {
-        List<ProductVO> productVOList = productInfoMapper.listProduct(queryParam);
-        return productVOList;
+        List<ProductVO> productVOList = listProductInfo(queryParam);
+        List<ProductVO> productClassList = listProductClass(queryParam);
+        List<ProductVO> returnList = listReturnData(productVOList, productClassList);
+        return returnList;
+    }
+
+    private List<ProductVO> listProductInfo(ProductInfoQueryParam queryParam) {
+        return productInfoMapper.listProduct(queryParam);
+    }
+
+    private List<ProductVO> listReturnData(List<ProductVO> productVOList, List<ProductVO> productClassList) {
+        List<ProductVO> returnList = new ArrayList<>();
+        for (ProductVO productClass : productClassList) {
+            if (ObjectUtils.isEmpty(productClass.getParentId())) {
+                String largeProductClassId = productClass.getId();
+                List<ProductVO> childList = new ArrayList<>();
+                for (ProductVO smallProductClass : productClassList) {
+                    if (largeProductClassId.equals(smallProductClass.getParentId())) {
+                        String smallProductClassId = smallProductClass.getId();
+                        List<ProductVO> products = new ArrayList<>();
+                        for (ProductVO product : productVOList) {
+                            if (smallProductClassId.equals(product.getParentId())) {
+                                products.add(product);
+                            }
+                        }
+                        smallProductClass.setChildren(products);
+                        childList.add(smallProductClass);
+                    }
+                }
+                productClass.setChildren(childList);
+                returnList.add(productClass);
+            }
+        }
+        return returnList;
+    }
+
+    private List<ProductVO> listProductClass(ProductInfoQueryParam queryParam) {
+        ProductClassQueryParam param = new ProductClassQueryParam();
+        param.setIndustryId(queryParam.getIndustryId());
+        return productClassMapper.listAllProductClass(param);
     }
 
     private ProductVO getReturnData(ProductClass largeProductClass, ProductClass smallProductClass, ProductInfo product) {

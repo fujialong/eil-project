@@ -9,6 +9,11 @@ public enum BaseEnum {
      */
     VALID_YES(1, "effective", "有效"),
 
+    VALID_NO(0, "effective", "无效"),
+
+    YES(1, "yes", "是"),
+
+    NO(0, "no", "否"),
     /**
      * Level
      */

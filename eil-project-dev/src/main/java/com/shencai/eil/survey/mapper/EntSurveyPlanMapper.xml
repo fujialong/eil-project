@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.survey.mapper.EntSurveyPlanMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shencai.eil.survey.entity.EntSurveyPlan">
+        <id column="id" property="id" />
+        <result column="ent_id" property="entId" />
+        <result column="survey_item_id" property="surveyItemId" />
+        <result column="default_result" property="defaultResult" />
+        <result column="excel_col_index" property="excelColIndex" />
+        <result column="ent_target_result_id" property="entTargetResultId" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+    <select id="pageBasicSurveyPlan" parameterType="com.shencai.eil.survey.model.EntSurveyPlanQueryParam"
+            resultType="com.shencai.eil.survey.model.EntSurveyPlanVO">
+        select
+            esp.id,
+            si.code,
+            si.name,
+            esp.default_result defaultResult
+        from ent_survey_plan esp
+            inner join survey_item si
+            on esp.survey_item_id = si.id and si.valid = 1 and si.type = 'basic'
+        where esp.valid = 1 and esp.ent_id = #{enterpriseId}
+        order by si.sort_num
+    </select>
+
+    <select id="pageIntensiveSurveyPlan" parameterType="com.shencai.eil.survey.model.EntSurveyPlanQueryParam"
+            resultType="com.shencai.eil.survey.model.EntSurveyPlanVO">
+        select
+            esp.id,
+            si.code,
+            si.name,
+            si.importance,
+            si.cost,
+            si.target_weight_code targetWeightCode,
+            erar.assess_value assessValue,
+            esp.default_result defaultResult
+        from ent_survey_plan esp
+            inner join survey_item si on esp.survey_item_id = si.id and si.valid = 1 and si.type = 'intensive'
+            left join ent_risk_assess_result erar on erar.id = esp.ent_target_result_id
+        where esp.valid = 1 and esp.ent_id = #{enterpriseId}
+        order by si.sort_num
+    </select>
+
+</mapper>

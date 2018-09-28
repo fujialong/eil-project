@@ -14,4 +14,6 @@ import java.util.List;
 public interface ISysDictionaryService extends IService<SysDictionary> {
 
     List<DictionaryVO> listSysDictionary(DictionaryQueryParam queryParam);
+
+    List<DictionaryVO> listTreeDictionary(DictionaryQueryParam queryParam);
 }

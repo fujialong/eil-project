@@ -24,4 +24,12 @@ public interface SystemBaseUserMapper extends BaseMapper<SystemBaseUser> {
      * @return
      */
     List<UserMenuVO> menuList(String userId);
+
+    /**
+     * Get role code
+     *
+     * @param userId
+     * @return
+     */
+    String getRoleCode(String userId);
 }

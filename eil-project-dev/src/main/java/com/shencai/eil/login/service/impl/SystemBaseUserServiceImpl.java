@@ -36,4 +36,9 @@ public class SystemBaseUserServiceImpl extends ServiceImpl<SystemBaseUserMapper,
     public List<UserMenuVO> menuList(String userId) {
         return this.baseMapper.menuList(userId);
     }
+
+    @Override
+    public String getRoleCode(String userId) {
+        return this.baseMapper.getRoleCode(userId);
+    }
 }

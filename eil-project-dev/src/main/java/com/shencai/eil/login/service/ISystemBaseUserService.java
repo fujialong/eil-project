@@ -30,4 +30,12 @@ public interface ISystemBaseUserService extends IService<SystemBaseUser> {
      * @return menu
      */
     List<UserMenuVO> menuList(String userId);
+
+    /**
+     * Get role code
+     *
+     * @param userId
+     * @return
+     */
+    String getRoleCode(String userId);
 }

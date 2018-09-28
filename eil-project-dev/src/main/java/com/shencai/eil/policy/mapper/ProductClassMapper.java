@@ -4,6 +4,7 @@ import com.shencai.eil.policy.entity.ProductClass;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.shencai.eil.policy.model.ProductClassQueryParam;
 import com.shencai.eil.policy.model.ProductClassVO;
+import com.shencai.eil.policy.model.ProductVO;
 
 import java.util.List;
 
@@ -14,4 +15,6 @@ import java.util.List;
 public interface ProductClassMapper extends BaseMapper<ProductClass> {
 
     List<ProductClassVO> listProductClass(ProductClassQueryParam queryParam);
+
+    List<ProductVO> listAllProductClass(ProductClassQueryParam param);
 }

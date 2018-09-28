@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.survey.mapper.SurveyItemMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shencai.eil.survey.entity.SurveyItem">
+        <id column="id" property="id" />
+        <result column="target_weight_code" property="targetWeightCode" />
+        <result column="data_source" property="dataSource" />
+        <result column="importance" property="importance" />
+        <result column="cost" property="cost" />
+        <result column="description" property="description" />
+        <result column="has_attachment" property="hasAttachment" />
+        <result column="code" property="code" />
+        <result column="sort_num" property="sortNum" />
+        <result column="name" property="name" />
+        <result column="value_type" property="valueType" />
+        <result column="unit_code" property="unitCode" />
+        <result column="type" property="type" />
+        <result column="parent_id" property="parentId" />
+        <result column="one_for_one_parent" property="oneForOneParent" />
+        <result column="isleaf" property="isleaf" />
+        <result column="value_required" property="valueRequired" />
+        <result column="need_selected" property="needSelected" />
+        <result column="dependent" property="dependent" />
+        <result column="dependent_result_code" property="dependentResultCode" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+</mapper>

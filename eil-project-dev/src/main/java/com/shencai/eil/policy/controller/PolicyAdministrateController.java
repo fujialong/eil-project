@@ -42,4 +42,5 @@ public class PolicyAdministrateController {
         PolicyVO policy = policyAdministrateService.getPolicy(queryParam);
         return Result.ok(policy);
     }
+
 }

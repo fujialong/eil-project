@@ -16,40 +16,42 @@
         <result column="create_user_id" property="createUserId"/>
     </resultMap>
 
-    <select id="listRootTarget" resultType="com.shencai.eil.grading.model.TargetResult">
-        select
-        tw.id targetId,
-        tw.code targetCode,
-        concat(tw.name, tw.code) targetName
-        from target_weight tw
-        where
-        tw.type='root' and tw.valid=1
-        ORDER by tw.code
-    </select>
-
-    <select id="listChildTarget" resultType="com.shencai.eil.grading.model.EntRiskAssessResultVO"
+    <select id="listAllTarget" resultType="com.shencai.eil.grading.model.TargetResultVO"
             parameterType="com.shencai.eil.grading.model.EntRiskAssessResultQueryParam">
         select
         tw.id targetId,
         tw.parent_id parentId,
         tw.code targetCode,
-        tw.name targetName
+        tw.name targetName,
+        tw.type targetType,
+        erar.assess_value targetResult
         from target_weight tw
+        left join ent_risk_assess_result erar on
+        (tw.id=erar.target_weight_id and erar.ent_id = #{enterpriseId} and tw.valid=1)
         where
-        <if test="parentIdList != null and parentIdList.size > 0">
-            tw.parent_id in
-            <foreach collection="parentIdList" item="item" open="(" separator=","
+        <if test="targetType != null and targetType.size > 0">
+            tw.type in
+            <foreach collection="targetType" item="item" open="(" separator=","
                      close=")">
                 #{item}
             </foreach>
             and
         </if>
-        <if test="targetType != null and targetType != ''">
-            tw.type = #{targetType}
-            and
-        </if>
-        tw.valid=1
+        tw.valid=1 and tw.visible=1
         ORDER by tw.code
+    </select>
+    <select id="listCodeTypeAndAssessResult" resultType="com.shencai.eil.grading.model.TargetResultVO">
+        SELECT
+            t.code targetCode,
+            t.type targetType,
+            r.assess_value targetResult
+        FROM
+            target_weight t
+        LEFT JOIN ent_risk_assess_result r ON t.id = r.target_weight_id AND ent_id = #{entId} and t.valid =1 and r.valid =1
+        where t.weight is not null
+    </select>
+    <select id="lisTargetWeightTypeAndWight" resultType="com.shencai.eil.grading.model.CodeAndValueUseDouble">
+        select type codeResult ,weight valueResult from target_weight where valid = 1 and code = #{code}
     </select>
 
 </mapper>
