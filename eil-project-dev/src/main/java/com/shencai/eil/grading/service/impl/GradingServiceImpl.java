@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * @author zhoujx
@@ -35,6 +36,9 @@ import java.util.*;
 @Service
 @Slf4j
 public class GradingServiceImpl implements IGradingService {
+
+    private final static int THREAD_POOL_SIZE = 3;
+    private static final int MAX_THREAD_POOL_SIZE = 5;
 
     @Autowired
     private EnterpriseInfoMapper enterpriseInfoMapper;
@@ -110,7 +114,7 @@ public class GradingServiceImpl implements IGradingService {
     /**
      * Ru >> R1*R1_w+R2*R2_w+R3*R3_w+R4*R4_w
      */
-    public void calculateRu(EnterpriseVO enterpriseInfo, List<String> riskIndicatorSystemType) {
+    public void calculateRu(EnterpriseVO enterpriseInfo, List<String> riskIndicatorSystemType) throws ExecutionException, InterruptedException {
         List<TargetResultVO> targetList = targetWeightService.lisTargetWeightTypeAndWeight(null);
         //use code+type as key,weight as value
         Map<String, Double> targetWeightMap = CommonsUtil.castListToMapAppendKey(targetList);
@@ -118,7 +122,7 @@ public class GradingServiceImpl implements IGradingService {
         Map<String, Double> computeMap = CommonsUtil.castListToMap(containsCodeValues);
 
         for (String calculateType : riskIndicatorSystemType) {
-            double r1w = targetWeightMap.get(TargetEnum.RISK_FACTOR.getCode() + calculateType);
+         /*   double r1w = targetWeightMap.get(TargetEnum.RISK_FACTOR.getCode() + calculateType);
             double r2w = targetWeightMap.get(TargetEnum.PRIMARY_CONTROL_MECHANISM.getCode() + calculateType);
             double r3w = targetWeightMap.get(TargetEnum.SECONDARY_CONTROL_MECHANISM.getCode() + calculateType);
             double r4w = targetWeightMap.get(TargetEnum.RECEPTOR_SENSITIVITY.getCode() + calculateType);
@@ -127,8 +131,9 @@ public class GradingServiceImpl implements IGradingService {
             double r2Result = calculateRtwo(enterpriseInfo, riskIndicatorSystemType, computeMap);
             double r3Result = calculateSecondaryControlMechanism(enterpriseInfo, calculateType, targetWeightMap, computeMap);
             double r4Result = calculateRFour(enterpriseInfo, calculateType, targetWeightMap, computeMap);
-            double ruResult = r1Result * r1w + r2Result * r2w + r3Result * r3w + r4Result * r4w;
-
+            double ruResult = r1Result * r1w + r2Result * r2w + r3Result * r3w + r4Result * r4w;*/
+            double ruResult= ThreadTask(targetWeightMap, riskIndicatorSystemType,
+                     enterpriseInfo, calculateType, computeMap);
             TargetWeight targetWeight = getTargetWeightByCodeAndType(calculateType, TargetEnum.R_U.getCode());
             EntRiskAssessResult entRiskAssessResult = getEntRiskAssessResults(enterpriseInfo, targetWeight.getId());
             EnterpriseInfo enterprise = enterpriseInfoMapper.selectOne(new QueryWrapper<EnterpriseInfo>()
@@ -141,6 +146,61 @@ public class GradingServiceImpl implements IGradingService {
             }
         }
     }
+
+    /**
+     * thread run task
+     */
+    public double ThreadTask(Map<String, Double> targetWeightMap, List<String> riskIndicatorSystemType,
+                           EnterpriseVO enterpriseInfo, String calculateType, Map<String, Double> computeMap) throws InterruptedException, ExecutionException {
+        BlockingQueue<Runnable> workQuene = new ArrayBlockingQueue<>(10);
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(THREAD_POOL_SIZE, MAX_THREAD_POOL_SIZE,
+                0, TimeUnit.MICROSECONDS, workQuene);
+
+
+        double r1w = targetWeightMap.get(TargetEnum.RISK_FACTOR.getCode() + calculateType);
+        double r2w = targetWeightMap.get(TargetEnum.PRIMARY_CONTROL_MECHANISM.getCode() + calculateType);
+        double r3w = targetWeightMap.get(TargetEnum.SECONDARY_CONTROL_MECHANISM.getCode() + calculateType);
+        double r4w = targetWeightMap.get(TargetEnum.RECEPTOR_SENSITIVITY.getCode() + calculateType);
+
+        CompletionService completionService = new ExecutorCompletionService(executor);
+        List<String> list = Arrays.asList("R1", "R2", "R3", "R4");
+        for (String type : list) {
+            completionService.submit(new Callable() {
+                double result = 0;
+                @Override
+                public Object call() throws Exception {
+                    switch (type) {
+                        case "R1":
+                            result = r1w * calculateRiskFactor(enterpriseInfo, riskIndicatorSystemType, calculateType, computeMap);
+                            break;
+                        case "R2":
+                            result = r2w * calculateRtwo(enterpriseInfo, riskIndicatorSystemType, computeMap);
+                            break;
+                        case "R3":
+                            result = r3w * calculateSecondaryControlMechanism(enterpriseInfo, calculateType, targetWeightMap, computeMap);
+                            break;
+                        case "R4":
+                            result = r4w * calculateRFour(enterpriseInfo, calculateType, targetWeightMap, computeMap);
+                            break;
+                        default:
+                            break;
+                    }
+                    return result;
+                }
+
+            });
+        }
+        executor.shutdown();
+        final long start = System.nanoTime();
+        double computerResult = 0.0d;
+        for (String type : list) {
+            Future<Double> f = completionService.take();
+            computerResult += f.get();
+            log.info("result:" + f.get() + "----after" + (System.nanoTime() - start) / 1000 / 1000 + "mills");
+        }
+        return computerResult;
+    }
+
 
 
     /**
