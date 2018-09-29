@@ -67,6 +67,16 @@ public enum TargetEnum {
     R_THREE_TWO("R3.2", "区域环境背景水平", "Regional environmental background level"),
 
     /**
+     * R3.2.1
+     */
+    R_THREE_TWO_ONE("R3.2.1", "R3.2.1", "R3.2.1"),
+
+    /**
+     * R3.2.2
+     */
+    R_THREE_TWO_TWO("R3.2.2", "R3.2.2", "R3.2.2"),
+
+    /**
      * R3.3
      */
     R_THREE_THREE("R3.3", "周边环境", "surroundings"),

@@ -86,10 +86,22 @@ public enum ComputeConstantEnum {
      * R1_1_max2
      */
     R_ONE_ONE_MAX_TWO("R1_1_max2", "R1.1极大法标准化最大值（渐进环境风险）", "R1_1_max2"),
+
     /**
      * R1_2_max
      */
     R_ONE_TWO_MAX("R1_2_max", "R1_2_max", "R1_2_max"),
+
+
+    /**
+     * R2_1_max
+     */
+    R_TWO_ONE_MAX("R2_1_max", "R2_1_max", "R2_1_max"),
+
+    /**
+     *R3_1max
+     */
+    R_THREE_ONE_MAX("R3_1max", "R3_1max", "R3_1max"),
 
     /**
      * R3_3_1_min
@@ -110,6 +122,21 @@ public enum ComputeConstantEnum {
      * R3_3_1_max
      */
     R_THREE_THREE_TWO_MAX("R3_3_2_max", "R3.3.2极差法标准化最大值", "R3_3_2_max"),
+
+    /**
+     * R4_3_max
+     */
+    R_FOUR_THREE_MAX("R4_3_max", "R4_3_max", "R4_3_max"),
+
+    /**
+     * R4_4_max
+     */
+    R_FOUR_FOUR_MAX("R4_4_max", "R4_4_max", "R4_4_max"),
+
+    /**
+     * R4_5_max
+     */
+    R_FOUR_FIVE_MAX("R4_5_max", "R4_5_max", "R4_5_max"),
 
     /**
      * ws

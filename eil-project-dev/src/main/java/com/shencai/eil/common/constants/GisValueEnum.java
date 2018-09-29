@@ -19,6 +19,16 @@ public enum GisValueEnum {
     R_TWO_TWO_ZERO_TWO("R2_2_02", "从圆心向外第二块缓冲区中覆盖园区的面积", "R2_2_02"),
 
     /**
+     * R3_2_1
+     */
+    R_THREE_TWO_ONE("R3_2_1", "R3_2_1", "R3_2_1"),
+
+    /**
+     * R3_2_2
+     */
+    R_THREE_TWO_TWO("R3_2_2", "R3_2_2", "R3_2_2"),
+
+    /**
      * R3_3_01
      */
     R_THREE_THREE_ZERO_ONE("R3_3_01", "企业的海拔", "R3_3_01"),
