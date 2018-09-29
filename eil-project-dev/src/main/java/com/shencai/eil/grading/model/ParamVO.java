@@ -10,4 +10,5 @@ import java.io.Serializable;
 @Data
 public class ParamVO implements Serializable {
     private String name;
+    private String value;
 }

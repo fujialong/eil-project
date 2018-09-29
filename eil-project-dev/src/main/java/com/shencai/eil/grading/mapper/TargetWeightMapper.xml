@@ -29,9 +29,9 @@
         left join ent_risk_assess_result erar on
         (tw.id=erar.target_weight_id and erar.ent_id = #{enterpriseId} and tw.valid=1)
         where
-        <if test="targetType != null and targetType.size > 0">
+        <if test="targetTypeList != null and targetTypeList.size > 0">
             tw.type in
-            <foreach collection="targetType" item="item" open="(" separator=","
+            <foreach collection="targetTypeList" item="item" open="(" separator=","
                      close=")">
                 #{item}
             </foreach>
@@ -50,11 +50,16 @@
         LEFT JOIN ent_risk_assess_result r ON t.id = r.target_weight_id AND ent_id = #{entId} and t.valid =1 and r.valid =1
         where t.weight is not null
     </select>
-    <select id="lisTargetWeightTypeAndWight" resultType="com.shencai.eil.grading.model.CodeAndValueUseDouble">
-        select type codeResult ,weight valueResult from target_weight where valid = 1 and code = #{code}
+    <select id="lisTargetWeightTypeAndWight" resultType="com.shencai.eil.grading.model.TargetResultVO">
+        select t.code targetCode,t.type targetType,weight valueResult t from target_weight where valid = 1
+        <if test="code != null and code != ''">
+            and code = #{code}
+        </if>
+
     </select>
     <select id="getAllCodeAndWight" resultType="com.shencai.eil.grading.model.CodeAndValueUseDouble">
-        select type codeResult ,weight valueResult from target_weight where valid = 1
+        select code codeResult ,weight valueResult from target_weight where valid = 1
     </select>
+
 
 </mapper>

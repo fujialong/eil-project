@@ -23,7 +23,7 @@ public class TargetWeightServiceImpl extends ServiceImpl<TargetWeightMapper, Tar
     }
 
     @Override
-    public List<CodeAndValueUseDouble> lisTargetWeightTypeAndWeight(String code) {
+    public List<TargetResultVO> lisTargetWeightTypeAndWeight(String code) {
         return this.baseMapper.lisTargetWeightTypeAndWight(code);
     }
 

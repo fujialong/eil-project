@@ -37,7 +37,21 @@ public enum TemplateCategory {
     /**
      * Production status of main products
      */
-    PRODUCTION("production", "主要产品生产情况模板");
+    PRODUCTION("production", "主要产品生产情况模板"),
+
+    /**
+     * intensity of gas emission
+     */
+    EMISSION_INTENSITY("emission_intensity", "废气排放"),
+    /**
+     * intensity of effluent
+     */
+    EFFLUENT_INTENSITY("effluent_intensity", "废水排放"),
+    /**
+     * intensity of heavy metal
+     */
+    HEAVY_METAL_INTENSITY("heavy_metal_intensity", "重金属排放"),
+    ;
 
     private String code;
     private String name;

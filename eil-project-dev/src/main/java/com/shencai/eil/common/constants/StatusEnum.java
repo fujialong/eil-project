@@ -20,6 +20,16 @@ public enum StatusEnum {
     VERIFIED("1030", "已核实"),
 
     /**
+     * Wait for the survey
+     */
+    W_SURVEY("1050", "待查勘"),
+
+    /**
+     * Wait for the survey
+     */
+    I_SURVEY("1060", "查勘中"),
+
+    /**
      * Checked
      */
     CHECKED("checked", "已审核");

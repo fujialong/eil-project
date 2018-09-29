@@ -30,7 +30,7 @@ public interface TargetWeightMapper extends BaseMapper<TargetWeight> {
      * @param code
      * @return
      */
-    List<CodeAndValueUseDouble> lisTargetWeightTypeAndWight(String code);
+    List<TargetResultVO> lisTargetWeightTypeAndWight(String code);
 
     /**
      * get all code and wight

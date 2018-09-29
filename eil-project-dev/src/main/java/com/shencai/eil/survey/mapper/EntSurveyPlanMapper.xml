@@ -24,11 +24,12 @@
             esp.id,
             si.code,
             si.name,
+            si.description,
             esp.default_result defaultResult
         from ent_survey_plan esp
             inner join survey_item si
             on esp.survey_item_id = si.id and si.valid = 1 and si.type = 'basic'
-        where esp.valid = 1 and esp.ent_id = #{enterpriseId}
+        where esp.valid = 1 and esp.ent_id = #{param.enterpriseId}
         order by si.sort_num
     </select>
 
@@ -38,6 +39,7 @@
             esp.id,
             si.code,
             si.name,
+            si.description,
             si.importance,
             si.cost,
             si.target_weight_code targetWeightCode,
@@ -46,7 +48,7 @@
         from ent_survey_plan esp
             inner join survey_item si on esp.survey_item_id = si.id and si.valid = 1 and si.type = 'intensive'
             left join ent_risk_assess_result erar on erar.id = esp.ent_target_result_id
-        where esp.valid = 1 and esp.ent_id = #{enterpriseId}
+        where esp.valid = 1 and esp.ent_id = #{param.enterpriseId}
         order by si.sort_num
     </select>
 

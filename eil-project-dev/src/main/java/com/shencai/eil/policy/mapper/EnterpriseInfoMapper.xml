@@ -31,6 +31,8 @@
         <result column="start_time" property="startTime"/>
         <result column="emission_mode_id" property="emissionModeId"/>
         <result column="status" property="status"/>
+        <result column="nee_survey_upgrade" property="neeSurveyUpgrade"/>
+        <result column="risk_level" property="riskLevel"/>
     </resultMap>
 
     <select id="pageEnterpriseInfo" resultType="com.shencai.eil.policy.model.PolicyVO"
@@ -82,6 +84,8 @@
         ic.level_two_id industryLargeCategoryId,
         ic.level_three_id industrySmallCategoryId,
         ei.industry_id industryId,
+        ei.longitude,
+        ei.latitude,
         t.name techniqueName,
         emt.tech_id techniqueId,
         ei.link_phone linkPhone,
@@ -136,6 +140,19 @@
         left join enterprise_mapping_technique emt on (ei.id=emt.ent_id and emt.valid=1)
         left join technique t on (t.id=emt.tech_id and t.valid=1)
         left join emission_mode em on (em.id = ei.emission_mode_id and em.valid = 1)
+        where ei.id = #{enterpriseId} and ei.valid=1
+    </select>
+
+    <select id="getEnterpriseInfoOfSurvey"
+            resultType="com.shencai.eil.policy.model.EnterpriseVO"
+            parameterType="com.shencai.eil.policy.model.EnterpriseQueryParam">
+        select
+            ei.id,
+            ei.status,
+            (select name from sys_dictionary where type_code='ent_status' and code=ei.status and valid = 1) statusName,
+            ei.nee_survey_upgrade neeSurveyUpgrade,
+            ei.risk_level riskLevel
+        from enterprise_info ei
         where ei.id = #{enterpriseId} and ei.valid=1
     </select>
 

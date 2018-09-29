@@ -10,6 +10,8 @@ import java.io.Serializable;
 @Data
 public class EntRiskAssessResultVO implements Serializable {
 
+    private String id;
+
     private String targetId;
 
     private String targetCode;
@@ -20,4 +22,7 @@ public class EntRiskAssessResultVO implements Serializable {
 
     private String parentId;
 
+    private String gradeLineCode;
+
+    private String targetType;
 }

@@ -71,6 +71,10 @@ public class PolicyVO implements Serializable {
 
     private String provinceCode;
 
+    private Double longitude;
+
+    private Double latitude;
+
     private String cityCode;
 
     private List<String> cantonCodeDefault;

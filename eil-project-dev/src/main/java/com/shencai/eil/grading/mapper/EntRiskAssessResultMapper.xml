@@ -7,6 +7,7 @@
         <result column="ent_id" property="entId"/>
         <result column="target_weight_id" property="targetWeightId"/>
         <result column="assess_value" property="assessValue"/>
+        <result column="grade_line_id" property="gradeLineId"/>
         <result column="create_time" property="createTime"/>
         <result column="update_user_id" property="updateUserId"/>
         <result column="update_time" property="updateTime"/>
@@ -29,6 +30,7 @@
     <select id="listEntRiskAssessResult" resultType="com.shencai.eil.grading.model.EntRiskAssessResultVO"
             parameterType="com.shencai.eil.grading.model.EntRiskAssessResultQueryParam">
         select
+        erar.id,
         tw.id targetId,
         tw.parent_id parentId,
         tw.code targetCode,
@@ -48,11 +50,34 @@
             tw.type = #{targetType}
             and
         </if>
+        <if test="targetCode != null and targetCode != ''">
+            tw.code = #{targetCode}
+            and
+        </if>
         <if test="enterpriseId != null and enterpriseId != ''">
             erar.ent_id = #{enterpriseId}
             and
         </if>
         erar.valid=1
         ORDER by tw.code
+    </select>
+
+    <select id="listEntRiskAssessResultLevel"
+            resultType="com.shencai.eil.grading.model.EntRiskAssessResultVO"
+            parameterType="com.shencai.eil.grading.model.EntRiskAssessResultQueryParam">
+        select
+            tw.code targetCode,
+            tw.type targetType,
+            twgl.result_code gradeLineCode
+        from ent_risk_assess_result erar
+        inner join target_weight tw on tw.id=erar.target_weight_id and tw.valid=1 and tw.visible=1
+        inner join target_weight_grade_line twgl on twgl.id = erar.grade_line_id and twgl.valid = 1
+        where erar.valid = 1
+        <if test="targetCode != null and targetCode != ''">
+            and tw.code = #{targetCode}
+        </if>
+        <if test="enterpriseId != null and enterpriseId != ''">
+            and erar.ent_id = #{enterpriseId}
+        </if>
     </select>
 </mapper>

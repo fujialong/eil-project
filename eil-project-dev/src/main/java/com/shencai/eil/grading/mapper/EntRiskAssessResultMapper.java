@@ -17,4 +17,6 @@ public interface EntRiskAssessResultMapper extends BaseMapper<EntRiskAssessResul
     List<TargetResultVO> listRootTargetResult(EntRiskAssessResultQueryParam queryParam);
 
     List<EntRiskAssessResultVO> listEntRiskAssessResult(EntRiskAssessResultQueryParam queryParam);
+
+    List<EntRiskAssessResultVO> listEntRiskAssessResultLevel(EntRiskAssessResultQueryParam queryParam);
 }

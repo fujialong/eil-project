@@ -12,5 +12,5 @@ import java.util.List;
  * @since 2018-09-19
  */
 public interface ParamMapper extends BaseMapper<Param> {
-
+    List<ParamVO> listEntParamValue(ParamQueryParam queryParam);
 }

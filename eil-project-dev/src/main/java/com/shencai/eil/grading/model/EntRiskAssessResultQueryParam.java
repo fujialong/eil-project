@@ -15,6 +15,9 @@ public class EntRiskAssessResultQueryParam implements Serializable {
 
     private String enterpriseId;
 
-    private List<String> targetType;
+    private String targetType;
 
+    private List<String> targetTypeList;
+
+    private String targetCode;
 }

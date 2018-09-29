@@ -26,7 +26,7 @@ public interface ITargetWeightService extends IService<TargetWeight> {
      * @param code
      * @return
      */
-    List<CodeAndValueUseDouble> lisTargetWeightTypeAndWeight(String code);
+    List<TargetResultVO> lisTargetWeightTypeAndWeight(String code);
 
 
     /**

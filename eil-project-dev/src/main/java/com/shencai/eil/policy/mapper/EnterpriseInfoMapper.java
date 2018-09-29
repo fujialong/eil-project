@@ -24,6 +24,8 @@ public interface EnterpriseInfoMapper extends BaseMapper<EnterpriseInfo> {
 
     EnterpriseVO getEnterprise(EnterpriseQueryParam queryParam);
 
+    EnterpriseVO getEnterpriseInfoOfSurvey(EnterpriseQueryParam queryParam);
+
     /**
      * Gets the coordinates of the current enterprise
      *

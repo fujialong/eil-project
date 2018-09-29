@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.shencai.eil.grading.mapper.ParamMapper">
-
     <resultMap id="BaseResultMap" type="com.shencai.eil.grading.entity.Param">
         <id column="id" property="id" />
         <result column="code" property="code" />
@@ -16,4 +15,23 @@
         <result column="valid" property="valid" />
     </resultMap>
 
+
+    <select id="listEntParamValue"
+            parameterType="com.shencai.eil.grading.model.ParamQueryParam"
+            resultType="com.shencai.eil.grading.model.ParamVO">
+        select
+            p.name,
+            erpv.value
+        from param p
+            inner join template_mapping_param tmp on tmp.param_id = p.id and tmp.valid = 1
+            inner join param_template_category ptc on ptc.param_template_id = tmp.template_id and ptc.valid = 1
+            inner join ent_risk_param_value erpv on erpv.param_id = p.id and erpv.valid = 1 and erpv.value != 0
+        where p.valid = 1
+        <if test="enterpriseId != null and enterpriseId != ''">
+            and erpv.enterprise_id = #{enterpriseId}
+        </if>
+        <if test="templateCategoryType != null and templateCategoryType != ''">
+            and ptc.type = #{templateCategoryType}
+        </if>
+    </select>
 </mapper>

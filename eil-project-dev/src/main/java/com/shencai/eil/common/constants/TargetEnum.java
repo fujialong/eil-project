@@ -11,6 +11,11 @@ public enum TargetEnum {
     RISK_FACTOR("R1", "风险因子", "Risk factors"),
 
     /**
+     * RU
+     */
+    R_U("Ru", "总评", "Ru"),
+
+    /**
      * Sudden risk
      */
     SUDDEN_RISK("sudden_risk", "突发风险类型", "Sudden risk"),
@@ -65,6 +70,16 @@ public enum TargetEnum {
      * R3.3
      */
     R_THREE_THREE("R3.3", "周边环境", "surroundings"),
+
+    /**
+     * R3.3.1
+     */
+    R_THREE_THREE_ONE("R3.3.1", "R3.3.1", "R3.3.1"),
+
+    /**
+     * R3.3.2
+     */
+    R_THREE_THREE_TWO("R3.3.2", "R3.3.2", "R3.3.2"),
 
     /**
      * R4.1
