@@ -151,7 +151,7 @@ public class GradingServiceImpl implements IGradingService {
      * thread run task
      */
     public double ThreadTask(Map<String, Double> targetWeightMap, List<String> riskIndicatorSystemType,
-                           EnterpriseVO enterpriseInfo, String calculateType, Map<String, Double> computeMap) throws InterruptedException, ExecutionException {
+                           EnterpriseVO enterpriseInfo, String calculateType, Map<String, Double> computeMap)  {
         BlockingQueue<Runnable> workQuene = new ArrayBlockingQueue<>(10);
         ThreadPoolExecutor executor = new ThreadPoolExecutor(THREAD_POOL_SIZE, MAX_THREAD_POOL_SIZE,
                 0, TimeUnit.MICROSECONDS, workQuene);
@@ -194,9 +194,13 @@ public class GradingServiceImpl implements IGradingService {
         final long start = System.nanoTime();
         double computerResult = 0.0d;
         for (String type : list) {
-            Future<Double> f = completionService.take();
-            computerResult += f.get();
-            log.info("result:" + f.get() + "----after" + (System.nanoTime() - start) / 1000 / 1000 + "mills");
+
+            try {
+                Future<Double> f = completionService.take();
+                computerResult += f.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         return computerResult;
     }
@@ -629,7 +633,7 @@ public class GradingServiceImpl implements IGradingService {
                 : codeAndValueMap.get(GisValueEnum.R_FOUR_THREE_ZERO_THREE.getCode());
 
         double r43Value = r4301Value * sw1 + r4302Value * sw2 + r4303Value * sw3;
-        TargetWeight targetWeight = getTargetWeightByCodeAndType(riskType, TargetEnum.R_FOUR_TWO.getCode());
+        TargetWeight targetWeight = getTargetWeightByCodeAndType(riskType, TargetEnum.R_FOUR_THREE.getCode());
 
         //obtain the existing R4.3 calculation results of the enterprise
         EntRiskAssessResult riskAssessResultList = getEntRiskAssessResults(enterprise, targetWeight.getId());
@@ -853,9 +857,9 @@ public class GradingServiceImpl implements IGradingService {
     private double calculateSecondaryControlMechanism(EnterpriseVO enterprise, String type,
                                                       Map<String, Double> targetWeightMap, Map<String, Double> computeMap) {
 
-        double r31w = targetWeightMap.get(TargetEnum.R_THREE_ONE + type);
-        double r32w = targetWeightMap.get(TargetEnum.R_THREE_TWO + type);
-        double r33w = targetWeightMap.get(TargetEnum.R_THREE_THREE + type);
+        double r31w = targetWeightMap.get(TargetEnum.R_THREE_ONE.getCode() + type);
+        double r32w = targetWeightMap.get(TargetEnum.R_THREE_TWO.getCode() + type);
+        double r33w = targetWeightMap.get(TargetEnum.R_THREE_THREE.getCode() + type);
 
         //calculate R3.1
         double threePointOneResult = secondaryControlMechanismOfOne(enterprise, type, computeMap);
@@ -904,8 +908,7 @@ public class GradingServiceImpl implements IGradingService {
 
         double r321Value = codeAndValueMap.get(GisValueEnum.R_THREE_TWO_ONE.getCode()) == null ? 0
                 : codeAndValueMap.get(GisValueEnum.R_THREE_TWO_ONE.getCode());
-        double r322Value = codeAndValueMap.get(GisValueEnum.R_THREE_TWO_TWO.getCode()) == null ? 0
-                : codeAndValueMap.get(GisValueEnum.R_THREE_TWO_TWO.getCode());
+        double r322Value =0;
 
         if (TargetWeightType.PROGRESSIVE_RISK.getCode().equals(riskType)) {
             //obtain the R3.2 index weight of the enterprise
