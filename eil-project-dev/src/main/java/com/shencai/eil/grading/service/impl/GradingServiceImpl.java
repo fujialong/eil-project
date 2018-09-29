@@ -82,7 +82,7 @@ public class GradingServiceImpl implements IGradingService {
     private ITargetWeightService targetWeightService;
 
     @Override
-    public void execute(GradingParam param) {
+    public void execute(GradingParam param) throws ExecutionException, InterruptedException {
         EnterpriseVO enterprise = getEnterpriseInfo(param.getEnterpriseId());
         disposeEnterpriseRiskProfileData(enterprise);
         List<String> riskIndicatorSystemType = determineEnterpriseRiskIndicatorSystem(enterprise);
@@ -97,7 +97,7 @@ public class GradingServiceImpl implements IGradingService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public GradingVO getGradingResult(GradingQueryParam queryParam) {
+    public GradingVO getGradingResult(GradingQueryParam queryParam) throws ExecutionException, InterruptedException {
         EnterpriseVO enterpriseInfo = getEnterpriseInfo(queryParam.getEnterpriseId());
 
         disposeEnterpriseRiskProfileData(enterpriseInfo);

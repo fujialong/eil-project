@@ -10,6 +10,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.concurrent.ExecutionException;
+
 /**
  * Created by zhoujx on 2018/9/19.
  */
@@ -22,14 +24,14 @@ public class GradingController {
 
     @ResponseBody
     @RequestMapping("/execute")
-    public Result execute(GradingParam param) {
+    public Result execute(GradingParam param) throws ExecutionException, InterruptedException {
         gradingService.execute(param);
         return Result.ok();
     }
 
     @ResponseBody
     @RequestMapping("/getGradingResult")
-    public Result getGradingResult(GradingQueryParam queryParam) {
+    public Result getGradingResult(GradingQueryParam queryParam) throws ExecutionException, InterruptedException {
         GradingVO gradingVO = gradingService.getGradingResult(queryParam);
         return Result.ok(gradingVO);
     }
