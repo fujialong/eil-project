@@ -51,7 +51,7 @@
         where t.weight is not null
     </select>
     <select id="lisTargetWeightTypeAndWight" resultType="com.shencai.eil.grading.model.TargetResultVO">
-        select t.code targetCode,t.type targetType,weight valueResult t from target_weight where valid = 1
+        select t.code targetCode,t.type targetType,weight valueResult  from target_weight where valid = 1
         <if test="code != null and code != ''">
             and code = #{code}
         </if>
