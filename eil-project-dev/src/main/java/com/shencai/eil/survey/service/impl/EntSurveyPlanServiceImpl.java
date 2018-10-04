@@ -1,5 +1,6 @@
 package com.shencai.eil.survey.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shencai.eil.common.constants.*;
@@ -26,14 +27,14 @@ import com.shencai.eil.survey.model.SurveyItemQueryParam;
 import com.shencai.eil.survey.model.SurveyItemVO;
 import com.shencai.eil.survey.service.IEntSurveyPlanService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.shencai.eil.system.entity.BaseFileupload;
+import com.shencai.eil.system.mapper.BaseFileuploadMapper;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * <p>
@@ -56,6 +57,8 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
     private EnterpriseInfoMapper enterpriseInfoMapper;
     @Autowired
     private EntRiskAssessResultMapper entRiskAssessResultMapper;
+    @Autowired
+    private BaseFileuploadMapper baseFileuploadMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -65,27 +68,30 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
             throw new BusinessException("The enterprise had been removed!");
         }
         if (StringUtil.isBlank(enterprise.getRiskLevel())) {
-            List<EntRiskAssessResultVO> riskResultList = listEnterpriseGeneralCommentLevel(enterpriseId);
-            if (CollectionUtils.isEmpty(riskResultList)) {
-                throw new BusinessException("general comment did not been calculate!");
-            }
-            generateBasicSurveyPlan(enterpriseId);
-            EnterpriseInfo enterpriseInfo = new EnterpriseInfo();
-            for (EntRiskAssessResultVO entRiskAssessResultVO: riskResultList) {
-                if (!GradeLineResultCode.LOW.getCode().equals(entRiskAssessResultVO.getGradeLineCode())) {
-                    enterpriseInfo.setRiskLevel(RiskLevel.HIGH.getCode());
-                    generateIntensiveSurveyPlan(enterpriseId);
-                    break;
-                }
-            }
-            enterpriseInfo.setStatus(StatusEnum.I_SURVEY.getCode());
-            enterpriseInfo.setRiskLevel(RiskLevel.LOW.getCode());
-            enterpriseInfo.setId(enterpriseId);
-            enterpriseInfo.setUpdateTime(DateUtil.getNowTimestamp());
-            enterpriseInfoMapper.updateById(enterpriseInfo);
-
+            judgeRiskLevel(enterpriseId);
         }
         return getEnterpriseOfSurvey(enterpriseId);
+    }
+
+    private void judgeRiskLevel(String enterpriseId) {
+        List<EntRiskAssessResultVO> riskResultList = listEnterpriseGeneralCommentLevel(enterpriseId);
+        if (CollectionUtils.isEmpty(riskResultList)) {
+            throw new BusinessException("general comment did not been calculate!");
+        }
+        generateBasicSurveyPlan(enterpriseId);
+        EnterpriseInfo enterpriseInfo = new EnterpriseInfo();
+        for (EntRiskAssessResultVO entRiskAssessResultVO: riskResultList) {
+            if (!GradeLineResultCode.LOW.getCode().equals(entRiskAssessResultVO.getGradeLineCode())) {
+                enterpriseInfo.setRiskLevel(RiskLevel.HIGH.getCode());
+                generateIntensiveSurveyPlan(enterpriseId);
+                break;
+            }
+        }
+        enterpriseInfo.setStatus(StatusEnum.I_SURVEY.getCode());
+        enterpriseInfo.setRiskLevel(RiskLevel.LOW.getCode());
+        enterpriseInfo.setId(enterpriseId);
+        enterpriseInfo.setUpdateTime(DateUtil.getNowTimestamp());
+        enterpriseInfoMapper.updateById(enterpriseInfo);
     }
 
     @Override
@@ -129,8 +135,38 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
         Page<EntSurveyPlanVO> page = new Page<>();
         page.setCurrent(queryParam.getCurrent());
         page.setSize(queryParam.getSize());
-        page.setRecords(entSurveyPlanMapper.pageIntensiveSurveyPlan(page, queryParam));
+        List<EntSurveyPlanVO> surveyPlanList = entSurveyPlanMapper.pageIntensiveSurveyPlan(page, queryParam);
+        setAttachment(surveyPlanList);
+        page.setRecords(surveyPlanList);
         return page;
+    }
+
+    private void setAttachment(List<EntSurveyPlanVO> surveyPlanList) {
+        List<String> sourceIds = new ArrayList<>();
+        for (EntSurveyPlanVO planVO: surveyPlanList) {
+            if (ObjectUtils.isNotNull(planVO.getHasAttachment())
+                    && planVO.getHasAttachment() ==  BaseEnum.VALID_YES.getCode()) {
+                sourceIds.add(planVO.getId());
+            }
+        }
+        if (CollectionUtils.isNotEmpty(sourceIds)) {
+            List<BaseFileupload> files = baseFileuploadMapper
+                    .selectList(new QueryWrapper<BaseFileupload>()
+                            .in("source_id", sourceIds)
+                            .eq("valid", BaseEnum.VALID_YES.getCode()));
+            if (CollectionUtils.isNotEmpty(files)) {
+                for (BaseFileupload file: files) {
+                    for (EntSurveyPlanVO planVO: surveyPlanList) {
+                        if (ObjectUtils.isNotNull(planVO.getHasAttachment())
+                                && planVO.getHasAttachment() ==  BaseEnum.VALID_YES.getCode()
+                                && planVO.getId().equals(file.getSourceId())) {
+                            planVO.getAttachmentList().add(file);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -191,7 +227,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
                     + ":"
                     + Double.valueOf(paramList.get(i).getValue()) * enterprise.getYield());
             if (i < paramList.size() - 1) {
-                builder.append(",");
+                builder.append("\n");
             }
         }
         plan.setDefaultResult(builder.toString());
@@ -200,6 +236,61 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
     @Override
     public void generateIntensiveSurveyPlan(String enterpriseId) {
         EnterpriseVO enterprise = getEnterpriseInfo(enterpriseId);
+        List<EntRiskAssessResultVO> riskAssessResultList = listEntRiskAssessResult(enterpriseId);
+        List<SurveyItemVO> surveyItemList = listSurveyItem(SurveyItemType.INTENSIVE.getCode());
+        HashMap<String, EntRiskAssessResultVO> map = compareAssessResult(riskAssessResultList);
+        List<EntSurveyPlan> surveyPlanList = generateSurveyPlanList(enterpriseId, surveyItemList, map);
+        saveBatch(surveyPlanList);
+    }
+
+    private List<EntSurveyPlan> generateSurveyPlanList(String enterpriseId, List<SurveyItemVO> surveyItemList, HashMap<String, EntRiskAssessResultVO> map) {
+        List<EntSurveyPlan> surveyPlanList = new ArrayList<>();
+        Iterator iterator= map.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry entry = (Map.Entry) iterator.next();
+            EntRiskAssessResultVO assessResult = (EntRiskAssessResultVO) entry.getValue();
+            if (GradeLineResultCode.LOW.getCode().equals(assessResult.getGradeLineCode())) {
+                for (SurveyItemVO vo: surveyItemList) {
+                    if (assessResult.getTargetCode().equals(vo.getTargetWeightCode())
+                            && vo.getNeedSelected() == 1) {
+                        addSurveyPlan(enterpriseId, surveyPlanList, assessResult, vo);
+                    }
+                }
+            } else {
+                if (TargetEnum.RISK_FACTOR.getCode().equals(assessResult.getTargetCode())) {
+                    for (SurveyItemVO vo: surveyItemList) {
+                        if (assessResult.getTargetCode().equals(vo.getTargetWeightCode())
+                                && vo.getNeedSelected() == 0) {
+                            addSurveyPlan(enterpriseId, surveyPlanList, assessResult, vo);
+                        }
+                    }
+                } else {
+                    for (SurveyItemVO vo: surveyItemList) {
+                        if (assessResult.getTargetCode().equals(vo.getTargetWeightCode())) {
+                            addSurveyPlan(enterpriseId, surveyPlanList, assessResult, vo);
+                        }
+                    }
+                }
+            }
+        }
+        return surveyPlanList;
+    }
+
+    private HashMap<String, EntRiskAssessResultVO> compareAssessResult(List<EntRiskAssessResultVO> riskAssessResultList) {
+        HashMap<String, EntRiskAssessResultVO> map = new HashMap<>();
+        for (EntRiskAssessResultVO vo: riskAssessResultList) {
+            if (ObjectUtils.isNotNull(map.get(vo.getTargetCode()))) {
+                if (Double.valueOf(vo.getTargetResult()) > Double.valueOf(map.get(vo.getTargetCode()).getTargetResult())) {
+                    map.put(vo.getTargetCode(), vo);
+                }
+            } else {
+                map.put(vo.getTargetCode(), vo);
+            }
+        }
+        return map;
+    }
+
+    private List<EntRiskAssessResultVO> listEntRiskAssessResult(String enterpriseId) {
         List<String> targetCodes = new ArrayList<>();
         targetCodes.add(TargetEnum.RISK_FACTOR.getCode());
         targetCodes.add(TargetEnum.PRIMARY_CONTROL_MECHANISM.getCode());
@@ -209,7 +300,23 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
         targetCodes.add(TargetEnum.R_FOUR_THREE.getCode());
         targetCodes.add(TargetEnum.R_FOUR_FOUR.getCode());
         targetCodes.add(TargetEnum.R_FOUR_FIVE.getCode());
+        EntRiskAssessResultQueryParam queryParam = new EntRiskAssessResultQueryParam();
+        queryParam.setEnterpriseId(enterpriseId);
+        queryParam.setTargetCodeList(targetCodes);
+        return entRiskAssessResultMapper.listEntRiskAssessResultLevel(queryParam);
+    }
 
+    private void addSurveyPlan(String enterpriseId, List<EntSurveyPlan> surveyPlanList, EntRiskAssessResultVO assessResult, SurveyItemVO vo) {
+        EntSurveyPlan surveyPlan = new EntSurveyPlan();
+        surveyPlan.setId(StringUtil.getUUID());
+        surveyPlan.setEntId(enterpriseId);
+        surveyPlan.setSurveyItemId(vo.getId());
+        surveyPlan.setEntTargetResultId(assessResult.getId());
+        Date now = DateUtil.getNowTimestamp();
+        surveyPlan.setCreateTime(now);
+        surveyPlan.setUpdateTime(now);
+        surveyPlan.setValid((Integer) BaseEnum.VALID_YES.getCode());
+        surveyPlanList.add(surveyPlan);
     }
 
     private EnterpriseVO getEnterpriseInfo(String enterpriseId) {

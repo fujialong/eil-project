@@ -19,6 +19,8 @@ import com.shencai.eil.policy.model.EnterpriseVO;
 import com.shencai.eil.risk.entity.RiskControlPollutionValue;
 import com.shencai.eil.risk.mapper.RiskControlPollutionValueMapper;
 import com.shencai.eil.risk.service.IRiskControlPollutionValueService;
+import com.shencai.eil.system.entity.SysDictionary;
+import com.shencai.eil.system.service.ISysDictionaryService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +41,7 @@ public class GradingServiceImpl implements IGradingService {
 
     private final static int THREAD_POOL_SIZE = 3;
     private static final int MAX_THREAD_POOL_SIZE = 5;
+    public static final int FAST_ING_SORT_NUM = 4;
 
     @Autowired
     private EnterpriseInfoMapper enterpriseInfoMapper;
@@ -80,6 +83,8 @@ public class GradingServiceImpl implements IGradingService {
     private IGisValueService gisValueService;
     @Autowired
     private ITargetWeightService targetWeightService;
+    @Autowired
+    private ISysDictionaryService sysDictionaryService;
 
     @Override
     public void execute(GradingParam param) throws ExecutionException, InterruptedException {
@@ -99,12 +104,30 @@ public class GradingServiceImpl implements IGradingService {
     @Transactional(rollbackFor = Exception.class)
     public GradingVO getGradingResult(GradingQueryParam queryParam) throws ExecutionException, InterruptedException {
         EnterpriseVO enterpriseInfo = getEnterpriseInfo(queryParam.getEnterpriseId());
+        if (ObjectUtils.isEmpty(enterpriseInfo)) {
+            throw new BusinessException("enterprise not exits!");
+        }
 
+        SysDictionary sysDictionary = sysDictionaryService.getOne(new QueryWrapper<SysDictionary>()
+                .eq("type_code", "ent_status")
+                .eq("code", enterpriseInfo.getStatus())
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+
+        if (ObjectUtils.isEmpty(sysDictionary)) {
+            throw new BusinessException("sys_dictionary not exits ! type:ent_status" + ",code:" + StatusEnum.I_SURVEY.getCode());
+        }
         disposeEnterpriseRiskProfileData(enterpriseInfo);
         List<String> riskIndicatorSystemType = determineEnterpriseRiskIndicatorSystem(enterpriseInfo);
+        List<EntRiskAssessResult> assessList = entRiskAssessResultMapper.selectList(new QueryWrapper<EntRiskAssessResult>()
+                .eq("ent_id", enterpriseInfo.getId())
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
 
-        calculateRu(enterpriseInfo, riskIndicatorSystemType);
+        if (FAST_ING_SORT_NUM > Integer.parseInt(sysDictionary.getSortNum()) || org.springframework.util.CollectionUtils.isEmpty(assessList)) {
+            calculateRu(enterpriseInfo, riskIndicatorSystemType);
+        }
+
         List<TargetResultVO> targetResultList = listAllTargetResult(queryParam, riskIndicatorSystemType);
+
         //Deal with parent-child relationships
         List<TargetResultVO> targetResultOfRu = listTargetResultOfRu(targetResultList);
         GradingVO returnData = getReturnData(enterpriseInfo, targetResultOfRu);
@@ -122,51 +145,49 @@ public class GradingServiceImpl implements IGradingService {
         Map<String, Double> computeMap = CommonsUtil.castListToMap(containsCodeValues);
 
         for (String calculateType : riskIndicatorSystemType) {
-         /*   double r1w = targetWeightMap.get(TargetEnum.RISK_FACTOR.getCode() + calculateType);
-            double r2w = targetWeightMap.get(TargetEnum.PRIMARY_CONTROL_MECHANISM.getCode() + calculateType);
-            double r3w = targetWeightMap.get(TargetEnum.SECONDARY_CONTROL_MECHANISM.getCode() + calculateType);
-            double r4w = targetWeightMap.get(TargetEnum.RECEPTOR_SENSITIVITY.getCode() + calculateType);
-
-            double r1Result = calculateRiskFactor(enterpriseInfo, riskIndicatorSystemType, calculateType, computeMap);
-            double r2Result = calculateRtwo(enterpriseInfo, riskIndicatorSystemType, computeMap);
-            double r3Result = calculateSecondaryControlMechanism(enterpriseInfo, calculateType, targetWeightMap, computeMap);
-            double r4Result = calculateRFour(enterpriseInfo, calculateType, targetWeightMap, computeMap);
-            double ruResult = r1Result * r1w + r2Result * r2w + r3Result * r3w + r4Result * r4w;*/
-            double ruResult= ThreadTask(targetWeightMap, riskIndicatorSystemType,
-                     enterpriseInfo, calculateType, computeMap);
             TargetWeight targetWeight = getTargetWeightByCodeAndType(calculateType, TargetEnum.R_U.getCode());
             EntRiskAssessResult entRiskAssessResult = getEntRiskAssessResults(enterpriseInfo, targetWeight.getId());
             EnterpriseInfo enterprise = enterpriseInfoMapper.selectOne(new QueryWrapper<EnterpriseInfo>()
                     .eq("id", enterpriseInfo.getId()));
 
             if (ObjectUtils.isEmpty(entRiskAssessResult)) {
+                double ruResult = threadTask(targetWeightMap, riskIndicatorSystemType, enterpriseInfo, calculateType, computeMap);
                 entRiskAssessResult = buildEntRiskAssessResult(enterpriseInfo.getId(), ruResult, targetWeight.getId());
                 entRiskAssessResultMapper.insert(entRiskAssessResult);
                 enterprise.setStatus(StatusEnum.W_SURVEY.getCode());
+                enterpriseInfoMapper.update(enterprise, new QueryWrapper<EnterpriseInfo>()
+                        .eq("id", enterpriseInfo.getId())
+                        .eq("valid", BaseEnum.VALID_YES.getCode()));
             }
+
         }
     }
 
     /**
      * thread run task
      */
-    public double ThreadTask(Map<String, Double> targetWeightMap, List<String> riskIndicatorSystemType,
-                           EnterpriseVO enterpriseInfo, String calculateType, Map<String, Double> computeMap)  {
+    public double threadTask(Map<String, Double> targetWeightMap, List<String> riskIndicatorSystemType,
+                             EnterpriseVO enterpriseInfo, String calculateType, Map<String, Double> computeMap) {
         BlockingQueue<Runnable> workQuene = new ArrayBlockingQueue<>(10);
         ThreadPoolExecutor executor = new ThreadPoolExecutor(THREAD_POOL_SIZE, MAX_THREAD_POOL_SIZE,
                 0, TimeUnit.MICROSECONDS, workQuene);
 
 
-        double r1w = targetWeightMap.get(TargetEnum.RISK_FACTOR.getCode() + calculateType);
-        double r2w = targetWeightMap.get(TargetEnum.PRIMARY_CONTROL_MECHANISM.getCode() + calculateType);
-        double r3w = targetWeightMap.get(TargetEnum.SECONDARY_CONTROL_MECHANISM.getCode() + calculateType);
-        double r4w = targetWeightMap.get(TargetEnum.RECEPTOR_SENSITIVITY.getCode() + calculateType);
+        double r1w = ObjectUtils.isEmpty(targetWeightMap.get(TargetEnum.RISK_FACTOR.getCode() + calculateType))
+                ? 0 : targetWeightMap.get(TargetEnum.RISK_FACTOR.getCode() + calculateType);
+        double r2w = ObjectUtils.isEmpty(targetWeightMap.get(TargetEnum.PRIMARY_CONTROL_MECHANISM.getCode() + calculateType))
+                ? 0 : targetWeightMap.get(TargetEnum.PRIMARY_CONTROL_MECHANISM.getCode() + calculateType);
+        double r3w = ObjectUtils.isEmpty(targetWeightMap.get(TargetEnum.SECONDARY_CONTROL_MECHANISM.getCode() + calculateType))
+                ? 0 : targetWeightMap.get(TargetEnum.SECONDARY_CONTROL_MECHANISM.getCode() + calculateType);
+        double r4w = ObjectUtils.isEmpty(targetWeightMap.get(TargetEnum.RECEPTOR_SENSITIVITY.getCode() + calculateType))
+                ? 0 : targetWeightMap.get(TargetEnum.RECEPTOR_SENSITIVITY.getCode() + calculateType);
 
         CompletionService completionService = new ExecutorCompletionService(executor);
         List<String> list = Arrays.asList("R1", "R2", "R3", "R4");
         for (String type : list) {
             completionService.submit(new Callable() {
                 double result = 0;
+
                 @Override
                 public Object call() throws Exception {
                     switch (type) {
@@ -194,7 +215,6 @@ public class GradingServiceImpl implements IGradingService {
         final long start = System.nanoTime();
         double computerResult = 0.0d;
         for (String type : list) {
-
             try {
                 Future<Double> f = completionService.take();
                 computerResult += f.get();
@@ -204,7 +224,6 @@ public class GradingServiceImpl implements IGradingService {
         }
         return computerResult;
     }
-
 
 
     /**
@@ -224,7 +243,6 @@ public class GradingServiceImpl implements IGradingService {
 
     @Override
     public void gisTest(EnterpriseVO enterpriseVO) {
-        //  log.info("----------R2.2---------value:" + calculateRtowPontTwoAboutGis "");
     }
 
     private GradingVO getReturnData(EnterpriseVO enterpriseInfo, List<TargetResultVO> targetResultOfRu) {
@@ -341,8 +359,10 @@ public class GradingServiceImpl implements IGradingService {
                                                     String type, Map<String, Double> computeMap) {
         double suddenResult = 0.0;
         double progressiveResult = 0.0;
-        double r11max1 = computeMap.get(ComputeConstantEnum.R_ONE_ONE_MAX_ONE.getCode());
-        double r11max2 = computeMap.get(ComputeConstantEnum.R_ONE_ONE_MAX_TWO.getCode());
+        double r11max1 = ObjectUtils.isEmpty(computeMap.get(ComputeConstantEnum.R_ONE_ONE_MAX_ONE.getCode()))
+                ? 0 : computeMap.get(ComputeConstantEnum.R_ONE_ONE_MAX_ONE.getCode());
+        double r11max2 = ObjectUtils.isEmpty(computeMap.get(ComputeConstantEnum.R_ONE_ONE_MAX_TWO.getCode()))
+                ? 0 : computeMap.get(ComputeConstantEnum.R_ONE_ONE_MAX_TWO.getCode());
 
         //obtain the R1.1 index weight of the enterprise
         List<TargetWeight> targetWeightList =
@@ -376,10 +396,10 @@ public class GradingServiceImpl implements IGradingService {
             saveRiskAssessResults(entRiskAssessResults);
         }
         if (TargetWeightType.PROGRESSIVE_RISK.getCode().equals(type)) {
-            return progressiveResult;
+            return progressiveResult * 100 / r11max1;
         }
         if (TargetWeightType.SUDDEN_RISK.getCode().equals(type)) {
-            return suddenResult;
+            return suddenResult * 100 / r11max2;
         }
         return 0;
     }
@@ -389,7 +409,8 @@ public class GradingServiceImpl implements IGradingService {
      */
     private double secondStepOfRiskFactorCalculation(EnterpriseVO enterprise,
                                                      List<String> riskType, Map<String, Double> computeMap) {
-        double r12max = computeMap.get(ComputeConstantEnum.R_ONE_TWO_MAX.getCode());
+        double r12max = ObjectUtils.isEmpty(computeMap.get(ComputeConstantEnum.R_ONE_TWO_MAX.getCode()))
+                ? 0 : computeMap.get(ComputeConstantEnum.R_ONE_TWO_MAX.getCode());
         double result = 0.0;
         //obtain the R1.2 index weight of the enterprise
         List<TargetWeight> targetWeightList =
@@ -402,7 +423,7 @@ public class GradingServiceImpl implements IGradingService {
             result = calculateOnePointTwoSecondaryIndicatorsOfRiskFactors(enterprise);
             saveEntRiskAssessResult(enterprise, targetWeightIds, result * 100 / r12max);
         }
-        return result;
+        return result * 100 / r12max;
     }
 
     /**
@@ -411,7 +432,8 @@ public class GradingServiceImpl implements IGradingService {
      */
     private double calculateComplianceCapability(EnterpriseVO enterprise, List<String> riskType, Map<String, Double> computeMap) {
         double result = 0.0;
-        double r21max = computeMap.get(ComputeConstantEnum.R_TWO_ONE_MAX.getCode());
+        double r21max = ObjectUtils.isEmpty(computeMap.get(ComputeConstantEnum.R_TWO_ONE_MAX.getCode()))
+                ? 0 : computeMap.get(ComputeConstantEnum.R_TWO_ONE_MAX.getCode());
         //obtain the R2.1 index weight of the enterprise
         List<TargetWeight> targetWeightList =
                 obtainTargetWeight(riskType, TargetEnum.ENTERPRISE_COMPLIANCE.getCode());
@@ -423,7 +445,7 @@ public class GradingServiceImpl implements IGradingService {
             result = calculateCompliance(enterprise);
             saveEntRiskAssessResult(enterprise, targetWeightIds, result * 100 / r21max);
         }
-        return result;
+        return result * 100 / r21max;
     }
 
     /**
@@ -432,7 +454,8 @@ public class GradingServiceImpl implements IGradingService {
      */
     private double calculateRtwoTwo(EnterpriseVO enterprise, List<String> riskType, Map<String, Double> computeMap) {
         double result = 0;
-        double r22max = computeMap.get(ComputeConstantEnum.R_TWO_TWO_MAX.getCode());
+        double r22max = ObjectUtils.isEmpty(computeMap.get(ComputeConstantEnum.R_TWO_TWO_MAX.getCode()))
+                ? 0 : computeMap.get(ComputeConstantEnum.R_TWO_TWO_MAX.getCode());
 
         List<TargetWeight> targetWeightList =
                 obtainTargetWeight(riskType, TargetEnum.R_TWO_POINT_TWO.getCode());
@@ -443,7 +466,7 @@ public class GradingServiceImpl implements IGradingService {
             result = calculateRtowPontTwoAboutGis(enterprise);
             saveEntRiskAssessResult(enterprise, targetWeightIds, result * 100 / r22max);
         }
-        return result;
+        return result * 100 / r22max;
     }
 
     /**
@@ -458,11 +481,15 @@ public class GradingServiceImpl implements IGradingService {
         Map<String, Double> computeMap = CommonsUtil.castListToMap(containsCodeValues);
 
         //Query the required constants
-        double sw1Value = computeMap.get(ComputeConstantEnum.S_W_ONE.getCode());
-        double sw2Value = computeMap.get(ComputeConstantEnum.S_W_TWO.getCode());
+        double sw1Value = computeMap.get(ComputeConstantEnum.S_W_ONE.getCode()) == null ? 0
+                : computeMap.get(ComputeConstantEnum.S_W_ONE.getCode());
+        double sw2Value = computeMap.get(ComputeConstantEnum.S_W_TWO.getCode()) == null ? 0
+                : computeMap.get(ComputeConstantEnum.S_W_TWO.getCode());
 
-        double ba2Value = computeMap.get(ComputeConstantEnum.B_A_TWO.getCode());
-        double r22max = computeMap.get(ComputeConstantEnum.R_TWO_TWO_MAX.getCode());
+        double ba2Value = computeMap.get(ComputeConstantEnum.B_A_TWO.getCode()) == null ? 0
+                : computeMap.get(ComputeConstantEnum.B_A_TWO.getCode());
+        double r22max = computeMap.get(ComputeConstantEnum.R_TWO_TWO_MAX.getCode()) == null ? 0
+                : computeMap.get(ComputeConstantEnum.B_A_TWO.getCode());
 
         //Query gis data for this enterprise
         double r2201Value = gisValueService.getValueByEntIdAndCode(enterprise.getId(), GisValueEnum.R_TWO_TWO_ZERO_ONE.getCode());
@@ -512,8 +539,8 @@ public class GradingServiceImpl implements IGradingService {
         double d2 = computeMap.get(ComputeConstantEnum.D_TWO.getCode());
         double d3 = computeMap.get(ComputeConstantEnum.D_THREE.getCode());
 
-        double r331w = targetWeightMap.get(TargetEnum.R_THREE_THREE_ONE + riskType);
-        double r332w = targetWeightMap.get(TargetEnum.R_THREE_THREE_TWO + riskType);
+        double r331w = targetWeightMap.get(TargetEnum.R_THREE_THREE_ONE.getCode() + riskType);
+        double r332w = targetWeightMap.get(TargetEnum.R_THREE_THREE_TWO.getCode() + riskType);
 
         //dem=(R3_3_01-(R3_3_01*sw1+R3_3_02*sw2+R3_3_03sw3))>0?1*R3_3_05:-1*R3_3_05
         double dem = (r3301Value - (r3301Value * sw1 + r3302Value * sw2 + r3303Value * sw3)) > 0 ? 1 * r3305Value : -1 * r3305Value;
@@ -528,7 +555,7 @@ public class GradingServiceImpl implements IGradingService {
         double r332StndValue = (r332Value - r332min) * 100 / (r332max - r332min);
 
         //R3.3 =  R3.3.1*R3_3_1_w+R3.3.2*R3_3_2_w
-        double r33Value = r331Value * r331w + r332Value * r332w;
+        double r33Value = r331StandValue * r331w + r332StndValue * r332w;
 
         TargetWeight targetWeight = getTargetWeightByCodeAndType(riskType, TargetEnum.R_THREE_THREE.getCode());
 
@@ -553,17 +580,15 @@ public class GradingServiceImpl implements IGradingService {
         double r44w = targetWeightMap.get(TargetEnum.R_FOUR_FOUR.getCode() + riskType);
         double r45w = targetWeightMap.get(TargetEnum.R_FOUR_FIVE.getCode() + riskType);
 
+        double r41 = calculateRFourOne(enterprise, riskType, targetWeightMap, computeMap);
 
-        double r41 = calculateRFourOne(enterprise, riskType, targetWeightMap);
-
-        double r42 = calculateRFourTwo(enterprise, riskType, targetWeightMap);
+        double r42 = calculateRFourTwo(enterprise, riskType, targetWeightMap, computeMap);
 
         double r43 = calculateRFourThree(enterprise, riskType, computeMap);
 
         double r44 = calculateRFourFour(enterprise, riskType, targetWeightMap, computeMap);
 
         double r45 = calculateRfourFive(enterprise, riskType, computeMap);
-
 
         return r41 * r41w + r42 * r42w + r43 * r43w + r44 * r44w + r45 * r45w;
     }
@@ -575,7 +600,6 @@ public class GradingServiceImpl implements IGradingService {
      * @return
      */
     private double calculateRfourFive(EnterpriseVO enterprise, String riskType, Map<String, Double> computeMap) {
-
 
         List<CodeAndValueUseDouble> gisCodeValueList = gisValueService.getCodeValueByEntId(enterprise.getId());
         Map<String, Double> codeAndValueMap = CommonsUtil.castListToMap(gisCodeValueList);
@@ -604,7 +628,7 @@ public class GradingServiceImpl implements IGradingService {
             entRiskAssessResultMapper.insert(entRiskAssessResult);
         }
 
-        return r45Result;
+        return r45Result * 100 / r45max;
     }
 
     /**
@@ -615,7 +639,6 @@ public class GradingServiceImpl implements IGradingService {
      * @return
      */
     private double calculateRFourThree(EnterpriseVO enterprise, String riskType, Map<String, Double> computeMap) {
-
 
         List<CodeAndValueUseDouble> gisCodeValueList = gisValueService.getCodeValueByEntId(enterprise.getId());
         Map<String, Double> codeAndValueMap = CommonsUtil.castListToMap(gisCodeValueList);
@@ -643,7 +666,7 @@ public class GradingServiceImpl implements IGradingService {
             entRiskAssessResultMapper.insert(entRiskAssessResult);
         }
 
-        return r43Value;
+        return r43Value * 100 / r43max;
     }
 
     /**
@@ -656,6 +679,7 @@ public class GradingServiceImpl implements IGradingService {
      */
     private double calculateRFourFour(EnterpriseVO enterprise, String riskType,
                                       Map<String, Double> targetWeightMap, Map<String, Double> computeMap) {
+
         List<CodeAndValueUseDouble> gisCodeValueList = gisValueService.getCodeValueByEntId(enterprise.getId());
         Map<String, Double> codeAndValueMap = CommonsUtil.castListToMap(gisCodeValueList);
 
@@ -671,7 +695,7 @@ public class GradingServiceImpl implements IGradingService {
             EntRiskAssessResult entRiskAssessResult = buildEntRiskAssessResult(enterprise.getId(), r44Value * 100 / r44max, targetWeight.getId());
             entRiskAssessResultMapper.insert(entRiskAssessResult);
         }
-        return r44Value;
+        return r44Value * 100 / r44max;
     }
 
     /**
@@ -682,12 +706,12 @@ public class GradingServiceImpl implements IGradingService {
      * @param targetWeightMap
      * @return
      */
-    private double calculateRFourTwo(EnterpriseVO enterprise, String riskType, Map<String, Double> targetWeightMap) {
-        List<CodeAndValueUseDouble> containsCodeValues = computeConstantService.listCodeValue();
-        Map<String, Double> computeMap = CommonsUtil.castListToMap(containsCodeValues);
+    private double calculateRFourTwo(EnterpriseVO enterprise, String riskType, Map<String, Double> targetWeightMap, Map<String, Double> computeMap) {
 
         List<CodeAndValueUseDouble> gisCodeValueList = gisValueService.getCodeValueByEntId(enterprise.getId());
         Map<String, Double> codeAndValueMap = CommonsUtil.castListToMap(gisCodeValueList);
+        double r421max = computeMap.get(ComputeConstantEnum.R_FOUR_TWO_ONE_MAX.getCode());
+        double r422max = computeMap.get(ComputeConstantEnum.R_FOUR_TWO_TWO_MAX.getCode());
 
         double r4201Value = codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ZERO_ONE.getCode()) == null ? 0
                 : codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_ZERO_ONE.getCode());
@@ -710,7 +734,6 @@ public class GradingServiceImpl implements IGradingService {
         double r42203Value = codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_TWO_ZERO_THREE.getCode()) == null ? 0
                 : codeAndValueMap.get(GisValueEnum.R_FOUR_TWO_TWO_ZERO_THREE.getCode());
 
-
         double sw1 = computeMap.get(ComputeConstantEnum.S_W_ONE.getCode());
         double sw2 = computeMap.get(ComputeConstantEnum.S_W_TWO.getCode());
         double sw3 = computeMap.get(ComputeConstantEnum.S_W_THREE.getCode());
@@ -728,7 +751,7 @@ public class GradingServiceImpl implements IGradingService {
         //R4.2 = R4.2.1*R4_2_1_w+R4.2.2*R4_2_2_w
         double r421 = r421Value * targetWeightMap.get(TargetEnum.R_FOUR_TWO_ONE.getCode() + riskType);
         double r422 = r422Value * targetWeightMap.get(TargetEnum.R_FOUR_TWO_TWO.getCode() + riskType);
-        double r42Value = r421 + r422;
+        double r42Value = r421 * 100 / r421max + r422 * 100 / r422max;
 
         TargetWeight targetWeight = getTargetWeightByCodeAndType(riskType, TargetEnum.R_FOUR_TWO.getCode());
         //obtain the existing R4.2 calculation results of the enterprise
@@ -750,14 +773,13 @@ public class GradingServiceImpl implements IGradingService {
      * @param targetWeightMap
      * @return
      */
-    private double calculateRFourOne(EnterpriseVO enterprise, String riskType, Map<String, Double> targetWeightMap) {
-
-
-        List<CodeAndValueUseDouble> containsCodeValues = computeConstantService.listCodeValue();
-        Map<String, Double> computeMap = CommonsUtil.castListToMap(containsCodeValues);
+    private double calculateRFourOne(EnterpriseVO enterprise, String riskType, Map<String, Double> targetWeightMap, Map<String, Double> computeMap) {
 
         List<CodeAndValueUseDouble> gisCodeValueList = gisValueService.getCodeValueByEntId(enterprise.getId());
         Map<String, Double> codeAndValueMap = CommonsUtil.castListToMap(gisCodeValueList);
+
+        double r411max = computeMap.get(ComputeConstantEnum.R_FOUR_ONE_ONE_MAX.getCode());
+        double r412max = computeMap.get(ComputeConstantEnum.R_FOUR_ONE_TWO_MAX.getCode());
 
         double r4101Value = codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ZERO_ONE.getCode()) == null ? 0
                 : codeAndValueMap.get(GisValueEnum.R_FOUR_ONE_ZERO_ONE.getCode());
@@ -797,7 +819,7 @@ public class GradingServiceImpl implements IGradingService {
         //R4.1 = R4.1.1*R4_1_1_w+R4.1.2*R4_1_2_w
         double r411 = r411Value * targetWeightMap.get(TargetEnum.R_FOUR_ONE_ONE.getCode() + riskType);
         double r412 = r412Value * targetWeightMap.get(TargetEnum.R_FOUR_ONE_TWO.getCode() + riskType);
-        double r41Value = r411 + r412;
+        double r41Value = r411 * 100 / r411max + r412 * 100 / r412max;
 
         TargetWeight targetWeight = getTargetWeightByCodeAndType(riskType, TargetEnum.R_FOUR_ONE.getCode());
         EntRiskAssessResult riskAssessResultList = getEntRiskAssessResults(enterprise, targetWeight.getId());
@@ -857,9 +879,12 @@ public class GradingServiceImpl implements IGradingService {
     private double calculateSecondaryControlMechanism(EnterpriseVO enterprise, String type,
                                                       Map<String, Double> targetWeightMap, Map<String, Double> computeMap) {
 
-        double r31w = targetWeightMap.get(TargetEnum.R_THREE_ONE.getCode() + type);
-        double r32w = targetWeightMap.get(TargetEnum.R_THREE_TWO.getCode() + type);
-        double r33w = targetWeightMap.get(TargetEnum.R_THREE_THREE.getCode() + type);
+        double r31w = ObjectUtils.isEmpty(targetWeightMap.get(TargetEnum.R_THREE_ONE.getCode() + type))
+                ? 0 : targetWeightMap.get(TargetEnum.R_THREE_ONE.getCode() + type);
+        double r32w = ObjectUtils.isEmpty(targetWeightMap.get(TargetEnum.R_THREE_TWO.getCode() + type))
+                ? 0 : targetWeightMap.get(TargetEnum.R_THREE_TWO.getCode() + type);
+        double r33w = ObjectUtils.isEmpty(targetWeightMap.get(TargetEnum.R_THREE_THREE.getCode() + type))
+                ? 0 : targetWeightMap.get(TargetEnum.R_THREE_THREE.getCode() + type);
 
         //calculate R3.1
         double threePointOneResult = secondaryControlMechanismOfOne(enterprise, type, computeMap);
@@ -878,7 +903,8 @@ public class GradingServiceImpl implements IGradingService {
      */
     private double secondaryControlMechanismOfOne(EnterpriseVO enterpriseVO, String riskType, Map<String, Double> computeMap) {
         double result = 0.0;
-        double r31max = computeMap.get(ComputeConstantEnum.R_THREE_ONE_MAX.getCode());
+        double r31max = ObjectUtils.isEmpty(computeMap.get(ComputeConstantEnum.R_THREE_ONE_MAX.getCode()))
+                ? 0 : computeMap.get(ComputeConstantEnum.R_THREE_ONE_MAX.getCode());
         TargetWeight targetWeight = getTargetWeightByCodeAndType(riskType, TargetEnum.R_THREE_ONE.getCode());
         //obtain the existing R3.1 calculation results of the enterprise
         EntRiskAssessResult entRiskAssessResultList = getEntRiskAssessResults(enterpriseVO, targetWeight.getId());
@@ -891,7 +917,7 @@ public class GradingServiceImpl implements IGradingService {
             result = ObjectUtils.isEmpty(riskControlPollutionValue) ? 0.0 : riskControlPollutionValue.getRiskControl();
             saveEntRiskAssessResult(enterpriseVO, targetWeight.getId(), result * 100 / r31max);
         }
-        return result;
+        return result * 100 / r31max;
     }
 
     /**
@@ -903,12 +929,20 @@ public class GradingServiceImpl implements IGradingService {
         List<CodeAndValueUseDouble> gisCodeValueList = gisValueService.getCodeValueByEntId(enterpriseVO.getId());
         Map<String, Double> codeAndValueMap = CommonsUtil.castListToMap(gisCodeValueList);
 
-        double r321w = targetWeightMap.get(TargetEnum.R_THREE_TWO_ONE.getCode() + riskType);
-        double r322w = targetWeightMap.get(TargetEnum.R_THREE_TWO_TWO.getCode() + riskType);
+        double r321w = ObjectUtils.isEmpty(targetWeightMap.get(TargetEnum.R_THREE_TWO_ONE.getCode() + riskType))
+                ? 0 : targetWeightMap.get(TargetEnum.R_THREE_TWO_ONE.getCode() + riskType);
+        double r322w = ObjectUtils.isEmpty(targetWeightMap.get(TargetEnum.R_THREE_TWO_TWO.getCode() + riskType))
+                ? 0 : targetWeightMap.get(TargetEnum.R_THREE_TWO_TWO.getCode() + riskType);
+
+        double r321max = ObjectUtils.isEmpty(computeMap.get(ComputeConstantEnum.R_THREE_TWO_ONE_MAX.getCode()))
+                ? 1 : computeMap.get(ComputeConstantEnum.R_THREE_TWO_ONE_MAX.getCode());
+        double r322max = ObjectUtils.isEmpty(computeMap.get(ComputeConstantEnum.R_THREE_TWO_TWO_MAX.getCode()))
+                ? 1 : computeMap.get(ComputeConstantEnum.R_THREE_TWO_TWO_MAX.getCode());
 
         double r321Value = codeAndValueMap.get(GisValueEnum.R_THREE_TWO_ONE.getCode()) == null ? 0
-                : codeAndValueMap.get(GisValueEnum.R_THREE_TWO_ONE.getCode());
-        double r322Value =0;
+                : codeAndValueMap.get(GisValueEnum.R_THREE_TWO_ONE.getCode()) * 100 / r321max;
+        double r322Value = 0;
+
 
         if (TargetWeightType.PROGRESSIVE_RISK.getCode().equals(riskType)) {
             //obtain the R3.2 index weight of the enterprise
@@ -921,7 +955,7 @@ public class GradingServiceImpl implements IGradingService {
                         new QueryWrapper<RiskControlPollutionValue>()
                                 .eq("area_code", enterpriseVO.getProvinceCode())
                                 .eq("valid", BaseEnum.VALID_YES.getCode()));
-                r322Value = ObjectUtils.isEmpty(riskControlPollutionValue) ? 0.0 : riskControlPollutionValue.getLandPollutionIndex();
+                r322Value = ObjectUtils.isEmpty(riskControlPollutionValue) ? 0.0 : riskControlPollutionValue.getLandPollutionIndex() / r322max;
 
                 result = r321Value * r321w + r322Value * r322w;
                 saveEntRiskAssessResult(enterpriseVO, targetWeight.getId(), result);
@@ -988,7 +1022,7 @@ public class GradingServiceImpl implements IGradingService {
      */
     private TargetWeight getTargetWeightByCodeAndType(String riskType, String targetCode) {
         TargetWeight targetWeight = targetWeightMapper.selectOne(new QueryWrapper<TargetWeight>()
-                .eq("type", TargetWeightType.PROGRESSIVE_RISK.getCode())
+                .eq("type", riskType)
                 .eq("code", targetCode)
                 .eq("valid", BaseEnum.VALID_YES.getCode()));
         return targetWeight;

@@ -20,6 +20,11 @@ public enum StatusEnum {
     VERIFIED("1030", "已核实"),
 
     /**
+     * fasting grading ing
+     */
+    FASTING("1040", "快速分级中"),
+
+    /**
      * Wait for the survey
      */
     W_SURVEY("1050", "待查勘"),

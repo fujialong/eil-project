@@ -20,4 +20,6 @@ public class EntRiskAssessResultQueryParam implements Serializable {
     private List<String> targetTypeList;
 
     private String targetCode;
+
+    private List<String> targetCodeList;
 }

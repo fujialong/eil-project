@@ -12,4 +12,5 @@ public class SurveyItemVO implements Serializable {
     private String id;
     private String targetWeightCode;
     private String targetBisCode;
+    private Integer needSelected;
 }

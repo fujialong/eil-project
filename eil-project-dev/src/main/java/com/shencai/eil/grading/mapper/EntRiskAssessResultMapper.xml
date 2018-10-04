@@ -66,6 +66,7 @@
             resultType="com.shencai.eil.grading.model.EntRiskAssessResultVO"
             parameterType="com.shencai.eil.grading.model.EntRiskAssessResultQueryParam">
         select
+            erar.id,
             tw.code targetCode,
             tw.type targetType,
             twgl.result_code gradeLineCode
@@ -75,6 +76,12 @@
         where erar.valid = 1
         <if test="targetCode != null and targetCode != ''">
             and tw.code = #{targetCode}
+        </if>
+        <if test="targetCodeList != null and targetCodeList.size > 0">
+            and tw.code in
+            <foreach collection="targetCodeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
         </if>
         <if test="enterpriseId != null and enterpriseId != ''">
             and erar.ent_id = #{enterpriseId}

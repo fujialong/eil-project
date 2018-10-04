@@ -99,9 +99,19 @@ public enum ComputeConstantEnum {
     R_TWO_ONE_MAX("R2_1_max", "R2_1_max", "R2_1_max"),
 
     /**
-     *R3_1max
+     * R3_1max
      */
-    R_THREE_ONE_MAX("R3_1max", "R3_1max", "R3_1max"),
+    R_THREE_ONE_MAX("R3_1_max", "R3_1_max", "R3_1_max"),
+
+    /**
+     * R3_2_1_max
+     */
+    R_THREE_TWO_ONE_MAX("R3_2_1_max", "R3_2_1_max", "R3_2_1_max"),
+
+    /**
+     * R3_2_2_max
+     */
+    R_THREE_TWO_TWO_MAX("R3_2_2_max", "R3_2_2_max", "R3_2_2_max"),
 
     /**
      * R3_3_1_min
@@ -122,6 +132,26 @@ public enum ComputeConstantEnum {
      * R3_3_1_max
      */
     R_THREE_THREE_TWO_MAX("R3_3_2_max", "R3.3.2极差法标准化最大值", "R3_3_2_max"),
+
+    /**
+     * R4_1_1_max
+     */
+    R_FOUR_ONE_ONE_MAX("R4_1_1_max", "R4_1_1_max", "R4_1_1_max"),
+
+    /**
+     * R4_1_2_max
+     */
+    R_FOUR_ONE_TWO_MAX("R4_1_2_max", "R4_1_2_max", "R4_1_2_max"),
+
+    /**
+     * R4_2_1_max
+     */
+    R_FOUR_TWO_ONE_MAX("R4_2_1_max", "R4_2_1_max", "R4_2_1_max"),
+
+    /**
+     * R4_2_2_max
+     */
+    R_FOUR_TWO_TWO_MAX("R4_2_2_max", "R4_2_2_max", "R4_2_2_max"),
 
     /**
      * R4_3_max

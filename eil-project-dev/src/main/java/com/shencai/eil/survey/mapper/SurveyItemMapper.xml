@@ -38,7 +38,8 @@
         select
             si.id,
             si.target_weight_code targetWeightCode,
-            sic.target_bis_code targetBisCode
+            sic.target_bis_code targetBisCode,
+            si.need_selected needSelected
         from survey_item si
             left join survey_item_category sic on sic.survey_item_id = si.id and sic.valid = 1
         where si.valid = 1
