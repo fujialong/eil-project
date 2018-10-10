@@ -48,4 +48,13 @@ public interface IGisValueService extends IService<GisValue> {
      * @return
      */
     List<CodeAndValueUseDouble> getCodeValueByEntId(String entId);
+
+    /**
+     * get gisValue code and value
+     *
+     * @param id
+     * @param selfGisCodes
+     * @return
+     */
+    List<CodeAndValueUseDouble> getGisValueCodeAndValue(String id, List<String> selfGisCodes);
 }

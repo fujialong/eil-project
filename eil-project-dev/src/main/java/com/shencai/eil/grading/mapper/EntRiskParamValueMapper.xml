@@ -59,4 +59,26 @@
             where rmpv.`value` = '1'
         ) a
     </select>
+
+    <select id="logicDeleteEntRiskParamValue"
+            parameterType="com.shencai.eil.grading.model.EntRiskParamValueParam">
+        update ent_risk_param_value set valid=0, update_time=#{updateTime}
+        where enterprise_id=#{enterpriseId}
+        and param_id in
+        (select
+        p.id
+        from param p
+        inner join template_mapping_param tmp on tmp.param_id = p.id and tmp.valid = 1
+        inner join param_template_category ptc on ptc.param_template_id = tmp.template_id
+        <if test="templateCategoryTypeList != null and templateCategoryTypeList.size > 0">
+            and ptc.type in
+            <foreach collection="templateCategoryTypeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        and ptc.valid = 1
+        where p.valid = 1)
+        and valid=1
+    </select>
+
 </mapper>

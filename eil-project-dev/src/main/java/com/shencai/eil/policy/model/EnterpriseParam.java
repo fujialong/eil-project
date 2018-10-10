@@ -8,5 +8,5 @@ import lombok.Data;
 @Data
 public class EnterpriseParam {
     private String id;
-    private Integer neeSurveyUpgrade;
+    private Integer needSurveyUpgrade;
 }

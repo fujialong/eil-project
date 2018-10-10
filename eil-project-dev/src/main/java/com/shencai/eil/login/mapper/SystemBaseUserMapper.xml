@@ -21,10 +21,12 @@
         <result column="deleteFlag" property="deleteFlag"/>
     </resultMap>
     <select id="menuList" resultType="com.shencai.eil.login.model.UserMenuVO">
+select * from (
  SELECT DISTINCT
         me.menuName,
         me.menuUrl,
-        me.remark menuEnglishName
+        me.remark menuEnglishName,
+        me.menuOrder
         FROM
         system_menu me
         INNER  JOIN system_right_menu rm ON me.menuCode = rm.menuCode and rm.deleteFlag = 0 and me.deleteFlag =0
@@ -34,7 +36,8 @@
         bu.userid = #{userId}
         AND me.parentMenuCode = 'eil'
         AND me.leaf = 1
-        ORDER BY me.menuOrder DESC
+        ) as tem
+        ORDER BY tem.menuOrder DESC
     </select>
     <select id="getRoleCode" resultType="java.lang.String">
         select roleCode from system_right_user where userid = #{userId}

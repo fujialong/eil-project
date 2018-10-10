@@ -55,12 +55,18 @@ public class GisValueServiceImpl extends ServiceImpl<GisValueMapper, GisValue> i
 
     @Override
     public double getValueByEntIdAndCode(String entId, String code) {
-        return this.baseMapper.getValueByEntIdAndCode(entId,code);
+        Double result = this.baseMapper.getValueByEntIdAndCode(entId, code);
+        return result == null ? 0 : result;
     }
 
     @Override
     public List<CodeAndValueUseDouble> getCodeValueByEntId(String entId) {
         return this.baseMapper.getCodeValueByEntId(entId);
+    }
+
+    @Override
+    public List<CodeAndValueUseDouble> getGisValueCodeAndValue(String entId, List<String> selfGisCodes) {
+        return this.baseMapper.getGisValueCodeAndValue(entId,selfGisCodes);
     }
 
 

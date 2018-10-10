@@ -16,4 +16,6 @@ public class UserMenuVO {
     private String menuEnglishName;
 
     private String menuUrl;
+
+    private String menuOrder;
 }

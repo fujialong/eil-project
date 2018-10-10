@@ -4,18 +4,18 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="com.shencai.eil.survey.entity.EntSurveyPlan">
-        <id column="id" property="id" />
-        <result column="ent_id" property="entId" />
-        <result column="survey_item_id" property="surveyItemId" />
-        <result column="default_result" property="defaultResult" />
-        <result column="excel_col_index" property="excelColIndex" />
-        <result column="ent_target_result_id" property="entTargetResultId" />
-        <result column="remark" property="remark" />
-        <result column="create_user_id" property="createUserId" />
-        <result column="create_time" property="createTime" />
-        <result column="update_user_id" property="updateUserId" />
-        <result column="update_time" property="updateTime" />
-        <result column="valid" property="valid" />
+        <id column="id" property="id"/>
+        <result column="ent_id" property="entId"/>
+        <result column="survey_item_id" property="surveyItemId"/>
+        <result column="default_result" property="defaultResult"/>
+        <result column="excel_col_index" property="excelColIndex"/>
+        <result column="ent_target_result_id" property="entTargetResultId"/>
+        <result column="remark" property="remark"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="valid" property="valid"/>
     </resultMap>
 
     <select id="pageBasicSurveyPlan" parameterType="com.shencai.eil.survey.model.EntSurveyPlanQueryParam"
@@ -29,7 +29,28 @@
         from ent_survey_plan esp
             inner join survey_item si
             on esp.survey_item_id = si.id and si.valid = 1 and si.type = 'basic'
+        <if test="param.categoryCode != null and param.categoryCode != ''">
+            inner join survey_item_category sic on sic.survey_item_id = si.id and sic.valid = 1 and sic.category_code = #{param.categoryCode}
+        </if>
         where esp.valid = 1 and esp.ent_id = #{param.enterpriseId}
+        order by si.sort_num
+    </select>
+
+    <select id="listBasicSurveyPlan" parameterType="com.shencai.eil.survey.model.EntSurveyPlanQueryParam"
+            resultType="com.shencai.eil.survey.model.EntSurveyPlanVO">
+        select
+            esp.id,
+            si.code,
+            si.name,
+            si.description,
+            esp.default_result defaultResult
+        from ent_survey_plan esp
+            inner join survey_item si
+            on esp.survey_item_id = si.id and si.valid = 1 and si.type = 'basic'
+        <if test="categoryCode != null and categoryCode != ''">
+            inner join survey_item_category sic on sic.survey_item_id = si.id and sic.valid = 1 and sic.category_code = #{categoryCode}
+        </if>
+        where esp.valid = 1 and esp.ent_id = #{enterpriseId}
         order by si.sort_num
     </select>
 
@@ -48,9 +69,53 @@
             si.has_attachment hasAttachment
         from ent_survey_plan esp
             inner join survey_item si on esp.survey_item_id = si.id and si.valid = 1 and si.type = 'intensive'
+            <if test="param.categoryCode != null and param.categoryCode != ''">
+                inner join survey_item_category sic on sic.survey_item_id = si.id and sic.valid = 1 and sic.category_code = #{param.categoryCode}
+            </if>
             left join ent_risk_assess_result erar on erar.id = esp.ent_target_result_id
         where esp.valid = 1 and esp.ent_id = #{param.enterpriseId}
         order by si.sort_num
+    </select>
+
+    <select id="listIntensiveSurveyPlan" parameterType="com.shencai.eil.survey.model.EntSurveyPlanQueryParam"
+            resultType="com.shencai.eil.survey.model.EntSurveyPlanVO">
+        select
+            esp.id,
+            si.code,
+            si.name,
+            si.description,
+            si.importance,
+            si.cost,
+            si.target_weight_code targetWeightCode,
+            erar.assess_value assessValue,
+            esp.default_result defaultResult,
+            si.has_attachment hasAttachment
+        from ent_survey_plan esp
+            inner join survey_item si on esp.survey_item_id = si.id and si.valid = 1 and si.type = 'intensive'
+        <if test="categoryCode != null and categoryCode != ''">
+            inner join survey_item_category sic on sic.survey_item_id = si.id and sic.valid = 1 and sic.category_code = #{categoryCode}
+        </if>
+            left join ent_risk_assess_result erar on erar.id = esp.ent_target_result_id
+        where esp.valid = 1 and esp.ent_id = #{enterpriseId}
+        order by si.sort_num
+    </select>
+
+    <select id="listEntSurveyPlan" parameterType="com.shencai.eil.survey.model.EntSurveyPlanQueryParam"
+            resultType="com.shencai.eil.survey.model.EntSurveyPlanVO">
+        select
+            esp.id,
+            esp.default_result defaultResult,
+            esp.excel_col_index excelColIndex,
+            sic.category_code categoryCode
+        from ent_survey_plan esp
+        left join survey_item_category sic on (sic.survey_item_id=esp.survey_item_id and sic.valid=1)
+        where
+        esp.ent_id = #{enterpriseId}
+        <if test="categoryCode != null and categoryCode != ''">
+            and sic.category_code = #{categoryCode}
+        </if>
+        and esp.valid = 1
+        order by esp.excel_col_index
     </select>
 
 </mapper>

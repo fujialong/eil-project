@@ -1,6 +1,8 @@
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @program: eil-project
@@ -14,17 +16,15 @@ public class TestCallPython {
      * @param args
      * @throws IOException
      */
-    public static void main(String[] args) throws IOException,InterruptedException
-
-    {
-       String address = System.getProperty("user.dir");
+    public static void main(String[] args) throws IOException, InterruptedException {
+        String address = System.getProperty("user.dir");
         System.out.println(address);
         String exe = "python";
-        String command = System.getProperty("user.dir")+"\\eil-project-dev\\src\\main\\resources\\py\\test.py";
-        String num1 = "1";
-        String num2 = "2";
-        String[] cmdArr = new String[]{exe,command,num1,num2};
-        Process process = Runtime.getRuntime().exec(cmdArr);
+        String command = System.getProperty("user.dir") + "\\eil-project-dev\\src\\main\\resources\\py\\Water_Model.py";
+        List<String> list = Arrays.asList(exe, command, "Thomas_Mode", "1","2", "3", "4","5", "6", "7", "8", "9", "10","12");
+
+        String[] parmass = (String[]) list.toArray();
+        Process process = Runtime.getRuntime().exec(parmass);
         InputStream is = process.getInputStream();
         DataInputStream dis = new DataInputStream(is);
         String str = dis.readLine();

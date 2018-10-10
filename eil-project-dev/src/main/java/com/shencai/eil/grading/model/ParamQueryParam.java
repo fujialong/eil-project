@@ -10,6 +10,11 @@ import java.util.List;
 @Data
 public class ParamQueryParam {
     private String templateCategoryType;
+    private String templateCategoryCode;
     private String enterpriseId;
     private List<String> ids;
+
+    private List<String> paramNameList;
+
+    private List<String> templateCategoryTypeList;
 }

@@ -11,15 +11,30 @@ import java.util.List;
  */
 @Data
 public class EntSurveyPlanVO implements Serializable {
+
     private String id;
+
     private String code;
+
     private String name;
+
     private String description;
+
     private Double importance;
+
     private Double cost;
+
     private String targetWeightCode;
+
     private Double assessValue;
+
     private String defaultResult;
+
+    private String categoryCode;
+
+    private Integer excelColIndex;
+
     private Integer hasAttachment;
+
     List<BaseFileupload> attachmentList;
 }

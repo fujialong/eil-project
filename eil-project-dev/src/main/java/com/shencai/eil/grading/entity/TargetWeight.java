@@ -19,7 +19,7 @@ public class TargetWeight extends Model<TargetWeight> {
 
     private String name;
 
-    private String weight;
+    private Double weight;
 
     private String type;
 
@@ -65,11 +65,11 @@ public class TargetWeight extends Model<TargetWeight> {
         this.name = name;
     }
 
-    public String getWeight() {
+    public Double getWeight() {
         return weight;
     }
 
-    public void setWeight(String weight) {
+    public void setWeight(Double weight) {
         this.weight = weight;
     }
 

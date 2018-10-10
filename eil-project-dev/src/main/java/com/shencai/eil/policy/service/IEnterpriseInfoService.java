@@ -3,6 +3,7 @@ package com.shencai.eil.policy.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.shencai.eil.gis.model.GisValueVO;
 import com.shencai.eil.policy.entity.EnterpriseInfo;
+import com.shencai.eil.policy.model.PolicyQueryParam;
 
 import java.util.List;
 
@@ -38,4 +39,6 @@ public interface IEnterpriseInfoService extends IService<EnterpriseInfo> {
      * @return
      */
     List<GisValueVO> listAllEntLocation();
+
+    EnterpriseInfo getEnterpriseInfo(PolicyQueryParam queryParam);
 }

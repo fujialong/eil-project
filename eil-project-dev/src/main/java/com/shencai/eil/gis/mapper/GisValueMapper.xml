@@ -18,10 +18,18 @@
         select distinct code from gis_value where ent_id=#{entId} and valid=1
     </select>
     <select id="getValueByEntIdAndCode" resultType="java.lang.Double">
-        select value from gis_value where ent_id = #{entId} and code = #{code} and valid = 1
+        select distinct value from gis_value where ent_id = #{entId} and code = #{code} and valid = 1
     </select>
     <select id="getCodeValueByEntId" resultType="com.shencai.eil.grading.model.CodeAndValueUseDouble">
         select code codeResult,value valueResult from gis_value where valid = 1 and ent_id = #{entId}
+    </select>
+    <select id="getGisValueCodeAndValue" resultType="com.shencai.eil.grading.model.CodeAndValueUseDouble">
+        select distinct code codeResult,value valueResult from gis_value where valid = 1 and ent_id = #{entId}
+        and code in
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+
     </select>
 
 </mapper>

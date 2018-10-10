@@ -24,6 +24,9 @@ public class EntRiskAssessResult extends Model<EntRiskAssessResult> {
     @TableField("assess_value")
     private Double assessValue;
 
+    @TableField("grade_line_id")
+    private String gradeLineId;
+
     @TableField("create_time")
     private Date createTime;
 
@@ -111,6 +114,14 @@ public class EntRiskAssessResult extends Model<EntRiskAssessResult> {
         this.createUserId = createUserId;
     }
 
+    public String getGradeLineId() {
+        return gradeLineId;
+    }
+
+    public void setGradeLineId(String gradeLineId) {
+        this.gradeLineId = gradeLineId;
+    }
+
     @Override
     protected Serializable pkVal() {
         return this.id;
@@ -127,6 +138,7 @@ public class EntRiskAssessResult extends Model<EntRiskAssessResult> {
         ", updateUserId=" + updateUserId +
         ", updateTime=" + updateTime +
         ", valid=" + valid +
+        ", gradLineId=" + gradeLineId +
         ", createUserId=" + createUserId +
         "}";
     }

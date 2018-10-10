@@ -27,7 +27,5 @@ public interface IEntSurveyPlanService extends IService<EntSurveyPlan> {
 
     Page<EntSurveyPlanVO> pageIntensiveSurveyPlan(EntSurveyPlanQueryParam queryParam);
 
-    void generateBasicSurveyPlan(String enterpriseId);
-
-    void generateIntensiveSurveyPlan(String enterpriseId);
+    void finishSurvey(String enterpriseId);
 }

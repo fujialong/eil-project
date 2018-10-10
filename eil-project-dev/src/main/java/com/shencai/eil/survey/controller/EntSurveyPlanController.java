@@ -4,6 +4,7 @@ package com.shencai.eil.survey.controller;
 import com.shencai.eil.model.Result;
 import com.shencai.eil.policy.model.EnterpriseParam;
 import com.shencai.eil.survey.model.EntSurveyPlanQueryParam;
+import com.shencai.eil.survey.service.IEntSurveyFileService;
 import com.shencai.eil.survey.service.IEntSurveyPlanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +26,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class EntSurveyPlanController {
     @Autowired
     private IEntSurveyPlanService entSurveyPlanService;
+    @Autowired
+    private IEntSurveyFileService entSurveyFileService;
 
     /**
      * get survey info of enterprise
@@ -59,16 +62,21 @@ public class EntSurveyPlanController {
     }
 
     @ResponseBody
-    @RequestMapping("generateBasicSurveyPlan")
-    public Result generateBasicSurveyPlan(String enterpriseId) {
-        entSurveyPlanService.generateBasicSurveyPlan(enterpriseId);
-        return Result.ok();
+    @RequestMapping("getFastGradingResult")
+    public Result getFastGradingResult(String enterpriseId) {
+        return Result.ok(entSurveyFileService.getFastGradingResult(enterpriseId));
     }
 
     @ResponseBody
-    @RequestMapping("generateIntensiveSurveyPlan")
-    public Result generateIntensiveSurveyPlan(String enterpriseId) {
-        entSurveyPlanService.generateIntensiveSurveyPlan(enterpriseId);
+    @RequestMapping("getExcelOfSurveyPlan")
+    public Result getExcelOfSurveyPlan(String enterpriseId, String sourceType) {
+        return Result.ok(entSurveyFileService.generateExcel(enterpriseId, sourceType));
+    }
+
+    @ResponseBody
+    @RequestMapping("finishSurvey")
+    public Result finishSurvey(String enterpriseId) {
+        entSurveyPlanService.finishSurvey(enterpriseId);
         return Result.ok();
     }
 }

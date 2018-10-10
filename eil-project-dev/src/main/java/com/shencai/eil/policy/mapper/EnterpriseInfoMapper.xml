@@ -31,7 +31,7 @@
         <result column="start_time" property="startTime"/>
         <result column="emission_mode_id" property="emissionModeId"/>
         <result column="status" property="status"/>
-        <result column="nee_survey_upgrade" property="neeSurveyUpgrade"/>
+        <result column="need_survey_upgrade" property="needSurveyUpgrade"/>
         <result column="risk_level" property="riskLevel"/>
     </resultMap>
 
@@ -74,6 +74,7 @@
             parameterType="com.shencai.eil.policy.model.PolicyQueryParam">
         select
         ei.id,
+        ei.audit_remark auditRemark,
         ei.name enterpriseName,
         ei.social_credit_code socialCreditCode,
         (select name from industry_category where id = ic.level_one_id and valid=1) industryCategoryName,
@@ -150,7 +151,7 @@
             ei.id,
             ei.status,
             (select name from sys_dictionary where type_code='ent_status' and code=ei.status and valid = 1) statusName,
-            ei.nee_survey_upgrade neeSurveyUpgrade,
+            ei.need_survey_upgrade needSurveyUpgrade,
             ei.risk_level riskLevel
         from enterprise_info ei
         where ei.id = #{enterpriseId} and ei.valid=1

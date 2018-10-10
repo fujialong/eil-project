@@ -10,7 +10,10 @@ import java.io.Serializable;
 @Data
 public class SurveyItemVO implements Serializable {
     private String id;
+    private String code;
+    private String name;
+    private String valueType;
     private String targetWeightCode;
-    private String targetBisCode;
+    private String categoryCode;
     private Integer needSelected;
 }

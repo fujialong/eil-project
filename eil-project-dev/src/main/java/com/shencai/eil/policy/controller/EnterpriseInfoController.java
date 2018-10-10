@@ -3,6 +3,7 @@ package com.shencai.eil.policy.controller;
 
 import com.shencai.eil.model.Result;
 import com.shencai.eil.policy.entity.EnterpriseInfo;
+import com.shencai.eil.policy.model.PolicyQueryParam;
 import com.shencai.eil.policy.service.IEnterpriseInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -25,6 +26,13 @@ public class EnterpriseInfoController {
     public Result saveEnterpriseInfo(EnterpriseInfo param) {
         enterpriseInfoService.saveEnterpriseInfo(param);
         return Result.ok();
+    }
+
+    @ResponseBody
+    @RequestMapping("/getEnterpriseInfo")
+    public Result getEnterpriseInfo(PolicyQueryParam queryParam) {
+        EnterpriseInfo enterpriseInfo = enterpriseInfoService.getEnterpriseInfo(queryParam);
+        return Result.ok(enterpriseInfo);
     }
 
 }

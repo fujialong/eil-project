@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.survey.mapper.GradeTemplateParamMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shencai.eil.survey.entity.GradeTemplateParam">
+        <id column="id" property="id" />
+        <result column="code" property="code" />
+        <result column="target_weight_id" property="targetWeightId" />
+        <result column="result_code" property="resultCode" />
+        <result column="param_code" property="paramCode" />
+        <result column="param_content" property="paramContent" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+    <select id="listGradeTemplateParam"
+            parameterType="com.shencai.eil.survey.model.GradeTemplateParamQueryParam"
+            resultType="com.shencai.eil.survey.model.GradeTemplateParamVO">
+        select
+            gtp.code,
+            tw.code targetWeightCode,
+            tw.type targetWeightType,
+            gtp.result_code resultCode,
+            gtp.param_code paramCode,
+            case when gtp.param_content is null then FORMAT(erar.assess_value, 2) else gtp.param_content end paramContent
+        from grade_template_param gtp
+            inner join ent_risk_assess_result erar on erar.target_weight_id = gtp.target_weight_id and erar.valid = 1
+            inner join target_weight_grade_line twgl on twgl.id = erar.grade_line_id and gtp.result_code = twgl.result_code and twgl.valid = 1
+            left join target_weight tw on tw.id = twgl.target_weight_id and tw.valid = 1
+        where erar.ent_id = #{enterpriseId}
+        union ALL
+        select
+            gtp.code,
+            NULL targetWeightCode,
+            NULL targetWeightType,
+            gtp.result_code resultCode,
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where code = 'risk-level' and result_code = (
+            select case when risk_level = '001' then '0' else '1' end result_code from enterprise_info
+            where id = #{enterpriseId}
+        )
+        union ALL
+        select
+            gtp.code,
+            NULL targetWeightCode,
+            NULL targetWeightType,
+            gtp.result_code resultCode,
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where code = 'R0' and result_code = (
+            select case when count(1) = 1 then '0' else '1' end result_code from ent_mapping_target_type
+            where id = #{enterpriseId}
+        )
+        union all
+        select
+            gtp.code,
+            NULL targetWeightCode,
+            NULL targetWeightType,
+            gtp.result_code resultCode,
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where code = 'R1' and result_code = (
+                select case when count(1) = 2 then '0' else '1' end result_code
+            from grade_template_param gtp
+            inner join ent_risk_assess_result erar on erar.target_weight_id = gtp.target_weight_id and erar.valid = 1
+            inner join target_weight_grade_line twgl on twgl.id = erar.grade_line_id and gtp.result_code = twgl.result_code and twgl.valid = 1
+            inner join target_weight tw on tw.id = twgl.target_weight_id and tw.valid = 1
+            where erar.ent_id = #{enterpriseId}
+            and tw.code = 'R1' and gtp.result_code = 'low' and gtp.code in ('R1-g-level', 'R1-s-level')
+        )
+        union all
+        select
+            gtp.code,
+            NULL targetWeightCode,
+            NULL targetWeightType,
+            gtp.result_code resultCode,
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where code = 'R3' and result_code = (
+                select case when count(1) = 2 then '0' else '1' end result_code
+            from grade_template_param gtp
+            inner join ent_risk_assess_result erar on erar.target_weight_id = gtp.target_weight_id and erar.valid = 1
+            inner join target_weight_grade_line twgl on twgl.id = erar.grade_line_id and gtp.result_code = twgl.result_code and twgl.valid = 1
+            inner join target_weight tw on tw.id = twgl.target_weight_id and tw.valid = 1
+            where erar.ent_id = #{enterpriseId}
+            and tw.code = 'R3' and gtp.result_code = 'low' and gtp.code in ('R3-g-level', 'R3-s-level')
+        )
+    </select>
+</mapper>

@@ -37,14 +37,44 @@
             resultType="com.shencai.eil.survey.model.SurveyItemVO">
         select
             si.id,
+            si.code,
             si.target_weight_code targetWeightCode,
-            sic.target_bis_code targetBisCode,
+        <if test="categoryCodeList != null and categoryCodeList.size > 0">
+            sic.category_code categoryCode,
+        </if>
             si.need_selected needSelected
         from survey_item si
-            left join survey_item_category sic on sic.survey_item_id = si.id and sic.valid = 1
+        <if test="categoryCodeList != null and categoryCodeList.size > 0">
+            left join survey_item_category sic on sic.survey_item_id = si.id
+              and sic.category_code in
+              <foreach collection="categoryCodeList" item="item" open="(" separator="," close=")">
+                  #{item}
+              </foreach>
+              and sic.valid = 1
+        </if>
         where si.valid = 1
         <if test="type != null and type != ''">
             and si.type = #{type}
         </if>
+        <choose>
+            <when test="categoryCodeList != null and categoryCodeList.size > 0 and type == 'intensive'">
+                order by sic.category_code, si.sort_num
+            </when>
+            <otherwise>
+                order by si.sort_num
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="listSurveyItemByCategory"
+            parameterType="com.shencai.eil.survey.model.SurveyItemQueryParam"
+            resultType="com.shencai.eil.survey.model.SurveyItemVO">
+        select
+            si.id,
+            si.code
+        from survey_item si
+        left join survey_item_category sic on sic.survey_item_id = si.id
+        where si.valid = 1 and sic.valid = 1 and sic.category_code = #{categoryCode}
+        order by si.sort_num
     </select>
 </mapper>

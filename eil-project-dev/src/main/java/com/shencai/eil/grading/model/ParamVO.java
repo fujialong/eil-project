@@ -9,6 +9,14 @@ import java.io.Serializable;
  */
 @Data
 public class ParamVO implements Serializable {
+
+    private String id;
+
     private String name;
+
     private String value;
+
+    private String templateCode;
+
+    private String templateCategoryType;
 }

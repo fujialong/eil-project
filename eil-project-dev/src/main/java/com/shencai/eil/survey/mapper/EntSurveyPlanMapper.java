@@ -19,6 +19,11 @@ import java.util.List;
  */
 public interface EntSurveyPlanMapper extends BaseMapper<EntSurveyPlan> {
     List<EntSurveyPlanVO> pageBasicSurveyPlan(Page<EntSurveyPlanVO> page, @Param("param") EntSurveyPlanQueryParam queryParam);
+    List<EntSurveyPlanVO> listBasicSurveyPlan(EntSurveyPlanQueryParam queryParam);
+
 
     List<EntSurveyPlanVO> pageIntensiveSurveyPlan(Page<EntSurveyPlanVO> page, @Param("param") EntSurveyPlanQueryParam queryParam);
+    List<EntSurveyPlanVO> listIntensiveSurveyPlan(EntSurveyPlanQueryParam queryParam);
+
+    List<EntSurveyPlanVO> listEntSurveyPlan(EntSurveyPlanQueryParam queryParam);
 }

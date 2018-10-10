@@ -7,17 +7,17 @@ public enum TemplateEnum {
     /**
      * Raw material
      */
-    RAW_OR_AUXILIARY_MATERIALS("raw_or_auxiliary_materials", "原辅料"),
-
-    /**
-     * Heavy metal
-     */
-    HEAVY_METAL("heavy_metal", "重金属"),
+    RAW_OR_AUXILIARY_MATERIALS("raw_material", "原辅料"),
+    PRODUCTION_STATUS_OF_PRODUCTS("production", "主要产品生产情况"),
+    OTHER_EMISSION_INTENSITY("other_emission_intensity", "其他污染物废气排放强度"),
+    OTHER_EFFLUENT_INTENSITY("other_effluent_intensity", "其他污染物废水排放强度"),
+    EMISSION_INTENSITY("emission_intensity", "重金属废气排放强度"),
+    EFFLUENT_INTENSITY("effluent_intensity", "重金属废水排放强度"),
 
     /**
      * A6
      */
-    CRITICAL_QUANTITY("A6", "临界量"),
+    CRITICAL_QUANTITY("A7", "临界量"),
 
     /**
      * A1
@@ -30,9 +30,9 @@ public enum TemplateEnum {
     BIOLOGICAL_ENRICHMENT("A2", "生物富集性"),
 
     /**
-     * D5
+     * A4
      */
-    CARCINOGENICITY("D5", "致癌性"),
+    CARCINOGENICITY("A4", "致癌性"),
 
     /**
      * A5

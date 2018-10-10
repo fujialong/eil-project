@@ -86,7 +86,7 @@ public class MpGenerator {
         // 策略配置
         StrategyConfig strategy = new StrategyConfig();
         strategy.setNaming(NamingStrategy.underline_to_camel);// 表名生成策略
-        strategy.setInclude(new String[]{"gis_value"}); // 需要生成的表//TODO
+        strategy.setInclude(new String[]{"gis_value_class"}); // 需要生成的表//TODO
         mpg.setStrategy(strategy);
 
         // 包配置

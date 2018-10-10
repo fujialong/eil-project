@@ -30,14 +30,14 @@ public enum StatusEnum {
     W_SURVEY("1050", "待查勘"),
 
     /**
-     * Wait for the survey
+     * in doing survey
      */
     I_SURVEY("1060", "查勘中"),
-
     /**
-     * Checked
+     * finish survey
      */
-    CHECKED("checked", "已审核");
+    IN_DEPTH_EVALUATION("1070", "查勘中");
+
 
     private String code;
     private String name;

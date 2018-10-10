@@ -47,7 +47,7 @@ public class EnterpriseVO implements Serializable {
 
     private String cantonCode;
 
-    private Integer neeSurveyUpgrade;
+    private Integer needSurveyUpgrade;
 
     private String riskLevel;
 }

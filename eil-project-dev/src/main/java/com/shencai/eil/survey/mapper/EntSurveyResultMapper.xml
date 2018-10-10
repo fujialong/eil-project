@@ -2,19 +2,47 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.shencai.eil.survey.mapper.EntSurveyResultMapper">
 
-    <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="com.shencai.eil.survey.entity.EntSurveyResult">
-        <id column="id" property="id" />
-        <result column="survey_plan_id" property="surveyPlanId" />
-        <result column="parent_id" property="parentId" />
-        <result column="result" property="result" />
-        <result column="excel_row_index" property="excelRowIndex" />
-        <result column="remark" property="remark" />
-        <result column="create_user_id" property="createUserId" />
-        <result column="create_time" property="createTime" />
-        <result column="update_user_id" property="updateUserId" />
-        <result column="update_time" property="updateTime" />
-        <result column="valid" property="valid" />
+        <id column="id" property="id"/>
+        <result column="survey_plan_id" property="surveyPlanId"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="result" property="result"/>
+        <result column="excel_row_index" property="excelRowIndex"/>
+        <result column="remark" property="remark"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="valid" property="valid"/>
     </resultMap>
 
+    <select id="listEntSurveyResult" parameterType="com.shencai.eil.survey.model.EntSurveyResultQueryParam"
+            resultType="com.shencai.eil.survey.model.EntSurveyResultVO">
+        select
+        si.name surveyItemName,
+        esr.result,
+        esr.excel_row_index excelRowIndex,
+        o.code optionCode
+        from ent_survey_result esr
+        inner join ent_survey_plan esp on esp.id=esr.survey_plan_id
+        <if test="sheetName != null and sheetName != ''">
+            and esp.ent_id=#{enterpriseId}
+        </if>
+        <if test="sheetName != null and sheetName != ''">
+            and esp.survey_item_id in (
+            select survey_item_id from survey_item_category where category_code=#{sheetName} and valid=1
+            )
+        </if>
+        and esp.valid=1
+        inner join survey_item si on esp.survey_item_id = si.id and si.valid = 1
+        <if test="categoryCode != null and categoryCode != ''">
+            inner join survey_item_category sic on sic.survey_item_id=si.id and sic.category_code=#{categoryCode} and
+            sic.valid=1
+        </if>
+        left join (select simo.survey_item_id,sio.code,sio.option_value from survey_item_mapping_option simo
+        inner join survey_item_option sio on simo.option_id=sio.id and sio.valid=1
+        where simo.valid = 1)o on (o.survey_item_id=si.id and o.option_value=esr.result)
+        where esr.valid=1
+        order by si.sort_num
+    </select>
 </mapper>

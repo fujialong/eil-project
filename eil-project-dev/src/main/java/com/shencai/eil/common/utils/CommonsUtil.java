@@ -23,10 +23,12 @@ public class CommonsUtil {
      * @return
      */
     public static Map<String, Double> castListToMap(List<CodeAndValueUseDouble> list) {
-        if (CollectionUtils.isEmpty(list)) {
-            return new HashMap(1);
-        }
         Map<String, Double> map = new HashMap<>(list.size());
+
+        if (CollectionUtils.isEmpty(list)) {
+            return map;
+        }
+
         for (CodeAndValueUseDouble codeValue : list) {
             map.put(codeValue.getCodeResult(), codeValue.getValueResult());
         }
@@ -39,12 +41,14 @@ public class CommonsUtil {
      * @return
      */
     public static Map<String, Double> castListToMapAppendKey(List<TargetResultVO> list) {
-        if (CollectionUtils.isEmpty(list)) {
-            return new HashMap(1);
-        }
         Map<String, Double> map = new HashMap<>(list.size());
+
+        if (CollectionUtils.isEmpty(list)) {
+            return map;
+        }
+
         for (TargetResultVO codeValue : list) {
-            map.put(codeValue.getTargetCode()+codeValue.getTargetType(), codeValue.getTargetResult());
+            map.put(codeValue.getTargetCode() + codeValue.getTargetType(), codeValue.getTargetResult());
         }
         return map;
     }

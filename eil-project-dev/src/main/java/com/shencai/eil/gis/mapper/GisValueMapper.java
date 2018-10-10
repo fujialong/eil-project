@@ -29,11 +29,11 @@ public interface GisValueMapper extends BaseMapper<GisValue> {
     /**
      * Get gisValue by enterpriseId and gisValueCode
      *
-     * @param entId   enterpriseId
-     * @param code gisValueCode
+     * @param entId enterpriseId
+     * @param code  gisValueCode
      * @return
      */
-    double getValueByEntIdAndCode(@Param("entId") String entId, @Param("code") String code);
+    Double getValueByEntIdAndCode(@Param("entId") String entId, @Param("code") String code);
 
     /**
      * Get code value by enterprise id
@@ -42,4 +42,13 @@ public interface GisValueMapper extends BaseMapper<GisValue> {
      * @return
      */
     List<CodeAndValueUseDouble> getCodeValueByEntId(String entId);
+
+    /**
+     * get gisValue code and value
+     *
+     * @param entId
+     * @param selfGisCodes
+     * @return
+     */
+    List<CodeAndValueUseDouble> getGisValueCodeAndValue(@Param("entId") String entId, @Param("list") List<String> selfGisCodes);
 }

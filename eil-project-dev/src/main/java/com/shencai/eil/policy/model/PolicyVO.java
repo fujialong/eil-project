@@ -15,6 +15,8 @@ public class PolicyVO implements Serializable {
 
     private String id;
 
+    private String auditRemark;
+
     private String enterpriseName;
 
     private String status;

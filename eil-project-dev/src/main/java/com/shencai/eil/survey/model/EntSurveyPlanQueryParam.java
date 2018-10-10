@@ -11,4 +11,5 @@ import java.io.Serializable;
 @Data
 public class EntSurveyPlanQueryParam extends PageParam implements Serializable {
     private String enterpriseId;
+    private String categoryCode;
 }

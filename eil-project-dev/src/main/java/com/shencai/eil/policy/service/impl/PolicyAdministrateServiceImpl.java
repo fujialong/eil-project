@@ -135,6 +135,9 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         } else {
             insertCheck(param);
         }
+        if (CollectionUtils.isEmpty(param.getAttachmentList())) {
+            throw new BusinessException("Uploaded attachments cannot be empty");
+        }
     }
 
     private void insertCheck(PolicyParam param) {

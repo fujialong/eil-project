@@ -19,7 +19,7 @@
             parameterType="com.shencai.eil.grading.model.EntRiskAssessResultQueryParam">
         select
         tw.id targetId,
-        erar.assess_value targetResult
+        erar.assess_value targetResult,
         from ent_risk_assess_result erar
         left join target_weight tw on (tw.id=erar.target_weight_id and tw.valid=1 and tw.visible=1)
         where
@@ -69,6 +69,7 @@
             erar.id,
             tw.code targetCode,
             tw.type targetType,
+            erar.assess_value targetResult,
             twgl.result_code gradeLineCode
         from ent_risk_assess_result erar
         inner join target_weight tw on tw.id=erar.target_weight_id and tw.valid=1 and tw.visible=1

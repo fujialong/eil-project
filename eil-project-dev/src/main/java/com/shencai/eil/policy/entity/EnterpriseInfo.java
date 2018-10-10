@@ -67,10 +67,13 @@ public class EnterpriseInfo extends Model<EnterpriseInfo> {
     private String emissionModeId;
 
     private String status;
-    @TableField("nee_survey_upgrade")
-    private Integer neeSurveyUpgrade;
+    @TableField("need_survey_upgrade")
+    private Integer needSurveyUpgrade;
     @TableField("risk_level")
     private String riskLevel;
+
+    @TableField("audit_remark")
+    private String auditRemark;
 
     @TableField("create_user_id")
     private String createUserId;
