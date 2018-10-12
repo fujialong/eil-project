@@ -12,14 +12,14 @@ public class SurveyFileTest extends BaseTest {
 
     @Test
     public void testExcel() {
-        String excelUrl = entSurveyFileService.generateExcel("ea453cfe70884dfaa8f2347e1c503438"
+        String excelUrl = entSurveyFileService.generateExcel("54b4ec41837f4fe6a62bc9fb732f341f"
                 , FileSourceType.BASIC_SURVEY_PLAN_EXCEL.getCode());
         System.out.print(excelUrl);
     }
 
     @Test
     public void testWord() {
-       String pdfFile = entSurveyFileService.getFastGradingResult("ea453cfe70884dfaa8f2347e1c503438");
+       String pdfFile = entSurveyFileService.getFastGradingResult("54b4ec41837f4fe6a62bc9fb732f341f");
        System.out.print(pdfFile);
     }
 }

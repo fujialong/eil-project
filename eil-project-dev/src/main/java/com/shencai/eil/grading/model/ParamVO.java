@@ -14,9 +14,15 @@ public class ParamVO implements Serializable {
 
     private String name;
 
+    private String remark;
+
     private String value;
 
     private String templateCode;
 
+    private String templateId;
+
     private String templateCategoryType;
+
+    private Integer codeNum;
 }

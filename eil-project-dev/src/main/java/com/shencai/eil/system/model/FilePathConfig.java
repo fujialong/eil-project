@@ -9,12 +9,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class FilePathConfig {
 
-    @Value("#{fileSetting['file.fastGrading.modelPath']}")
-    public String modelPath;
+    @Value("#{fileSetting['file.basic.fastGrading.modelPath']}")
+    public String basicModelPath;
+
+    @Value("#{fileSetting['file.intensive.fastGrading.modelPath']}")
+    public String intensiveModelPath;
 
     @Value("#{fileSetting['file.destPath']}")
     public String destPath;
-
-    @Value("#{fileSetting['file.downloadPath']}")
-    public String downloadPath;
 }

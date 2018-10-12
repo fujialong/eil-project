@@ -20,6 +20,7 @@
             resultType="com.shencai.eil.survey.model.EntSurveyResultVO">
         select
         si.name surveyItemName,
+        si.code surveyItemCode,
         esr.result,
         esr.excel_row_index excelRowIndex,
         o.code optionCode
@@ -45,4 +46,27 @@
         where esr.valid=1
         order by si.sort_num
     </select>
+
+    <select id="logDelete"
+            parameterType="com.shencai.eil.survey.model.EntSurveyResultParam">
+        update ent_survey_result set valid=0, update_time=#{updateTime}
+        where survey_plan_id in
+        (select
+        esp.id
+        from ent_survey_plan esp
+        inner join survey_item_category sic on sic.survey_item_id=esp.survey_item_id and esp.ent_id=#{enterpriseId}
+        <if test="surveyItemCategoryCode != null and surveyItemCategoryCode != ''">
+            and
+            <if test="surveyItemCategoryCode == 'Sheet0'">
+                sic.category_code = #{surveyItemCategoryCode}
+            </if>
+            <if test="surveyItemCategoryCode != 'Sheet0'">
+                sic.category_code != #{surveyItemCategoryCode}
+            </if>
+        </if>
+        and sic.valid = 1
+        where esp.valid = 1)
+        and valid=1
+    </select>
+
 </mapper>

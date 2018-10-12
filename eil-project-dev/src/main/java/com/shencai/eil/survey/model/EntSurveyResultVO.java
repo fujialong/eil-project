@@ -10,6 +10,8 @@ import java.io.Serializable;
 @Data
 public class EntSurveyResultVO implements Serializable {
 
+    private String surveyItemCode;
+
     private String surveyItemName;
 
     private String result;
@@ -24,6 +26,12 @@ public class EntSurveyResultVO implements Serializable {
 
     private String materialName;
 
-    private String output;
+    private String inputOrOutput;
+
+    private String mainPollutantName;
+
+    private Double emission;
+
+    private Double emissionConcentration;
 
 }

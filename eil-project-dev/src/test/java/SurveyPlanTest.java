@@ -18,15 +18,15 @@ public class SurveyPlanTest extends BaseTest{
 
     @Test
     public void getSurveyInfo() {
-        EnterpriseVO enterpriseVO = entSurveyPlanService.getEntSurveyInfo("ea453cfe70884dfaa8f2347e1c503438");
+        EnterpriseVO enterpriseVO = entSurveyPlanService.getEntSurveyInfo("21bc2e7d6fd54019a1d36b36ad07ff15");
         System.out.print("finish");
     }
 
     @Test
     public void surveyUpgrade() {
         EnterpriseParam param = new EnterpriseParam();
-        param.setId("ea453cfe70884dfaa8f2347e1c503438");
-        param.setNeedSurveyUpgrade(0);
+        param.setId("993c7259e171404db218af55477c6776");
+        param.setNeedSurveyUpgrade(1);
         entSurveyPlanService.surveyUpgrade(param);
         System.out.print("finish");
     }

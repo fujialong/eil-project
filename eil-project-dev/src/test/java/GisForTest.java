@@ -1,5 +1,3 @@
-package com.shencai.eil.grading.service.impl;
-
 import cn.hutool.core.thread.ThreadUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.power.common.util.ObjectUtil;
@@ -23,7 +21,6 @@ import com.shencai.eil.risk.service.IRiskControlPollutionValueService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
@@ -34,9 +31,8 @@ import java.util.concurrent.*;
  * @author zhoujx
  * @date 2018/9/19
  */
-@Service
 @Slf4j
-public class GradingServiceImpl implements IGradingService {
+public class GisForTest {
 
     public static final double DOUBLE_DEFAULT_VALUE = 0.0;
     private final static int THREAD_POOL_SIZE = 3;
@@ -87,29 +83,20 @@ public class GradingServiceImpl implements IGradingService {
     @Autowired
     private ITargetWeightGradeLineService targetWeightGradeLineService;
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void execute(GradingParam param) {
-        EnterpriseVO enterprise = getEnterpriseInfo(param.getEnterpriseId());
-        disposeEnterpriseRiskProfileData(enterprise);
-        List<String> riskIndicatorSystemType = determineEnterpriseRiskIndicatorSystem(enterprise);
-        calculateRu(enterprise, riskIndicatorSystemType);
-    }
+    private static double suddenRu;
 
-    @Override
+    private static double progressRu;
+
+
     public GradingVO getGradingResult(GradingQueryParam queryParam) {
         EnterpriseVO enterpriseInfo = getEnterpriseInfo(queryParam.getEnterpriseId());
-
         if (StatusEnum.VERIFIED.getCode().equals(enterpriseInfo.getStatus())) {
             updateEnterpriseStatus(enterpriseInfo, StatusEnum.FASTING.getCode());
             disposeEnterpriseRiskProfileData(enterpriseInfo);
             List<String> riskIndicatorSystemType = determineEnterpriseRiskIndicatorSystem(enterpriseInfo);
             ThreadUtil.execute(() -> {
-                try {
-                    calculateRu(enterpriseInfo, riskIndicatorSystemType);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                calculateRu(enterpriseInfo, riskIndicatorSystemType);
+
             });
         }
 
@@ -148,20 +135,24 @@ public class GradingServiceImpl implements IGradingService {
      */
     public void calculateRu(EnterpriseVO enterpriseInfo, List<String> riskIndicatorSystemType) {
         List<TargetResultVO> targetList = targetWeightService.lisTargetWeightTypeAndWeight(null);
-        //use code+type as key,weight as value
         Map<String, Double> targetWeightMap = CommonsUtil.castListToMapAppendKey(targetList);
         List<CodeAndValueUseDouble> containsCodeValues = computeConstantService.listCodeValue();
         Map<String, Double> computeMap = CommonsUtil.castListToMap(containsCodeValues);
-
+        //计算Ru的结果是否已经保存
         for (String calculateType : riskIndicatorSystemType) {
             TargetWeight targetWeight = getTargetWeightByCodeAndType(calculateType, TargetEnum.R_U.getCode());
             EntRiskAssessResult entRiskAssessResult = getEntRiskAssessResult(enterpriseInfo, targetWeight.getId());
-            if (ObjectUtils.isEmpty(entRiskAssessResult)) {
-                double ruResult = threadTask(targetWeightMap, riskIndicatorSystemType, enterpriseInfo, calculateType, computeMap);
-                entRiskAssessResult = buildEntRiskAssessResult(enterpriseInfo.getId(), ruResult, targetWeight.getId());
-                entRiskAssessResultMapper.insert(entRiskAssessResult);
-            }
         }
+
+        threadTask(targetWeightMap, riskIndicatorSystemType, enterpriseInfo, computeMap);
+
+
+     /*   if (ObjectUtils.isEmpty(entRiskAssessResult)) {
+            double ruResult = threadTask(targetWeightMap, riskIndicatorSystemType, enterpriseInfo, calculateType, computeMap);
+            entRiskAssessResult = buildEntRiskAssessResult(enterpriseInfo.getId(), ruResult, targetWeight.getId());
+            entRiskAssessResultMapper.insert(entRiskAssessResult);
+        }
+*/
         updateEnterpriseStatus(enterpriseInfo, StatusEnum.W_SURVEY.getCode());
     }
 
@@ -169,17 +160,17 @@ public class GradingServiceImpl implements IGradingService {
      * thread run task
      */
     public double threadTask(Map<String, Double> targetWeightMap, List<String> riskIndicatorSystemType,
-                             EnterpriseVO enterpriseInfo, String calculateType, Map<String, Double> computeMap) {
+                             EnterpriseVO enterpriseInfo, Map<String, Double> computeMap) {
         BlockingQueue<Runnable> workQuene = new ArrayBlockingQueue<>(10);
         ThreadPoolExecutor executor = new ThreadPoolExecutor(THREAD_POOL_SIZE, MAX_THREAD_POOL_SIZE,
                 0, TimeUnit.MICROSECONDS, workQuene);
 
-        double r1w = targetWeightMap.getOrDefault(TargetEnum.RISK_FACTOR.getCode() + calculateType, DOUBLE_DEFAULT_VALUE);
+      /*  double r1w = targetWeightMap.getOrDefault(TargetEnum.RISK_FACTOR.getCode() + calculateType, DOUBLE_DEFAULT_VALUE);
         double r2w = targetWeightMap.getOrDefault(TargetEnum.PRIMARY_CONTROL_MECHANISM.getCode() + calculateType, DOUBLE_DEFAULT_VALUE);
         double r3w = targetWeightMap.getOrDefault(TargetEnum.SECONDARY_CONTROL_MECHANISM.getCode() + calculateType, DOUBLE_DEFAULT_VALUE);
-        double r4w = targetWeightMap.getOrDefault(TargetEnum.RECEPTOR_SENSITIVITY.getCode() + calculateType, DOUBLE_DEFAULT_VALUE);
+        double r4w = targetWeightMap.getOrDefault(targetWeightMap.get(TargetEnum.RECEPTOR_SENSITIVITY.getCode() + calculateType), DOUBLE_DEFAULT_VALUE);*/
 
-        CompletionService completionService = new ExecutorCompletionService(executor);
+       /* CompletionService completionService = new ExecutorCompletionService(executor);
         List<String> list = Arrays.asList("R1", "R2", "R3", "R4");
         for (String type : list) {
             completionService.submit(new Callable() {
@@ -189,7 +180,7 @@ public class GradingServiceImpl implements IGradingService {
                 public Object call() throws Exception {
                     switch (type) {
                         case "R1":
-                            result = r1w * calculateRiskFactor(enterpriseInfo, calculateType, computeMap);
+                            result = r1w * calculateRiskFactor(enterpriseInfo, riskIndicatorSystemType, computeMap);
                             break;
                         case "R2":
                             result = r2w * calculateRtwo(enterpriseInfo, calculateType, computeMap);
@@ -217,8 +208,8 @@ public class GradingServiceImpl implements IGradingService {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-        return computerResult;
+        }*/
+        return 0.0;
     }
 
 
@@ -239,9 +230,6 @@ public class GradingServiceImpl implements IGradingService {
         return riskAssessResult.getAssessValue();
     }
 
-    @Override
-    public void gisTest(EnterpriseVO enterpriseVO) {
-    }
 
     private GradingVO getReturnData(EnterpriseVO enterpriseInfo, List<TargetResultVO> targetResultOfRu) {
         GradingVO returnData = new GradingVO();
@@ -342,21 +330,21 @@ public class GradingServiceImpl implements IGradingService {
      * calculate risk factor R1
      */
     private double calculateRiskFactor(EnterpriseVO enterprise,
-                                       String riskType, Map<String, Double> computeMap) {
-        TargetWeight targetWeight = getTargetWeightByCodeAndType(riskType, TargetEnum.RISK_FACTOR.getCode());
+                                       List<String> riskIndicatorSystemType, Map<String, Double> computeMap) {
+        // TargetWeight targetWeight = getTargetWeightByCodeAndType(riskType, TargetEnum.RISK_FACTOR.getCode());
         //obtain the existing R1 calculation results of the enterprise
-        EntRiskAssessResult riskAssessResultList = getEntRiskAssessResult(enterprise, targetWeight.getId());
+      /*  EntRiskAssessResult riskAssessResultList = getEntRiskAssessResult(enterprise, targetWeight.getId());
         if (ObjectUtils.isEmpty(riskAssessResultList)) {
             //calculate R1.1
-            double onePointOneResult = firstStepOfRiskFactorCalculation(enterprise, riskType, computeMap);
+            double onePointOneResult = firstStepOfRiskFactorCalculation(enterprise, riskIndicatorSystemType, computeMap);
             //calculate R1.2
             double onePointTwoResult = secondStepOfRiskFactorCalculation(enterprise, riskType, computeMap);
             EntRiskAssessResult riskAssessResult = buildEntRiskAssessResult(enterprise.getId(), onePointOneResult + onePointTwoResult, targetWeight.getId());
             entRiskAssessResultMapper.insert(riskAssessResult);
 
             return onePointOneResult + onePointTwoResult;
-        }
-        return riskAssessResultList.getAssessValue();
+        }*/
+        return 0.0;
     }
 
     /**
@@ -383,6 +371,7 @@ public class GradingServiceImpl implements IGradingService {
                 double standardizedResult = progressiveResult * 100 / r11max1;
                 EntRiskAssessResult entRiskAssessResult = buildEntRiskAssessResult(enterprise.getId(), standardizedResult, targetWeight.getId());
                 entRiskAssessResultMapper.insert(entRiskAssessResult);
+                progressRu += standardizedResult * targetWeight.getWeight();
                 return standardizedResult * targetWeight.getWeight();
             }
             if (TargetWeightType.SUDDEN_RISK.getCode().equals(type)) {
@@ -392,6 +381,7 @@ public class GradingServiceImpl implements IGradingService {
                 double standardizedResult = suddenResult * 100 / r11max2;
                 EntRiskAssessResult entRiskAssessResult = buildEntRiskAssessResult(enterprise.getId(), standardizedResult, targetWeight.getId());
                 entRiskAssessResultMapper.insert(entRiskAssessResult);
+                suddenRu += standardizedResult * targetWeight.getWeight();
                 return standardizedResult * targetWeight.getWeight();
             }
         }
@@ -479,7 +469,7 @@ public class GradingServiceImpl implements IGradingService {
         double r2202Value = gisValueService.getValueByEntIdAndCode(enterprise.getId(), GisValueEnum.R_TWO_TWO_ZERO_TWO.getCode());
 
         double result = (r2201Value * sw1Value + r2202Value * sw2Value) / ba2Value;
-        return result;
+        return result / r22max;
     }
 
 
@@ -995,11 +985,11 @@ public class GradingServiceImpl implements IGradingService {
     }
 
     private List<RiskMaterialVO> listRiskMaterial(EnterpriseVO enterprise,
-                                                  List<EntRiskParamValueVO> entRiskParamValueList) {
+                                                  List<EntRiskParamValueVO> envRiskParamValueList) {
         List<String> riskMaterialNameList = new ArrayList<>();
         riskMaterialNameList.add(enterprise.getMainProductName());
-        for (EntRiskParamValueVO entRiskParamValue : entRiskParamValueList) {
-            riskMaterialNameList.add(entRiskParamValue.getName());
+        for (EntRiskParamValueVO envRiskParamValue : envRiskParamValueList) {
+            riskMaterialNameList.add(envRiskParamValue.getName());
         }
         RiskMaterialQueryParam queryParam = new RiskMaterialQueryParam();
         queryParam.setRiskMaterialNameList(riskMaterialNameList);
@@ -1099,46 +1089,43 @@ public class GradingServiceImpl implements IGradingService {
      * calculate progressive risk R1.1
      */
     private double calculateProgressiveSecondaryIndicatorsOfRiskFactors(EnterpriseVO enterprise,
-                                                                        List<EntRiskParamValueVO> entRiskParamValueList,
+                                                                        List<EntRiskParamValueVO> envRiskParamValueList,
                                                                         List<RiskMaterialVO> riskMaterialList) {
+        String mainProductName = enterprise.getMainProductName();
+        Double mainProductQty = enterprise.getMainProductQty();
+        double mainProductBioavailability = 0;
+        double mainProductBiologicalEnrichment = 0;
+        double mainProductCarcinogenicity = 0;
+        double mainProductStability = 0;
+        for (RiskMaterialVO riskMaterialVO : riskMaterialList) {
+            if (mainProductName.equals(riskMaterialVO.getName())) {
+                String templateParamCode = riskMaterialVO.getTemplateParamCode();
+                if (TemplateEnum.STABILITY.getCode().equals(templateParamCode)) {
+                    Double stability = Double.valueOf(riskMaterialVO.getValue());
+                    if (stability == 0) {
+                        break;
+                    }
+                    mainProductStability = Double.valueOf(riskMaterialVO.getValue());
+                }
+                if (TemplateEnum.BIOAVAILABILITY.getCode().equals(templateParamCode)) {
+                    mainProductBioavailability = Double.valueOf(riskMaterialVO.getValue());
+                }
+                if (TemplateEnum.BIOLOGICAL_ENRICHMENT.getCode().equals(templateParamCode)) {
+                    mainProductBiologicalEnrichment = Double.valueOf(riskMaterialVO.getValue());
+                }
+                if (TemplateEnum.CARCINOGENICITY.getCode().equals(templateParamCode)) {
+                    mainProductCarcinogenicity = Double.valueOf(riskMaterialVO.getValue());
+                }
+            }
+        }
         double k1 = getK1();
         Double yield = enterprise.getYield();
         double progressiveSecondaryIndicatorsOfRiskFactors = 0;
-        //If the raw materials are less than five, the main product is added to the calculation
-        if (entRiskParamValueList.size() < 5) {
-            String mainProductName = enterprise.getMainProductName();
-            Double mainProductQty = enterprise.getMainProductQty();
-            double mainProductBioavailability = 0;
-            double mainProductBiologicalEnrichment = 0;
-            double mainProductCarcinogenicity = 0;
-            double mainProductStability = 0;
-            for (RiskMaterialVO riskMaterialVO : riskMaterialList) {
-                if (mainProductName.equals(riskMaterialVO.getName())) {
-                    String templateParamCode = riskMaterialVO.getTemplateParamCode();
-                    if (TemplateEnum.STABILITY.getCode().equals(templateParamCode)) {
-                        Double stability = Double.valueOf(riskMaterialVO.getValue());
-                        if (stability == 0) {
-                            break;
-                        }
-                        mainProductStability = Double.valueOf(riskMaterialVO.getValue());
-                    }
-                    if (TemplateEnum.BIOAVAILABILITY.getCode().equals(templateParamCode)) {
-                        mainProductBioavailability = Double.valueOf(riskMaterialVO.getValue());
-                    }
-                    if (TemplateEnum.BIOLOGICAL_ENRICHMENT.getCode().equals(templateParamCode)) {
-                        mainProductBiologicalEnrichment = Double.valueOf(riskMaterialVO.getValue());
-                    }
-                    if (TemplateEnum.CARCINOGENICITY.getCode().equals(templateParamCode)) {
-                        mainProductCarcinogenicity = Double.valueOf(riskMaterialVO.getValue());
-                    }
-                }
-            }
-            if (mainProductStability == 1 && mainProductCarcinogenicity != 0) {
-                progressiveSecondaryIndicatorsOfRiskFactors = mainProductQty / k1 * mainProductBioavailability
-                        * mainProductBiologicalEnrichment / mainProductCarcinogenicity;
-            }
+        if (mainProductStability == 1 && mainProductCarcinogenicity != 0) {
+            progressiveSecondaryIndicatorsOfRiskFactors = mainProductQty / k1 * mainProductBioavailability
+                    * mainProductBiologicalEnrichment / mainProductCarcinogenicity;
         }
-        for (EntRiskParamValueVO riskParamValue : entRiskParamValueList) {
+        for (EntRiskParamValueVO riskParamValue : envRiskParamValueList) {
             if (riskParamValue.getStability() == 1
                     && riskParamValue.getBioavailability() != null && riskParamValue.getBiologicalEnrichment() != null
                     && riskParamValue.getCarcinogenicity() != null && riskParamValue.getCarcinogenicity() != 0) {
@@ -1154,29 +1141,23 @@ public class GradingServiceImpl implements IGradingService {
      * calculate sudden risk R1.1
      */
     private double calculateSuddenSecondaryIndicatorsOfRiskFactors(EnterpriseVO enterprise,
-                                                                   List<EntRiskParamValueVO> entRiskParamValueList,
+                                                                   List<EntRiskParamValueVO> envRiskParamValueList,
                                                                    List<RiskMaterialVO> riskMaterialList) {
-        double k1 = getK1();
-        Double yield = enterprise.getYield();
-        double suddenSecondaryIndicatorsOfRiskFactors = 0;
-        //If the raw materials are less than five, the main product is added to the calculation
-        if (entRiskParamValueList.size() < 5) {
-            String mainProductName = enterprise.getMainProductName();
-            Double mainProductQty = enterprise.getMainProductQty();
-            double mainProductCriticalQuantity = 0;
-            for (RiskMaterialVO riskMaterialVO : riskMaterialList) {
-                if (mainProductName.equals(riskMaterialVO.getName())) {
-                    if (TemplateEnum.CRITICAL_QUANTITY.getCode().equals(riskMaterialVO.getTemplateParamCode())) {
-                        mainProductCriticalQuantity = Double.parseDouble(riskMaterialVO.getValue());
-                        break;
-                    }
+        String mainProductName = enterprise.getMainProductName();
+        Double mainProductQty = enterprise.getMainProductQty();
+        double mainProductCriticalQuantity = 0;
+        for (RiskMaterialVO riskMaterialVO : riskMaterialList) {
+            if (mainProductName.equals(riskMaterialVO.getName())) {
+                if (TemplateEnum.CRITICAL_QUANTITY.getCode().equals(riskMaterialVO.getTemplateParamCode())) {
+                    mainProductCriticalQuantity = Double.parseDouble(riskMaterialVO.getValue());
+                    break;
                 }
             }
-            if (mainProductCriticalQuantity > 0) {
-                suddenSecondaryIndicatorsOfRiskFactors = mainProductQty / k1 / mainProductCriticalQuantity;
-            }
         }
-        for (EntRiskParamValueVO riskParamValue : entRiskParamValueList) {
+        double k1 = getK1();
+        Double yield = enterprise.getYield();
+        double suddenSecondaryIndicatorsOfRiskFactors = mainProductQty / k1 / mainProductCriticalQuantity;
+        for (EntRiskParamValueVO riskParamValue : envRiskParamValueList) {
             if (riskParamValue.getCriticalQuantity() != null && riskParamValue.getCriticalQuantity() != 0) {
                 suddenSecondaryIndicatorsOfRiskFactors +=
                         (riskParamValue.getValue() * yield) / k1 / riskParamValue.getCriticalQuantity();

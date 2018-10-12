@@ -21,7 +21,7 @@ public enum ComputeConstantEnum {
     /**
      * d3
      */
-    D_THREE("d2", "R3.3.2计算土壤质地在扩散方面的性质时使用", "d3"),
+    D_THREE("d3", "R3.3.2计算土壤质地在扩散方面的性质时使用", "d3"),
 
     /**
      * p1

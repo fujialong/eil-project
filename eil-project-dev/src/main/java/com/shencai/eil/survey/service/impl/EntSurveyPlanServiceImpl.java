@@ -275,7 +275,15 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
         for (int i = 0; i < paramList.size(); i++) {
             if (ObjectUtils.isNotNull(yield)) {
                 Double result = Double.valueOf(paramList.get(i).getValue()) * yield;
-                builder.append(paramList.get(i).getName()
+                String[] splitArray = paramList.get(i).getRemark().split("/");
+                String name;
+                if (splitArray.length > 1) {
+                    name = splitArray[0] + "）";
+                } else {
+                    name = paramList.get(i).getName();
+                }
+
+                builder.append(name
                         + ":"
                         + BigDecimal.valueOf(result).setScale(2, BigDecimal.ROUND_HALF_UP));
             } else {
@@ -414,18 +422,14 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
         if (ObjectUtil.isNull(enterpriseInfo)) {
             throw new BusinessException("enterprise is not exist");
         }
-        List<BaseFileupload> files = baseFileuploadMapper.selectList(new QueryWrapper<BaseFileupload>()
-                .eq("source_id", enterpriseId)
-                .in("stype", Arrays.asList(new String[]{FileSourceType.BASIC_SURVEY_PLAN_UPLOAD.getCode()
-                        , FileSourceType.INTENSIVE_SURVEY_PLAN_UPLOAD.getCode()}))
-                .eq("valid", BaseEnum.VALID_YES.getCode()));
+        List<BaseFileupload> files = listFiles(enterpriseId);
 
         if (RiskLevel.HIGH.getCode().equals(enterpriseInfo.getRiskLevel())) {
             if (CollectionUtils.isEmpty(files)) {
                 throw new BusinessException("please upload basic and intensive survey report!");
             } else if (files.size() != 2) {
                 throw new BusinessException(FileSourceType.BASIC_SURVEY_PLAN_UPLOAD.getCode().equals(files.get(0).getStype())
-                        ? "please upload intensive survey report!": "please upload intensive survey report!");
+                        ? "please upload intensive survey report!": "please upload basic survey report!");
             }
         } else {
             if (CollectionUtils.isEmpty(files)) {
@@ -435,5 +439,13 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
         enterpriseInfo.setStatus(StatusEnum.IN_DEPTH_EVALUATION.getCode());
         enterpriseInfo.setUpdateTime(DateUtil.getNowTimestamp());
         enterpriseInfoMapper.update(enterpriseInfo, new QueryWrapper<EnterpriseInfo>().eq("id", enterpriseId));
+    }
+
+    private List<BaseFileupload> listFiles(String enterpriseId) {
+        return baseFileuploadMapper.selectList(new QueryWrapper<BaseFileupload>()
+                    .eq("source_id", enterpriseId)
+                    .in("stype", Arrays.asList(new String[]{FileSourceType.BASIC_SURVEY_PLAN_UPLOAD.getCode()
+                            , FileSourceType.INTENSIVE_SURVEY_PLAN_UPLOAD.getCode()}))
+                    .eq("valid", BaseEnum.VALID_YES.getCode()));
     }
 }

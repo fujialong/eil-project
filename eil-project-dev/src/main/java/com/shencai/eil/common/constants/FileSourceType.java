@@ -5,6 +5,7 @@ package com.shencai.eil.common.constants;
  */
 public enum FileSourceType {
     ENT_INFO("ent_info", "保单附件"),
+    INTENSIVE_SURVEY("intensive_survey", "查勘强化表附件"),
     BASIC_FAST_GRADING_FILE("basic_fast_grading_file", "基础快速分级报告"),
     FAST_GRADING_FILE("fast_grading_file", "快速分级报告"),
     BASIC_SURVEY_PLAN_EXCEL("basic_survey_plan_excel", "基础勘查模板"),

@@ -143,7 +143,7 @@ public enum GisValueEnum {
     /**
      * R4_2_1_02
      */
-    R_FOUR_TWO_ONE_ZERO_TWO("R4_1_1_02", "企业1-5km缓冲区覆盖范围的水田和旱田面积", "R4_2_1_02"),
+    R_FOUR_TWO_ONE_ZERO_TWO("R4_2_1_02", "企业1-5km缓冲区覆盖范围的水田和旱田面积", "R4_2_1_02"),
 
 
     /**

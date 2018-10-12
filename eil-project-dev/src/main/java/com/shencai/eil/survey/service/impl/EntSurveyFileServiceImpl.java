@@ -1,6 +1,9 @@
 package com.shencai.eil.survey.service.impl;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.poi.excel.ExcelReader;
+import cn.hutool.poi.excel.ExcelUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
@@ -8,20 +11,34 @@ import com.shencai.eil.common.constants.*;
 import com.shencai.eil.common.utils.DateUtil;
 import com.shencai.eil.common.utils.StringUtil;
 import com.shencai.eil.exception.BusinessException;
+import com.shencai.eil.grading.entity.EntMappingTargetType;
+import com.shencai.eil.grading.entity.EntRiskParamValue;
+import com.shencai.eil.grading.entity.Param;
+import com.shencai.eil.grading.entity.TemplateMappingParam;
+import com.shencai.eil.grading.mapper.EntMappingTargetTypeMapper;
 import com.shencai.eil.grading.mapper.ParamMapper;
+import com.shencai.eil.grading.model.EntRiskParamValueParam;
 import com.shencai.eil.grading.model.ParamQueryParam;
 import com.shencai.eil.grading.model.ParamVO;
+import com.shencai.eil.grading.service.IEntRiskParamValueService;
+import com.shencai.eil.grading.service.IParamService;
+import com.shencai.eil.grading.service.ITemplateMappingParamService;
 import com.shencai.eil.policy.entity.EnterpriseInfo;
 import com.shencai.eil.policy.mapper.EnterpriseInfoMapper;
+import com.shencai.eil.survey.constants.ExcelEnum;
+import com.shencai.eil.survey.constants.ExcelSheetName;
+import com.shencai.eil.survey.entity.EntSurveyResult;
 import com.shencai.eil.survey.mapper.EntSurveyPlanMapper;
 import com.shencai.eil.survey.mapper.GradeTemplateParamMapper;
 import com.shencai.eil.survey.mapper.SurveyItemCategoryMapper;
 import com.shencai.eil.survey.mapper.SurveyItemOptionMapper;
 import com.shencai.eil.survey.model.*;
 import com.shencai.eil.survey.service.IEntSurveyFileService;
+import com.shencai.eil.survey.service.IEntSurveyResultService;
 import com.shencai.eil.system.entity.BaseFileupload;
 import com.shencai.eil.system.mapper.BaseFileuploadMapper;
 import com.shencai.eil.system.model.FilePathConfig;
+import org.apache.log4j.Logger;
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -46,6 +63,7 @@ import java.util.*;
  */
 @Service
 public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
+    Logger logger = Logger.getLogger(EntSurveyFileServiceImpl.class);
     @Autowired
     private EntSurveyPlanMapper entSurveyPlanMapper;
     @Autowired
@@ -62,9 +80,21 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
     private EnterpriseInfoMapper enterpriseInfoMapper;
     @Autowired
     private FilePathConfig filePathConfig;
+    @Autowired
+    private IEntSurveyResultService entSurveyResultService;
+    @Autowired
+    private IParamService paramService;
+    @Autowired
+    private ITemplateMappingParamService templateMappingParamService;
+    @Autowired
+    private IEntRiskParamValueService entRiskParamValueService;
+    @Autowired
+    private EntMappingTargetTypeMapper entMappingTargetTypeMapper;
 
-    private static final int[] BASIC_TABLE_COL_WIDTH = new int[] { 2200, 3200, 3000};
-    private static final int[] INTENSIVE_TABLE_COL_WIDTH = new int[] { 2000, 3000, 1000, 1000, 800, 1100};
+    private static final int READ_EXCEL_START_ROW_INDEX = 1;
+
+    private static final int[] BASIC_TABLE_COL_WIDTH = new int[]{2200, 3200, 3000};
+    private static final int[] INTENSIVE_TABLE_COL_WIDTH = new int[]{2000, 3000, 1000, 1000, 800, 1100};
     private static final String BASIC_SURVEY_TABLE_TITLE = "勘查基础项：";
     private static final String BASIC_SURVEY_TABLE_WIDTH = "9000";
     private static final String INTENSIVE_SURVEY_TABLE_TITLE = "勘查强化项：";
@@ -102,7 +132,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
         if (CollectionUtils.isEmpty(fileList) || fileList.size() != 2) {
             pdfAddress = generateFile(info, fileSourceType);
         } else {
-            for(BaseFileupload file: fileList) {
+            for (BaseFileupload file : fileList) {
                 if (file.getFileAdress().indexOf(".pdf") > -1) {
                     pdfAddress = file.getId();
                 }
@@ -122,13 +152,13 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
     private String generateFile(EnterpriseInfo info, String fileSourceType) {
         String pdfAddress;
         String fileName = StringUtil.getUUID();
-        String srcPath = filePathConfig.modelPath;
+        String srcPath = getSrcPath(info);
         String destPath = filePathConfig.destPath + fileName + ".docx";
         String pdfPath = filePathConfig.destPath + fileName + ".pdf";
         List<GradeTemplateParamVO> gradeTemplateParamBasicList = listReplaceValue(info.getId());
         Map<String, GradeTemplateParamVO> map = new HashMap<>();
         boolean needIntensiveTable = false;
-        for (GradeTemplateParamVO vo: gradeTemplateParamBasicList) {
+        for (GradeTemplateParamVO vo : gradeTemplateParamBasicList) {
             if (ObjectUtil.isNull(info.getRiskLevel())
                     || (ObjectUtil.isNull(info.getNeedSurveyUpgrade()) && RiskLevel.LOW.getCode().equals(info.getRiskLevel()))) {
                 if (RISK_LEVEL_CODE.equals(vo.getCode())) {
@@ -151,6 +181,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
             handleWordFile(srcPath, destPath, map, info, needIntensiveTable);
             word2pdf(destPath, pdfPath);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new BusinessException("file generate error!");
         }
 
@@ -161,6 +192,20 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
                 , fileSourceType, buildFileName(FAST_GRADING_RESULT_TITLE));
 
         return pdfAddress;
+    }
+
+    private String getSrcPath(EnterpriseInfo info) {
+        String srcPath;
+        int typeCount = entMappingTargetTypeMapper.selectCount(new QueryWrapper<EntMappingTargetType>()
+                .eq("ent_id", info.getId()).eq("valid", BaseEnum.VALID_YES.getCode()));
+        if (typeCount == 1) {
+            srcPath = filePathConfig.basicModelPath;
+        } else if (typeCount == 2) {
+            srcPath = filePathConfig.intensiveModelPath;
+        } else {
+            throw new BusinessException("can't judge the risk type of enterprise");
+        }
+        return srcPath;
     }
 
     @Override
@@ -191,21 +236,23 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
             }
             deleteFiles(enterpriseId, sourceType);
             String excelUrl = insertFile(enterpriseId, fileName, sourceType
-                    , FileSourceType.BASIC_SURVEY_PLAN_EXCEL.getCode().equals(sourceType)?
-                            buildFileName(BASIC_SURVEY_PLAN_TITLE): buildFileName(INTENSIVE_SURVEY_PLAN_TITLE));
+                    , FileSourceType.BASIC_SURVEY_PLAN_EXCEL.getCode().equals(sourceType) ?
+                            buildFileName(BASIC_SURVEY_PLAN_TITLE) : buildFileName(INTENSIVE_SURVEY_PLAN_TITLE));
             return excelUrl;
         } else {
-            return fileList.get(0).getFileAdress();
+            return fileList.get(0).getId();
         }
     }
 
     /**
      * replace the placeholder in the template
+     *
      * @param srcPath
      * @param destPath
      * @param replaceMap
      */
     public void handleWordFile(String srcPath, String destPath, Map<String, GradeTemplateParamVO> replaceMap, EnterpriseInfo info, boolean needIntensiveTable) throws Exception {
+        logger.info("in generate word");
         XWPFDocument doc = new XWPFDocument(POIXMLDocument.openPackage(srcPath));
         replaceWords(replaceMap, doc);
         if (RiskLevel.HIGH.getCode().equals(info.getRiskLevel()) || ObjectUtils.isNotNull(info.getNeedSurveyUpgrade())) {
@@ -216,6 +263,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
                 insertIntensiveSurveyTable(doc, intensiveSurveyPlanList);
             }
         }
+
         OutputStream os = new FileOutputStream(destPath);
         doc.write(os);
         os.close();
@@ -235,7 +283,6 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
         XWPFRun run = paragraph.createRun();
         run.setText(INTENSIVE_SURVEY_TABLE_TITLE);
         run.setFontSize(WORD_TITLE_FONT_SIZE);
-        run.setBold(true);
 
         XWPFTable table = doc.createTable(intensiveSurveyPlanList.size() + 1, INTENSIVE_TABLE_TH.size());
         setTableWidthAndHAlign(table, INTENSIVE_SURVEY_TABLE_WIDTH, STJc.CENTER);
@@ -246,20 +293,20 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
             EntSurveyPlanVO plan = intensiveSurveyPlanList.get(i - 1);
             rowItem.getCell(0).setText(plan.getCode() + " " + plan.getName());
             rowItem.getCell(1).setText(plan.getDescription());
-            rowItem.getCell(2).setText(ObjectUtils.isNull(plan.getImportance())? "--": plan.getImportance().toString());
-            rowItem.getCell(3).setText(ObjectUtils.isNull(plan.getCost())? "--": plan.getCost().toString());
+            rowItem.getCell(2).setText(ObjectUtils.isNull(plan.getImportance()) ? "--" : plan.getImportance().toString());
+            rowItem.getCell(3).setText(ObjectUtils.isNull(plan.getCost()) ? "--" : plan.getCost().toString());
             rowItem.getCell(4).setText(plan.getTargetWeightCode());
-            rowItem.getCell(5).setText(ObjectUtils.isNull(plan.getAssessValue())? "--": BigDecimal.valueOf(plan.getAssessValue()).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
+            rowItem.getCell(5).setText(ObjectUtils.isNull(plan.getAssessValue()) ? "--" : BigDecimal.valueOf(plan.getAssessValue()).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
         }
     }
 
     private void replaceWords(Map<String, GradeTemplateParamVO> replaceMap, XWPFDocument doc) {
         Iterator itPara = doc.getParagraphsIterator();
-        while(itPara.hasNext()) {
+        while (itPara.hasNext()) {
             XWPFParagraph paragraph = (XWPFParagraph) itPara.next();
             Set<String> set = replaceMap.keySet();
             Iterator iterator = set.iterator();
-            while(iterator.hasNext()) {
+            while (iterator.hasNext()) {
                 String key = (String) iterator.next();
                 List<XWPFRun> run = paragraph.getRuns();
                 for (int i = 0; i < run.size(); i++) {
@@ -267,11 +314,10 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
                             && run.get(i).getText(run.get(i).getTextPosition()).equals(key)) {
                         GradeTemplateParamVO vo = replaceMap.get(key);
                         run.get(i).setText(vo.getParamContent(), 0);
-                        if (GradeLineResultCode.LOW.getCode().equals(vo.getResultCode()) || String.valueOf(BaseEnum.VALID_NO.getCode()).equals(vo.getCode())) {
-                            run.get(i).setBold(true);
+                        if (GradeLineResultCode.LOW.getCode().equals(vo.getResultCode())
+                                || String.valueOf(BaseEnum.VALID_NO.getCode()).equals(vo.getResultCode())) {
                             run.get(i).setColor("00BC1D");
                         } else {
-                            run.get(i).setBold(true);
                             run.get(i).setColor("ff0000");
                         }
                     }
@@ -294,8 +340,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
         XWPFParagraph paragraph = doc.createParagraph();
         XWPFRun run = paragraph.createRun();
         run.setText(BASIC_SURVEY_TABLE_TITLE);
-        run.setFontSize(16);
-        run.setBold(true);
+        run.setFontSize(WORD_TITLE_FONT_SIZE);
 
         XWPFTable table = doc.createTable(basicSurveyPlanList.size() + 1, BASIC_TABLE_TH.size());
         setTableWidthAndHAlign(table, BASIC_SURVEY_TABLE_WIDTH, STJc.CENTER);
@@ -307,7 +352,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
             EntSurveyPlanVO plan = basicSurveyPlanList.get(i - 1);
             rowItem.getCell(0).setText(plan.getCode() + " " + plan.getName());
             rowItem.getCell(1).setText(plan.getDescription());
-            rowItem.getCell(2).setText(StringUtil.isBlank(plan.getDefaultResult())? "--": plan.getDefaultResult());
+            rowItem.getCell(2).setText(StringUtil.isBlank(plan.getDefaultResult()) ? "--" : plan.getDefaultResult());
         }
     }
 
@@ -320,26 +365,32 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
 
     /**
      * convert word to pdf
+     *
      * @param srcPath
      * @param destPath
      */
     public void word2pdf(String srcPath, String destPath) throws Exception {
-        XWPFDocument document=new XWPFDocument(new FileInputStream(new File(srcPath)));
-        File outFile=new File(destPath);
+        logger.info("in generate convert pdf");
+        /**
+         *  when convert word to pdf, maybe chinese disappeared. should install windows fonts
+         */
+        XWPFDocument document = new XWPFDocument(new FileInputStream(new File(srcPath)));
+        File outFile = new File(destPath);
         outFile.getParentFile().mkdirs();
         OutputStream out = new FileOutputStream(outFile);
-        PdfOptions options= PdfOptions.create();
-        PdfConverter.getInstance().convert(document,out,options);
+        PdfOptions options = PdfOptions.create();
+        PdfConverter.getInstance().convert(document, out, options);
     }
 
     /**
      * set table width and horizontal align
+     *
      * @param table
      * @param width
      * @param enumValue
      */
     public void setTableWidthAndHAlign(XWPFTable table, String width,
-                                              STJc.Enum enumValue) {
+                                       STJc.Enum enumValue) {
         CTTblPr tblPr = getTableCTTblPr(table);
         CTTblWidth tblWidth = tblPr.isSetTblW() ? tblPr.getTblW() : tblPr
                 .addNewTblW();
@@ -353,6 +404,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
 
     /**
      * get table CTTblPr, create it when is not exist,
+     *
      * @param table
      * @return
      */
@@ -365,6 +417,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
 
     /**
      * set table column width
+     *
      * @param table
      * @param colWidths
      */
@@ -380,9 +433,9 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
 
     private List<BaseFileupload> listExistFiles(String enterpriseId, String sourceType) {
         return baseFileuploadMapper.selectList(new QueryWrapper<BaseFileupload>()
-                    .eq("source_id", enterpriseId)
-                    .eq("stype", sourceType)
-                    .eq("valid", BaseEnum.VALID_YES.getCode()));
+                .eq("source_id", enterpriseId)
+                .eq("stype", sourceType)
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
     }
 
     private void deleteFiles(String enterpriseId, String sourceType) {
@@ -399,10 +452,11 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
         BaseFileupload baseFileupload = new BaseFileupload();
         baseFileupload.setId(StringUtil.getUUID());
         baseFileupload.setSourceId(enterpriseId);
+        baseFileupload.setFileDesc(fileName);
         String[] strArray = fileName.split("\\.");
         baseFileupload.setFileName(titlePre + "." + strArray[1]);
         baseFileupload.setStype(sourceType);
-        String fileAddress = filePathConfig.downloadPath + fileName;
+        String fileAddress = filePathConfig.destPath + fileName;
         baseFileupload.setFileAdress(fileAddress);
         baseFileupload.setCreateTime(DateUtil.getNowTimestamp());
         baseFileupload.setValid((Integer) BaseEnum.VALID_YES.getCode());
@@ -418,7 +472,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
     private void initSurveySheet(String enterpriseId, HSSFWorkbook workbook, String categoryCode) {
         List<SurveyItemVO> surveyItemList = listSurveyItemByCategory(enterpriseId, categoryCode);
         if (CollectionUtils.isNotEmpty(surveyItemList)) {
-            HSSFSheet sheet = workbook.createSheet(categoryCode);
+            HSSFSheet sheet = workbook.createSheet(ExcelSheetName.getNameByCode(categoryCode));
             CellStyle style = workbook.createCellStyle();
             style.setWrapText(true);
             style.setAlignment(HSSFCellStyle.ALIGN_CENTER);
@@ -488,7 +542,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
         startIndex++;
         HSSFRow materialTypeSourceRow = sheet.createRow(startIndex);
         startIndex++;
-        for (SurveyItemOptionVO option: optionList) {
+        for (SurveyItemOptionVO option : optionList) {
             HSSFCell cell = materialTypeSourceRow.createCell(offset);
             cell.setCellValue(option.getOptionValue());
             int sourceStartIndex = startIndex;
@@ -502,8 +556,8 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
 
         char selectedCol = (char) ('A' + i);
         char sourceEndCol = (char) ('A' + offset - 1);
-        String customFormula = "offset($A$"+ startIndex +", 1, match($"+ selectedCol +"1, $A$"+ startIndex +":$"+ sourceEndCol +"$"+ startIndex +", 0) - 1" +
-                ", COUNTA(offset($A$"+ startIndex +", 1, match($"+ selectedCol +"1, $A$"+ startIndex +":$"+ sourceEndCol +"$"+ startIndex +", 0) - 1, 2000, 1)), 1)";
+        String customFormula = "offset($A$" + startIndex + ", 1, match($" + selectedCol + "1, $A$" + startIndex + ":$" + sourceEndCol + "$" + startIndex + ", 0) - 1" +
+                ", COUNTA(offset($A$" + startIndex + ", 1, match($" + selectedCol + "1, $A$" + startIndex + ":$" + sourceEndCol + "$" + startIndex + ", 0) - 1, 2000, 1)), 1)";
         DVConstraint formulaConstraint = DVConstraint.createFormulaListConstraint(customFormula);
         CellRangeAddressList cellRangeAddress = new CellRangeAddressList(1, 1, i + 1, i + 1);
         HSSFDataValidation cellValidation = new HSSFDataValidation(cellRangeAddress, formulaConstraint);
@@ -549,4 +603,392 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
         queryParam.setEnterpriseId(enterpriseId);
         return gradeTemplateParamMapper.listGradeTemplateParam(queryParam);
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void importSurveyResults(String baseFileuploadId, String enterpriseId) {
+        String filePath = getFilePath(baseFileuploadId);
+        String dataBackFlowSheetName = readAndSaveSurveyResults(filePath, enterpriseId);
+        dataBackFlow(dataBackFlowSheetName, enterpriseId);
+    }
+
+    private String getFilePath(String baseFileuploadId) {
+        BaseFileupload baseFileupload = baseFileuploadMapper.selectOne(new QueryWrapper<BaseFileupload>()
+                .eq("id", baseFileuploadId)
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+        return baseFileupload.getFileAdress();
+    }
+
+    private String readAndSaveSurveyResults(String filePath, String enterpriseId) {
+        List<String> sheetNames = listAllSheetOfTheExcel(filePath);
+        List<EntSurveyPlanVO> entSurveyPlanVOS = listAllSurveyPlanOfTheEnterprise(enterpriseId);
+        Date nowTime = DateUtil.getNowTimestamp();
+        List<EntSurveyResult> surveyResults = new ArrayList<>();
+        String dataBackFlowSheetName = null;
+        for (String sheetName : sheetNames) {
+            ExcelReader readerOfSheet = ExcelUtil.getReader(FileUtil.file(filePath), sheetName);
+            List<List<Object>> sheetContent = readerOfSheet.read(READ_EXCEL_START_ROW_INDEX);
+            if (SurveyItemCategoryCode.EXCEL_VIEW_BASIC_SURVEY_TABLE.getCode().equals(sheetName)) {
+                disposeContentOfTheSheet(sheetName, entSurveyPlanVOS, nowTime, surveyResults, sheetContent);
+                dataBackFlowSheetName = sheetName;
+            } else {
+                if (SurveyItemCategoryCode.EXCEL_VIEW_INTENSIVE_TOP5.getCode().equals(sheetName)) {
+                    disposeContentOfTheSheet(sheetName, entSurveyPlanVOS, nowTime, surveyResults, sheetContent);
+                    dataBackFlowSheetName = sheetName;
+                }
+                if (SurveyItemCategoryCode.EXCEL_VIEW_INTENSIVE_TOP10.getCode().equals(sheetName)) {
+                    disposeContentOfTheSheet(sheetName, entSurveyPlanVOS, nowTime, surveyResults, sheetContent);
+                    dataBackFlowSheetName = sheetName;
+                }
+                if (SurveyItemCategoryCode.EXCEL_VIEW_INTENSIVE_S1.getCode().equals(sheetName)) {
+                    disposeContentOfTheSheet(sheetName, entSurveyPlanVOS, nowTime, surveyResults, sheetContent);
+                }
+                if (SurveyItemCategoryCode.EXCEL_VIEW_INTENSIVE_S2.getCode().equals(sheetName)) {
+                    disposeContentOfTheSheet(sheetName, entSurveyPlanVOS, nowTime, surveyResults, sheetContent);
+                }
+                if (SurveyItemCategoryCode.EXCEL_VIEW_INTENSIVE_S3.getCode().equals(sheetName)) {
+                    disposeContentOfTheSheet(sheetName, entSurveyPlanVOS, nowTime, surveyResults, sheetContent);
+                }
+            }
+        }
+        if (!CollectionUtils.isEmpty(surveyResults)) {
+            deleteEntSurveyResults(enterpriseId, nowTime, dataBackFlowSheetName);
+            saveEntSurveyResults(surveyResults);
+        }
+        return dataBackFlowSheetName;
+    }
+
+    private void saveEntSurveyResults(List<EntSurveyResult> surveyResults) {
+        entSurveyResultService.saveBatch(surveyResults);
+    }
+
+    private void deleteEntSurveyResults(String enterpriseId, Date nowTime, String dataBackFlowSheetName) {
+        EntSurveyResultParam param = new EntSurveyResultParam();
+        param.setEnterpriseId(enterpriseId);
+        param.setSurveyItemCategoryCode(dataBackFlowSheetName);
+        param.setUpdateTime(nowTime);
+        entSurveyResultService.deleteEntSurveyResults(param);
+    }
+
+    private void dataBackFlow(String sheetName, String enterpriseId) {
+        List<EntSurveyResultVO> surveyResultVOList = listSurveyResultForDataBackFlow(sheetName, enterpriseId);
+        List<EntSurveyResultVO> productionSurveyResultList = new ArrayList<>();
+        List<EntSurveyResultVO> rawMaterialSurveyResultList = new ArrayList<>();
+        List<EntSurveyResultVO> gasEmissionsSurveyResultList = new ArrayList<>();
+        List<EntSurveyResultVO> waterEmissionsSurveyResultList = new ArrayList<>();
+        List<Integer> rowIndexList = listAllRowIndex(surveyResultVOList);
+        disposeEntSurveyResult(surveyResultVOList, productionSurveyResultList, rawMaterialSurveyResultList,
+                gasEmissionsSurveyResultList, waterEmissionsSurveyResultList, rowIndexList);
+        List<String> templateCategoryTypeList = listTemplateCategoryTypeForDataBackFlow(sheetName);
+        List<ParamVO> paramList = listParamForDataBackFlow(templateCategoryTypeList);
+        List<ParamVO> productionParamList = new ArrayList<>();
+        List<ParamVO> rawMaterialParamList = new ArrayList<>();
+        List<ParamVO> gasEmissionsIntensityParamList = new ArrayList<>();
+        List<ParamVO> waterEmissionsIntensityParamList = new ArrayList<>();
+        disposeParam(paramList, productionParamList, rawMaterialParamList, gasEmissionsIntensityParamList, waterEmissionsIntensityParamList);
+        List<EntRiskParamValue> entRiskParamValueList = new ArrayList<>();
+        Date nowTime = DateUtil.getNowTimestamp();
+        batchCreateEntRiskParamValue(enterpriseId, productionSurveyResultList, productionParamList, entRiskParamValueList, nowTime);
+        batchCreateEntRiskParamValue(enterpriseId, rawMaterialSurveyResultList, rawMaterialParamList, entRiskParamValueList, nowTime);
+        Double yield = getEnterpriseYield(enterpriseId);
+        List<Param> newParamList = new ArrayList<>();
+        List<TemplateMappingParam> newTemplateMappingParamList = new ArrayList<>();
+        batchCreateEmissionsEntRiskParamValue(enterpriseId, gasEmissionsSurveyResultList, gasEmissionsIntensityParamList,
+                entRiskParamValueList, nowTime, yield, newParamList, newTemplateMappingParamList,
+                TemplateEnum.TEMPLATE_ID_OF_GAS.getCode());
+        batchCreateEmissionsEntRiskParamValue(enterpriseId, waterEmissionsSurveyResultList, waterEmissionsIntensityParamList,
+                entRiskParamValueList, nowTime, yield, newParamList, newTemplateMappingParamList,
+                TemplateEnum.TEMPLATE_ID_OF_WATER.getCode());
+        saveParam(newParamList);
+        saveTemplateMappingParam(newParamList, newTemplateMappingParamList);
+        deleteOldEntRiskParamValue(entRiskParamValueList, enterpriseId, templateCategoryTypeList, nowTime);
+        saveEntRiskParamValue(entRiskParamValueList);
+    }
+
+    private void saveEntRiskParamValue(List<EntRiskParamValue> entRiskParamValueList) {
+        if (!CollectionUtils.isEmpty(entRiskParamValueList)) {
+            entRiskParamValueService.saveBatch(entRiskParamValueList);
+        }
+    }
+
+    private void deleteOldEntRiskParamValue(List<EntRiskParamValue> entRiskParamValueList, String enterpriseId,
+                                            List<String> templateCategoryTypeList, Date nowTime) {
+        if (!CollectionUtils.isEmpty(entRiskParamValueList)) {
+            EntRiskParamValueParam param = new EntRiskParamValueParam();
+            param.setEnterpriseId(enterpriseId);
+            param.setTemplateCategoryTypeList(templateCategoryTypeList);
+            param.setUpdateTime(nowTime);
+            entRiskParamValueService.deleteEntRiskParamValue(param);
+        }
+    }
+
+    private void saveTemplateMappingParam(List<Param> newParamList, List<TemplateMappingParam> newTemplateMappingParamList) {
+        if (CollectionUtils.isEmpty(newParamList)) {
+            templateMappingParamService.saveBatch(newTemplateMappingParamList);
+        }
+    }
+
+    private void saveParam(List<Param> newParamList) {
+        if (CollectionUtils.isEmpty(newParamList)) {
+            paramService.saveBatch(newParamList);
+        }
+    }
+
+    private Double getEnterpriseYield(String enterpriseId) {
+        EnterpriseInfo enterpriseInfo = enterpriseInfoMapper.selectOne(new QueryWrapper<EnterpriseInfo>()
+                .eq("id", enterpriseId)
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+        return enterpriseInfo.getYield();
+    }
+
+    private void batchCreateEmissionsEntRiskParamValue(String enterpriseId,
+                                                       List<EntSurveyResultVO> emissionsSurveyResultList,
+                                                       List<ParamVO> emissionsIntensityParamList,
+                                                       List<EntRiskParamValue> entRiskParamValueList, Date nowTime,
+                                                       Double yield, List<Param> newParamList,
+                                                       List<TemplateMappingParam> newTemplateMappingParamList,
+                                                       String templateId) {
+        ParamVO maxCodeNumParam = emissionsIntensityParamList.get(emissionsIntensityParamList.size() - 1);
+        int maxCodeNum = maxCodeNumParam.getCodeNum();
+        for (EntSurveyResultVO surveyResult : emissionsSurveyResultList) {
+            EntRiskParamValue entRiskParamValue = new EntRiskParamValue();
+            entRiskParamValue.setId(StringUtil.getUUID());
+            entRiskParamValue.setEnterpriseId(enterpriseId);
+            entRiskParamValue.setCreateTime(nowTime);
+            entRiskParamValue.setUpdateTime(nowTime);
+            entRiskParamValue.setValid((Integer) BaseEnum.VALID_YES.getCode());
+            entRiskParamValue.setValue(String.valueOf(surveyResult.getEmission() * surveyResult.getEmissionConcentration() / yield));
+            String mainPollutantName = surveyResult.getMainPollutantName();
+            for (ParamVO param : emissionsIntensityParamList) {
+                if (param.getName().equals(mainPollutantName)) {
+                    entRiskParamValue.setParamId(param.getId());
+                }
+            }
+            if (ObjectUtils.isEmpty(entRiskParamValue.getParamId())) {
+                maxCodeNum += 1;
+                String paramCode = templateId + maxCodeNum;
+                Param param = new Param();
+                param.setId(paramCode);
+                param.setCode(paramCode);
+                param.setName(mainPollutantName);
+                param.setValueType(ValueType.DOUBLE.getCode());
+                param.setRemark(mainPollutantName + ParamEnum.SUFFIX_OF_EMISSION_INTENSITY.getCode());
+                param.setCreateTime(nowTime);
+                param.setUpdateTime(nowTime);
+                param.setValid((Integer) BaseEnum.VALID_YES.getCode());
+                newParamList.add(param);
+
+                entRiskParamValue.setParamId(param.getId());
+
+                TemplateMappingParam templateMappingParam = new TemplateMappingParam();
+                templateMappingParam.setId(StringUtil.getUUID());
+                templateMappingParam.setTemplateId(templateId);
+                templateMappingParam.setParamId(param.getId());
+                templateMappingParam.setCreateTime(nowTime);
+                templateMappingParam.setUpdateTime(nowTime);
+                templateMappingParam.setValid((Integer) BaseEnum.VALID_YES.getCode());
+                newTemplateMappingParamList.add(templateMappingParam);
+            }
+            entRiskParamValueList.add(entRiskParamValue);
+        }
+    }
+
+    private void disposeParam(List<ParamVO> paramList, List<ParamVO> productionParamList,
+                              List<ParamVO> rawMaterialParamList,
+                              List<ParamVO> gasEmissionsIntensityParamList,
+                              List<ParamVO> waterEmissionsIntensityParamList) {
+        for (ParamVO param : paramList) {
+            String templateCategoryType = param.getTemplateCategoryType();
+            if (TemplateCategory.PRODUCTION.getCode().equals(templateCategoryType)) {
+                productionParamList.add(param);
+            }
+            if (TemplateCategory.RAW_MATERIAL.getCode().equals(templateCategoryType)) {
+                rawMaterialParamList.add(param);
+            }
+            if (TemplateCategory.EMISSIONS_INTENSITY.getCode().equals(templateCategoryType)) {
+                String templateId = param.getTemplateId();
+                if (TemplateEnum.TEMPLATE_ID_OF_GAS.getCode().equals(templateId)) {
+                    gasEmissionsIntensityParamList.add(param);
+                }
+                if (TemplateEnum.TEMPLATE_ID_OF_WATER.getCode().equals(templateId)) {
+                    waterEmissionsIntensityParamList.add(param);
+                }
+            }
+        }
+    }
+
+    private List<ParamVO> listParamForDataBackFlow(List<String> templateCategoryTypeList) {
+        ParamQueryParam qParam = new ParamQueryParam();
+        qParam.setTemplateCategoryTypeList(templateCategoryTypeList);
+        return paramMapper.listParam(qParam);
+    }
+
+    private List<String> listTemplateCategoryTypeForDataBackFlow(String sheetName) {
+        List<String> templateCategoryTypeList = new ArrayList<>();
+        templateCategoryTypeList.add(TemplateCategory.PRODUCTION.getCode());
+        templateCategoryTypeList.add(TemplateCategory.RAW_MATERIAL.getCode());
+        if (SurveyItemCategoryCode.EXCEL_VIEW_BASIC_SURVEY_TABLE.getCode().equals(sheetName)) {
+            templateCategoryTypeList.add(TemplateCategory.EMISSIONS_INTENSITY.getCode());
+        }
+        return templateCategoryTypeList;
+    }
+
+    private void disposeEntSurveyResult(List<EntSurveyResultVO> surveyResultVOList,
+                                        List<EntSurveyResultVO> productionSurveyResultList,
+                                        List<EntSurveyResultVO> rawMaterialSurveyResultList,
+                                        List<EntSurveyResultVO> gasEmissionsSurveyResultList,
+                                        List<EntSurveyResultVO> waterEmissionsSurveyResultList,
+                                        List<Integer> rowIndexList) {
+        for (Integer rowIndex : rowIndexList) {
+            EntSurveyResultVO surveyResult = new EntSurveyResultVO();
+            EntSurveyResultVO gasEmissionSurveyResult = new EntSurveyResultVO();
+            for (EntSurveyResultVO entSurveyResult : surveyResultVOList) {
+                if (entSurveyResult.getExcelRowIndex() == rowIndex) {
+                    String surveyItemName = entSurveyResult.getSurveyItemName();
+                    String surveyItemCode = entSurveyResult.getSurveyItemCode();
+                    String result = entSurveyResult.getResult();
+                    if (ExcelEnum.MATERIAL_TYPE.getValue().equals(surveyItemName)) {
+                        surveyResult.setMaterialTypeOptionName(result);
+                        surveyResult.setMaterialTypeOptionCode(entSurveyResult.getOptionCode());
+                    }
+                    if (surveyItemName.contains(ExcelEnum.MATERIAL_NAME.getValue())) {
+                        surveyResult.setMaterialName(result);
+                    }
+                    if (ExcelEnum.INPUT_OR_OUTPUT.getValue().equals(surveyItemName)) {
+                        surveyResult.setInputOrOutput(result);
+                    }
+                    if (ExcelEnum.MAIN_POLLUTANT_OF_WATER_CODE.getValue().equals(surveyItemCode)) {
+                        surveyResult.setMainPollutantName(result);
+                    }
+                    if (ExcelEnum.EMISSION_OF_WATER_CODE.getValue().equals(surveyItemCode)) {
+                        surveyResult.setEmission(Double.valueOf(result));
+                    }
+                    if (ExcelEnum.WATER_POLLUTANT_EMISSION_CONCENTRATION_CODE.getValue().equals(surveyItemCode)) {
+                        surveyResult.setEmissionConcentration(Double.valueOf(result));
+                    }
+                    if (ExcelEnum.MAIN_POLLUTANT_OF_GAS_CODE.getValue().equals(surveyItemCode)) {
+                        gasEmissionSurveyResult.setMainPollutantName(result);
+                    }
+                    if (ExcelEnum.EMISSION_OF_GAS_CODE.getValue().equals(surveyItemCode)) {
+                        gasEmissionSurveyResult.setEmission(Double.valueOf(result));
+                    }
+                    if (ExcelEnum.AIR_POLLUTANT_EMISSION_CONCENTRATION_CODE.getValue().equals(surveyItemCode)) {
+                        gasEmissionSurveyResult.setEmissionConcentration(Double.valueOf(result));
+                    }
+                }
+            }
+            if (!ObjectUtils.isEmpty(surveyResult)) {
+                if (ExcelEnum.PRODUCT_OPTION_CODE.getValue().equals(surveyResult.getMaterialTypeOptionCode())) {
+                    productionSurveyResultList.add(surveyResult);
+                } else {
+                    rawMaterialSurveyResultList.add(surveyResult);
+                }
+                if (!ObjectUtils.isEmpty(surveyResult.getMainPollutantName())) {
+                    waterEmissionsSurveyResultList.add(surveyResult);
+                }
+            }
+            if (!ObjectUtils.isEmpty(gasEmissionSurveyResult)) {
+                gasEmissionsSurveyResultList.add(gasEmissionSurveyResult);
+            }
+        }
+    }
+
+    private List<Integer> listAllRowIndex(List<EntSurveyResultVO> surveyResultVOList) {
+        List<Integer> rowIndexList = new ArrayList<>();
+        for (EntSurveyResultVO entSurveyResultVO : surveyResultVOList) {
+            Integer excelRowIndex = entSurveyResultVO.getExcelRowIndex();
+            if (!rowIndexList.contains(excelRowIndex)) {
+                rowIndexList.add(entSurveyResultVO.getExcelRowIndex());
+            }
+        }
+        return rowIndexList;
+    }
+
+    private List<EntSurveyResultVO> listSurveyResultForDataBackFlow(String sheetName, String enterpriseId) {
+        EntSurveyResultQueryParam queryParam = new EntSurveyResultQueryParam();
+        queryParam.setEnterpriseId(enterpriseId);
+        queryParam.setCategoryCode(SurveyItemCategoryCode.GO_BACK.getCode());
+        queryParam.setSheetName(sheetName);
+        return entSurveyResultService.listEntSurveyResult(queryParam);
+    }
+
+    private void batchCreateEntRiskParamValue(String enterpriseId, List<EntSurveyResultVO> surveyResultList,
+                                              List<ParamVO> paramList,
+                                              List<EntRiskParamValue> entRiskParamValueList, Date nowTime) {
+        for (EntSurveyResultVO surveyResult : surveyResultList) {
+            EntRiskParamValue entRiskParamValue = new EntRiskParamValue();
+            entRiskParamValue.setId(StringUtil.getUUID());
+            entRiskParamValue.setEnterpriseId(enterpriseId);
+            entRiskParamValue.setCreateTime(nowTime);
+            entRiskParamValue.setUpdateTime(nowTime);
+            entRiskParamValue.setValid((Integer) BaseEnum.VALID_YES.getCode());
+            entRiskParamValue.setValue(surveyResult.getInputOrOutput());
+            for (ParamVO param : paramList) {
+                if (param.getName().equals(surveyResult.getMaterialName())) {
+                    entRiskParamValue.setParamId(param.getId());
+                }
+            }
+            entRiskParamValueList.add(entRiskParamValue);
+        }
+    }
+
+    private void disposeContentOfTheSheet(String sheetName, List<EntSurveyPlanVO> entSurveyPlanVOS,
+                                          Date nowTime, List<EntSurveyResult> surveyResults,
+                                          List<List<Object>> sheetContent) {
+        List<EntSurveyPlanVO> entSurveyPlanOfSheet = new ArrayList<>();
+        for (EntSurveyPlanVO entSurveyPlan : entSurveyPlanVOS) {
+            if (sheetName.equals(entSurveyPlan.getCategoryCode())) {
+                entSurveyPlanOfSheet.add(entSurveyPlan);
+            }
+        }
+        if (!CollectionUtils.isEmpty(sheetContent)) {
+            int rowSize = sheetContent.size();
+            for (int i = 0; i < rowSize; i++) {
+                List<Object> row = sheetContent.get(i);
+                int colSize = row.size();
+                boolean isReadFinished = false;
+                for (int j = 0; j < colSize; j++) {
+                    Object cellValue = row.get(j);
+                    if (!ObjectUtils.isEmpty(cellValue)) {
+                        if (ExcelEnum.END_OF_SHEET.getValue().equals(cellValue)) {
+                            isReadFinished = true;
+                            break;
+                        }
+                        for (EntSurveyPlanVO entSurveyPlan : entSurveyPlanOfSheet) {
+                            if (j == entSurveyPlan.getExcelColIndex()) {
+                                EntSurveyResult surveyResult = new EntSurveyResult();
+                                surveyResult.setId(StringUtil.getUUID());
+                                surveyResult.setSurveyPlanId(entSurveyPlan.getId());
+                                surveyResult.setResult(String.valueOf(cellValue));
+                                surveyResult.setExcelRowIndex(i + 1);
+                                surveyResult.setCreateTime(nowTime);
+                                surveyResult.setUpdateTime(nowTime);
+                                surveyResult.setValid((Integer) BaseEnum.VALID_YES.getCode());
+                                surveyResults.add(surveyResult);
+                            }
+                        }
+                    }
+                }
+                if (isReadFinished) {
+                    break;
+                }
+            }
+        }
+    }
+
+    private List<String> listAllSheetOfTheExcel(String filePath) {
+        ExcelReader reader = ExcelUtil.getReader(FileUtil.file(filePath));
+        return reader.getSheetNames();
+    }
+
+    private List<EntSurveyPlanVO> listAllSurveyPlanOfTheEnterprise(String enterpriseId) {
+        EntSurveyPlanQueryParam queryParam = new EntSurveyPlanQueryParam();
+        queryParam.setEnterpriseId(enterpriseId);
+        List<EntSurveyPlanVO> entSurveyPlanVOS = entSurveyPlanMapper.listEntSurveyPlan(queryParam);
+        if (CollectionUtils.isEmpty(entSurveyPlanVOS)) {
+            throw new BusinessException("The enterprise has no survey plan");
+        }
+        return entSurveyPlanVOS;
+    }
+
 }

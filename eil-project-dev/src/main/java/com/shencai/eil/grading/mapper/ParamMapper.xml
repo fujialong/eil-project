@@ -21,6 +21,7 @@
             resultType="com.shencai.eil.grading.model.ParamVO">
         select
             p.name,
+            p.remark,
             erpv.value,
             pt.code templateCode
         from param p
@@ -42,8 +43,10 @@
             resultType="com.shencai.eil.grading.model.ParamVO">
         select
         p.id,
+        SUBSTRING(p.code,2)codeNum,
         p.name,
-        ptc.type templateCategoryType
+        ptc.type templateCategoryType,
+        ptc.param_template_id templateId
         from param p
         inner join template_mapping_param tmp on tmp.param_id = p.id and tmp.valid = 1
         inner join param_template_category ptc on ptc.param_template_id = tmp.template_id
@@ -63,6 +66,7 @@
             and
         </if>
         p.valid = 1
+        order by p.code
     </select>
 
 
