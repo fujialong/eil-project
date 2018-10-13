@@ -43,4 +43,11 @@ public class PolicyAdministrateController {
         return Result.ok(policy);
     }
 
+    @ResponseBody
+    @RequestMapping("/deletePolicy")
+    public Result deletePolicy(@RequestBody PolicyParam param) {
+        policyAdministrateService.deletePolicy(param);
+        return Result.ok();
+    }
+
 }

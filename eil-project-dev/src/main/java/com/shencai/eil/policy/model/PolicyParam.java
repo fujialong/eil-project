@@ -58,6 +58,8 @@ public class PolicyParam implements Serializable {
 
     private String emissionModeId;
 
-    private List<BaseFileupload> attachmentList;
+    private List<BaseFileupload> evaluationReportAttachmentList;
+
+    private List<BaseFileupload> licenceAttachmentList;
 
 }

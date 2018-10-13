@@ -4,7 +4,8 @@ package com.shencai.eil.common.constants;
  * Created by fanhj on 2018/10/7.
  */
 public enum FileSourceType {
-    ENT_INFO("ent_info", "保单附件"),
+    EVALUATION_REPORT("evaluation_report", "保单附件-风险评估报告"),
+    LICENCE("licence", "保单附件-许可证"),
     INTENSIVE_SURVEY("intensive_survey", "查勘强化表附件"),
     BASIC_FAST_GRADING_FILE("basic_fast_grading_file", "基础快速分级报告"),
     FAST_GRADING_FILE("fast_grading_file", "快速分级报告"),

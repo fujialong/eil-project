@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by zhoujx on 2018/10/11.
@@ -11,7 +12,7 @@ import java.util.Date;
 @Data
 public class EntSurveyResultParam implements Serializable {
 
-    private String surveyItemCategoryCode;
+    private List<String> categoryCodeList;
 
     private String enterpriseId;
 

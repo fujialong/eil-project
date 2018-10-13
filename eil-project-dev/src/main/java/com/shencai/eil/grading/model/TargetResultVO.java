@@ -25,4 +25,10 @@ public class TargetResultVO implements Serializable {
 
     private Double targetResult;
 
+    private String riskGrade;
+
+    private Double lowerLimitOfRiskGrade;
+
+    private Double upperLimitOfRiskGrade;
+
 }

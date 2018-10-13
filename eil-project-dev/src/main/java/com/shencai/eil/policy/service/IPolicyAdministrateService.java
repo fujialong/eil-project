@@ -16,4 +16,5 @@ public interface IPolicyAdministrateService {
 
     PolicyVO getPolicy(PolicyQueryParam queryParam);
 
+    void deletePolicy(PolicyParam param);
 }

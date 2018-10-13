@@ -26,7 +26,7 @@
         o.code optionCode
         from ent_survey_result esr
         inner join ent_survey_plan esp on esp.id=esr.survey_plan_id
-        <if test="sheetName != null and sheetName != ''">
+        <if test="enterpriseId != null and enterpriseId != ''">
             and esp.ent_id=#{enterpriseId}
         </if>
         <if test="sheetName != null and sheetName != ''">
@@ -55,18 +55,36 @@
         esp.id
         from ent_survey_plan esp
         inner join survey_item_category sic on sic.survey_item_id=esp.survey_item_id and esp.ent_id=#{enterpriseId}
-        <if test="surveyItemCategoryCode != null and surveyItemCategoryCode != ''">
-            and
-            <if test="surveyItemCategoryCode == 'Sheet0'">
-                sic.category_code = #{surveyItemCategoryCode}
-            </if>
-            <if test="surveyItemCategoryCode != 'Sheet0'">
-                sic.category_code != #{surveyItemCategoryCode}
-            </if>
+        <if test="categoryCodeList != null and categoryCodeList.size > 0">
+            and sic.category_code in
+            <foreach collection="categoryCodeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
         </if>
         and sic.valid = 1
         where esp.valid = 1)
         and valid=1
+    </select>
+
+    <select id="countIntensiveEntSurveyResult" resultType="int"
+            parameterType="com.shencai.eil.survey.model.EntSurveyResultQueryParam">
+        select
+        count(1)
+        from ent_survey_result esr
+        inner join ent_survey_plan esp on esp.id=esr.survey_plan_id
+        <if test="enterpriseId != null and enterpriseId != ''">
+            and esp.ent_id=#{enterpriseId}
+        </if>
+        and esp.valid=1
+        inner join survey_item_category sic on sic.survey_item_id=esp.survey_item_id
+        <if test="categoryCodeList != null and categoryCodeList.size > 0">
+            and sic.category_code in
+            <foreach collection="categoryCodeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        and sic.valid=1
+        where esr.valid=1
     </select>
 
 </mapper>

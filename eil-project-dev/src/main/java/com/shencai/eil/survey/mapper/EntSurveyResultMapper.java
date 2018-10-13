@@ -17,4 +17,6 @@ public interface EntSurveyResultMapper extends BaseMapper<EntSurveyResult> {
     List<EntSurveyResultVO> listEntSurveyResult(EntSurveyResultQueryParam queryParam);
 
     void logDelete(EntSurveyResultParam param);
+
+    int countIntensiveEntSurveyResult(EntSurveyResultQueryParam queryParam);
 }

@@ -97,6 +97,8 @@ public class PolicyVO implements Serializable {
 
     private Integer enterpriseAccidentCount;
 
-    private List<BaseFileupload> attachmentList;
+    private List<BaseFileupload> evaluationReportAttachmentList;
+
+    private List<BaseFileupload> licenceAttachmentList;
 
 }

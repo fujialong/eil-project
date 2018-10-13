@@ -24,15 +24,18 @@
         tw.code targetCode,
         tw.name targetName,
         tw.type targetType,
-        erar.assess_value targetResult
+        erar.assess_value targetResult,
+        twgl.result_code riskGrade,
+        twgl.percent_start lowerLimitOfRiskGrade,
+        twgl.percent_end upperLimitOfRiskGrade
         from target_weight tw
         left join ent_risk_assess_result erar on
-        (tw.id=erar.target_weight_id and erar.ent_id = #{enterpriseId} and tw.valid=1)
+        (tw.id=erar.target_weight_id and erar.ent_id = #{enterpriseId} and erar.valid=1)
+        left join target_weight_grade_line twgl on (twgl.id=erar.grade_line_id and twgl.valid=1)
         where
         <if test="targetTypeList != null and targetTypeList.size > 0">
             tw.type in
-            <foreach collection="targetTypeList" item="item" open="(" separator=","
-                     close=")">
+            <foreach collection="targetTypeList" item="item" open="(" separator="," close=")">
                 #{item}
             </foreach>
             and
@@ -51,7 +54,7 @@
         where t.weight is not null
     </select>
     <select id="lisTargetWeightTypeAndWight" resultType="com.shencai.eil.grading.model.TargetResultVO">
-        select t.code targetCode,t.type targetType,weight targetResult  from target_weight t where valid = 1
+        select t.code targetCode,t.type targetType,weight targetResult from target_weight t where valid = 1
         <if test="code != null and code != ''">
             and code = #{code}
         </if>
