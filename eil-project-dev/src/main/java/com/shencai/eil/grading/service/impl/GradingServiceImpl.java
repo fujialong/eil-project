@@ -1058,13 +1058,13 @@ public class GradingServiceImpl implements IGradingService {
 
     private void createEntRiskAssessResult(EnterpriseVO enterprise, List<EntRiskAssessResult> entRiskAssessResults,
                                            double result, String targetWeightId) {
-        String resutLeve = getGradeLineLeve(result, targetWeightId);
+        String resultLevelId = getGradeLineLevel(result, targetWeightId);
         EntRiskAssessResult riskAssessResult = new EntRiskAssessResult();
         riskAssessResult.setId(StringUtil.getUUID());
         riskAssessResult.setEntId(enterprise.getId());
         riskAssessResult.setTargetWeightId(targetWeightId);
         riskAssessResult.setAssessValue(result);
-        riskAssessResult.setGradeLineId(resutLeve == null ? "" : resutLeve);
+        riskAssessResult.setGradeLineId(resultLevelId);
         riskAssessResult.setCreateTime(DateUtil.getNowTimestamp());
         riskAssessResult.setUpdateTime(DateUtil.getNowTimestamp());
         riskAssessResult.setValid((Integer) BaseEnum.VALID_YES.getCode());
@@ -1072,12 +1072,12 @@ public class GradingServiceImpl implements IGradingService {
     }
 
     private EntRiskAssessResult buildEntRiskAssessResult(String entId, double result, String targetWeightId) {
-        String resultLevelId = getGradeLineLeve(result, targetWeightId);
+        String resultLevelId = getGradeLineLevel(result, targetWeightId);
         EntRiskAssessResult riskAssessResult = new EntRiskAssessResult();
         riskAssessResult.setId(StringUtil.getUUID());
         riskAssessResult.setEntId(entId);
         riskAssessResult.setTargetWeightId(targetWeightId);
-        riskAssessResult.setGradeLineId(resultLevelId == null ? "" : resultLevelId);
+        riskAssessResult.setGradeLineId(resultLevelId);
         riskAssessResult.setAssessValue(result);
         riskAssessResult.setCreateTime(DateUtil.getNowTimestamp());
         riskAssessResult.setUpdateTime(DateUtil.getNowTimestamp());
@@ -1430,24 +1430,33 @@ public class GradingServiceImpl implements IGradingService {
         return Double.parseDouble(computeConstant.getValue());
     }
 
-    private String getGradeLineLeve(double score, String weightId) {
-
+    private String getGradeLineLevel(double score, String weightId) {
         TargetWeightGradeLine targetWeightGradeLine;
         if (score >= HIGH_SCORE) {
             targetWeightGradeLine = targetWeightGradeLineService.getOne(new QueryWrapper<TargetWeightGradeLine>()
                     .eq("target_weight_id", weightId)
                     .eq("result_code", GradeLineResultCode.HIGH.getCode())
                     .eq("valid", BaseEnum.VALID_YES.getCode()));
-
-            return targetWeightGradeLine == null ? "" : targetWeightGradeLine.getId();
+            if (ObjectUtils.isEmpty(targetWeightGradeLine)) {
+                targetWeightGradeLineService.getOne(new QueryWrapper<TargetWeightGradeLine>()
+                        .eq("type", GradeLineResultCode.TYPE_DEFAULT.getCode())
+                        .eq("result_code", GradeLineResultCode.HIGH.getCode())
+                        .eq("valid", BaseEnum.VALID_YES.getCode()));
+            }
+            return targetWeightGradeLine.getId();
         }
-
         targetWeightGradeLine = targetWeightGradeLineService.getOne(new QueryWrapper<TargetWeightGradeLine>()
                 .eq("target_weight_id", weightId)
-                .le("percent_start", score)
-                .gt("percent_end", score)
+                .lt("percent_start", score)
+                .ge("percent_end", score)
                 .eq("valid", BaseEnum.VALID_YES.getCode()));
-
-        return targetWeightGradeLine == null ? "" : targetWeightGradeLine.getId();
+        if (ObjectUtils.isEmpty(targetWeightGradeLine)) {
+            targetWeightGradeLineService.getOne(new QueryWrapper<TargetWeightGradeLine>()
+                    .eq("type", GradeLineResultCode.TYPE_DEFAULT.getCode())
+                    .lt("percent_start", score)
+                    .ge("percent_end", score)
+                    .eq("valid", BaseEnum.VALID_YES.getCode()));
+        }
+        return targetWeightGradeLine.getId();
     }
 }

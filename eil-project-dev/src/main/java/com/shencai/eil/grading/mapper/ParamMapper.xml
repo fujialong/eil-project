@@ -45,6 +45,7 @@
         p.id,
         SUBSTRING(p.code,2)codeNum,
         p.name,
+        p.code,
         ptc.type templateCategoryType,
         ptc.param_template_id templateId
         from param p

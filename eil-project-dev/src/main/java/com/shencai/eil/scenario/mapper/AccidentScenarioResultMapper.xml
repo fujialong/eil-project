@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.scenario.mapper.AccidentScenarioResultMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shencai.eil.scenario.entity.AccidentScenarioResult">
+        <id column="id" property="id" />
+        <result column="info_id" property="infoId" />
+        <result column="scenario_id" property="scenarioId" />
+        <result column="scenario_result" property="scenarioResult" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+</mapper>

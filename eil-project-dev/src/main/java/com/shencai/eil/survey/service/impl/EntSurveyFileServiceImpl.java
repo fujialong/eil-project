@@ -103,6 +103,9 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
     private static final List<String> paramCodesOfLowRiskLevel
             = Arrays.asList(new String[]{"R1", "R2-desc", "R3", "R4.1-desc", "R4.2-desc"
             , "R4.3-desc", "R4.4-desc", "R4.5-desc", "risk-level"});
+    private static final List<String> needFontColorCode
+            = Arrays.asList(new String[]{"Ru-s-level", "Ru-g-level", "R1-s-leve", "R1-g-level", "R2-level"
+            , "R3-s-level", "R3-g-level", "R4.1-level", "R4.2-level", "R4.3-level", "R4.4-level", "R4.5-level"});
     private static final List<String> BASIC_TABLE_TH = Arrays.asList(new String[]{"勘查条目", "勘查内容", "默认值"});
     private static final List<String> INTENSIVE_TABLE_TH
             = Arrays.asList(new String[]{"勘查条目", "勘查内容", "重要性", "成本（元）", "分级", "分级评分"});
@@ -315,11 +318,17 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
                             && run.get(i).getText(run.get(i).getTextPosition()).equals(key)) {
                         GradeTemplateParamVO vo = replaceMap.get(key);
                         run.get(i).setText(vo.getParamContent(), 0);
-                        if (GradeLineResultCode.LOW.getCode().equals(vo.getResultCode())
-                                || String.valueOf(BaseEnum.VALID_NO.getCode()).equals(vo.getResultCode())) {
-                            run.get(i).setColor("00BC1D");
-                        } else {
-                            run.get(i).setColor("ff0000");
+
+                        if (needFontColorCode.indexOf(vo.getCode()) > -1) {
+                            if (GradeLineResultCode.LOW.getCode().equals(vo.getResultCode())
+                                    || String.valueOf(BaseEnum.VALID_NO.getCode()).equals(vo.getResultCode())) {
+                                run.get(i).setColor("00BC1D");
+                            } else {
+                                run.get(i).setColor("ff0000");
+                            }
+                        }
+                        if (paramCodesOfLowRiskLevel.indexOf(vo.getCode()) > -1) {
+                            run.get(i).setBold(true);
                         }
                     }
                 }

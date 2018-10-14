@@ -16,7 +16,13 @@ public enum GradeLineResultCode {
     /**
      * high level
      */
-    HIGH("high", "高");
+    HIGH("high", "高"),
+
+    /**
+     * Default risk classification type
+     */
+    TYPE_DEFAULT("default", "分级类型_默认");
+
     private String code;
     private String name;
 

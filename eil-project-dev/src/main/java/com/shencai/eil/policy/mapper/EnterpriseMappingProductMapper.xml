@@ -29,7 +29,8 @@
         pcs.name largeClassName,
         pcs.id largeClassId,
         pi.name,
-        pi.id
+        pi.id,
+        emp.sort_num
         from
         product_info pi
         inner join enterprise_mapping_product emp on emp.prod_id = pi.id

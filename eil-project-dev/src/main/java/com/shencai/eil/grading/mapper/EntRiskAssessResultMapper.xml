@@ -20,6 +20,7 @@
         select
         tw.id targetId,
         erar.assess_value targetResult,
+        tw.code
         from ent_risk_assess_result erar
         left join target_weight tw on (tw.id=erar.target_weight_id and tw.valid=1 and tw.visible=1)
         where

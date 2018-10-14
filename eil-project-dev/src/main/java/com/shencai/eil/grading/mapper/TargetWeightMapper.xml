@@ -27,7 +27,8 @@
         erar.assess_value targetResult,
         twgl.result_code riskGrade,
         twgl.percent_start lowerLimitOfRiskGrade,
-        twgl.percent_end upperLimitOfRiskGrade
+        twgl.percent_end upperLimitOfRiskGrade,
+        tw.code
         from target_weight tw
         left join ent_risk_assess_result erar on
         (tw.id=erar.target_weight_id and erar.ent_id = #{enterpriseId} and erar.valid=1)

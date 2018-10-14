@@ -24,7 +24,8 @@
         id,
         code,
         name,
-        parent_code parentCode
+        parent_code parentCode,
+        sort_num
         from
         sys_dictionary
         where
@@ -47,7 +48,8 @@
         id,
         code,
         name,
-        parent_code parentCode
+        parent_code parentCode,
+        sort_num
         from
         sys_dictionary
         where

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.scenario.mapper.ScenarioSelectionInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shencai.eil.scenario.entity.ScenarioSelectionInfo">
+        <id column="id" property="id" />
+        <result column="ent_id" property="entId" />
+        <result column="matter_name" property="matterName" />
+        <result column="matter_type" property="matterType" />
+        <result column="technique_cell" property="techniqueCell" />
+        <result column="technique_component" property="techniqueComponent" />
+        <result column="component_location" property="componentLocation" />
+        <result column="online_content" property="onlineContent" />
+        <result column="matter_property" property="matterProperty" />
+        <result column="explosive_characteristic" property="explosiveCharacteristic" />
+        <result column="combustion_characteristic" property="combustionCharacteristic" />
+        <result column="melting_point" property="meltingPoint" />
+        <result column="boiling_point" property="boilingPoint" />
+        <result column="phase_state" property="phaseState" />
+        <result column="flashing_point" property="flashingPoint" />
+        <result column="density" property="density" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+    <resultMap id="scenarioSelectionInfo" type="com.shencai.eil.scenario.model.ScenarioSelectionInfoVO">
+        <result column="entId" property="entId" />
+        <result column="matterName" property="matterName" />
+        <result column="matterType" property="matterType" />
+        <result column="techniqueCell" property="techniqueCell" />
+        <result column="techniqueComponent" property="techniqueComponent" />
+        <result column="componentLocation" property="componentLocation" />
+        <result column="onlineContent" property="onlineContent" />
+        <result column="matterProperty" property="matterProperty" />
+        <result column="explosiveCharacteristic" property="explosiveCharacteristic" />
+        <result column="combustionCharacteristic" property="combustionCharacteristic" />
+        <result column="meltingPoint" property="meltingPoint" />
+        <result column="boilingPoint" property="boilingPoint" />
+        <result column="phaseState" property="phaseState" />
+        <result column="flashingPoint" property="flashingPoint" />
+        <result column="density" property="density" />
+        <result column="remark" property="remark" />
+        <collection property="accidentScenarioResultList"
+                    ofType="com.shencai.eil.scenario.model.AccidentScenarioResultVO">
+            <result column="scenarioName" property="scenarioName" />
+            <result column="scenarioResult" property="scenarioResult" />
+            <result column="scenarioResultDesc" property="scenarioResultDesc" />
+        </collection>
+    </resultMap>
+
+    <select id="pageScenarioSelectionInfo"
+            parameterType="com.shencai.eil.scenario.model.ScenarioSelectionInfoQueryParam"
+            resultMap="scenarioSelectionInfo">
+        select
+          info.id,
+          info.ent_id entId,
+          info.matter_name matterName,
+          info.matter_type matterType,
+          info.technique_cell techniqueCell,
+          info.technique_component techniqueComponent,
+          info.component_location componentLocation,
+          info.online_content onlineContent,
+          info.matter_property matterProperty,
+          info.explosive_characteristic explosiveCharacteristic,
+          info.combustion_characteristic combustionCharacteristic,
+          info.melting_point meltingPoint,
+          info.boiling_point boilingPoint,
+          info.phase_state phaseState,
+          info.flashing_point flashingPoint,
+          info.density,
+          info.remark,
+          accsr.scenario_result scenarioResult,
+          accs.name scenarioName,
+          accs.result_desc scenarioResultDesc,
+          info.create_time
+        from scenario_selection_info info
+        left join accident_scenario_result accsr on accsr.info_id = info.id and accsr.valid = 1
+        left join accident_scenario accs on accsr.scenario_id = accs.id and accs.valid = 1
+        where info.ent_id = #{param.enterpriseId}
+        order by info.create_time
+    </select>
+</mapper>

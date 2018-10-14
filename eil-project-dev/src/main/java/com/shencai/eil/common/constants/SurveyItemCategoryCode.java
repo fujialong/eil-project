@@ -13,7 +13,9 @@ public enum SurveyItemCategoryCode {
     EXCEL_VIEW_INTENSIVE_TOP10("tableA1", "excel加强表Top10"),
     EXCEL_VIEW_INTENSIVE_S1("Sheet1", "excel加强表其他1"),
     EXCEL_VIEW_INTENSIVE_S2("Sheet2", "excel加强表其他2"),
-    EXCEL_VIEW_INTENSIVE_S3("Sheet3", "excel加强表其他3");
+    EXCEL_VIEW_INTENSIVE_S3("Sheet3", "excel加强表其他3"),
+    SCENARIO_SELECTION("scenario_selection", "情景选择信息来源"),
+    ;
 
     private String code;
     private String name;
