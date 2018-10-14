@@ -2,10 +2,10 @@ package com.shencai.eil.grading.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
+import lombok.Data;
 
-import javax.transaction.Transactional;
-import java.util.Date;
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * <p>
@@ -15,6 +15,7 @@ import java.io.Serializable;
  * @author fujl
  * @since 2018-10-13
  */
+@Data
 public class TargetMaxMin extends Model<TargetMaxMin> {
 
     private static final long serialVersionUID = 1L;
@@ -25,10 +26,10 @@ public class TargetMaxMin extends Model<TargetMaxMin> {
     private String targetId;
 
     @TableField("max_value")
-    private Double maxValue;
+    private Double maxParamValue;
 
     @TableField("min_value")
-    private Double minValue;
+    private Double minParamValue;
 
     @TableField("industry_id")
     private String industryId;
@@ -47,105 +48,8 @@ public class TargetMaxMin extends Model<TargetMaxMin> {
 
     private Boolean valid;
 
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getTargetId() {
-        return targetId;
-    }
-
-    public void setTargetId(String targetId) {
-        this.targetId = targetId;
-    }
-
-    public Double getMaxValue() {
-        return maxValue;
-    }
-
-    public void setMaxValue(Double maxValue) {
-        this.maxValue = maxValue;
-    }
-
-    public Double getMinValue() {
-        return minValue;
-    }
-
-    public void setMinValue(Double minValue) {
-        this.minValue = minValue;
-    }
-
-    public String getIndustryId() {
-        return industryId;
-    }
-
-    public void setIndustryId(String industryId) {
-        this.industryId = industryId;
-    }
-
-    public String getCreateUserId() {
-        return createUserId;
-    }
-
-    public void setCreateUserId(String createUserId) {
-        this.createUserId = createUserId;
-    }
-
-    public Date getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public String getUpdateUserId() {
-        return updateUserId;
-    }
-
-    public void setUpdateUserId(String updateUserId) {
-        this.updateUserId = updateUserId;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
-
-    public Boolean getValid() {
-        return valid;
-    }
-
-    public void setValid(Boolean valid) {
-        this.valid = valid;
-    }
-
     @Override
     protected Serializable pkVal() {
-        return this.id;
-    }
-
-    @Override
-    public String toString() {
-        return "TargetMaxMin{" +
-                "id=" + id +
-                ", targetId=" + targetId +
-                ", maxValue=" + maxValue +
-                ", minValue=" + minValue +
-                ", industryId=" + industryId +
-                ", createUserId=" + createUserId +
-                ", createTime=" + createTime +
-                ", updateUserId=" + updateUserId +
-                ", updateTime=" + updateTime +
-                ", valid=" + valid +
-                "}";
+        return null;
     }
 }

@@ -1,4 +1,3 @@
-package com.shencai.eil.grading.service.impl;
 
 import cn.hutool.core.thread.ThreadUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -43,6 +42,7 @@ public class GisForTest {
     private static final int MAX_THREAD_POOL_SIZE = 5;
     public static final int SLEEP_TIME = 5000;
     public static final int HIGH_SCORE = 100;
+    private Map<String, Double> ruMap = new HashMap<>();
 
     @Autowired
     private EnterpriseInfoMapper enterpriseInfoMapper;
@@ -86,9 +86,16 @@ public class GisForTest {
     private ITargetWeightService targetWeightService;
     @Autowired
     private ITargetWeightGradeLineService targetWeightGradeLineService;
-    private static double prosessRuResult;
-    private static double suddenRuResult;
+    @Autowired
+    private ITargetMaxMinService targetMaxMinService;
 
+    @Transactional(rollbackFor = Exception.class)
+    public void execute(GradingParam param) {
+        EnterpriseVO enterprise = getEnterpriseInfo(param.getEnterpriseId());
+        disposeEnterpriseRiskProfileData(enterprise);
+        List<String> riskIndicatorSystemType = determineEnterpriseRiskIndicatorSystem(enterprise);
+        calculateRu(enterprise, riskIndicatorSystemType);
+    }
 
     public GradingVO getGradingResult(GradingQueryParam queryParam) {
         EnterpriseVO enterpriseInfo = getEnterpriseInfo(queryParam.getEnterpriseId());
@@ -109,6 +116,7 @@ public class GisForTest {
         List<String> riskTypeList = listEntRiskType(queryParam);
         List<TargetResultVO> targetResultList = listAllTargetResult(queryParam, riskTypeList);
 
+        //Deal with parent-child relationships
         List<TargetResultVO> targetResultOfRu = listTargetResultOfRu(targetResultList);
         GradingVO returnData = getReturnData(enterpriseInfo, targetResultOfRu);
         return returnData;
@@ -135,6 +143,63 @@ public class GisForTest {
         return riskTypeList;
     }
 
+    private Map<String, TargetMaxMin> getMaxMinMap() {
+        List<TargetMaxMin> list = targetMaxMinService.list(new QueryWrapper<TargetMaxMin>()
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+
+        if (org.springframework.util.CollectionUtils.isEmpty(list)) {
+            throw new BusinessException("list is null");
+        }
+
+        Map<String, TargetMaxMin> map = new HashMap<>(list.size());
+
+        for (TargetMaxMin targetMaxMin : list) {
+            map.put(targetMaxMin.getTargetId(), targetMaxMin);
+        }
+        return map;
+    }
+
+    /*private List<TargetWeight> obtainTargetWeight(List<String> riskType, String targetCode) { 
+        if (CollectionUtils.isEmpty(riskType)) { 
+            throw new BusinessException("The enterprise risk indicator system type cannot be empty!"); 
+        } 
+        List<TargetWeight> result = new ArrayList<>(); 
+        if (riskType.contains(TargetWeightType.PROGRESSIVE_RISK.getCode())) {
+            TargetWeight targetWeight = targetWeightMapper.selectOne(new QueryWrapper<TargetWeight>()
+                    .eq("type", TargetWeightType.PROGRESSIVE_RISK.getCode())
+                    .eq("code", targetCode).eq("valid", BaseEnum.VALID_YES.getCode()));
+            result.add(targetWeight);
+
+        }
+        if (riskType.contains(TargetWeightType.SUDDEN_RISK.getCode())) {
+            TargetWeight targetWeight = targetWeightMapper.selectOne(new QueryWrapper<TargetWeight>()
+                    .eq("type", TargetWeightType.SUDDEN_RISK.getCode())
+                    .eq("code", targetCode).eq("valid", BaseEnum.VALID_YES.getCode()));
+            result.add(targetWeight);
+        }
+
+        return result; 
+    }*/
+
+    /*private List<String> listTargetWeightId(List<TargetWeight> targetWeightList) { 
+        List<String> targetWeightIds = new ArrayList<>(); 
+        for (TargetWeight targetWeight : targetWeightList) { 
+            targetWeightIds.add(targetWeight.getId()); 
+        } 
+        return targetWeightIds; 
+    }*/
+
+
+  /*  private List<EntRiskAssessResult> listEntRiskAssessResults(EnterpriseVO enterprise, List<String> targetIds) { 
+        List<EntRiskAssessResult> list = entRiskAssessResultMapper.selectList(new QueryWrapper<EntRiskAssessResult>()
+                .eq("ent_id", enterprise.getId())
+                .in("target_weight_id", targetIds)
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+
+        return list; 
+    }
+*/
+
     /**
      * Ru >> R1*R1_w+R2*R2_w+R3*R3_w+R4*R4_w
      */
@@ -144,32 +209,31 @@ public class GisForTest {
         Map<String, Double> targetWeightMap = CommonsUtil.castListToMapAppendKey(targetList);
         List<CodeAndValueUseDouble> containsCodeValues = computeConstantService.listCodeValue();
         Map<String, Double> computeMap = CommonsUtil.castListToMap(containsCodeValues);
-
-        for (String calculateType : riskIndicatorSystemType) {
-            TargetWeight targetWeight = getTargetWeightByCodeAndType(calculateType, TargetEnum.R_U.getCode());
-            EntRiskAssessResult entRiskAssessResult = getEntRiskAssessResult(enterpriseInfo, targetWeight.getId());
-            if (ObjectUtils.isEmpty(entRiskAssessResult)) {
-                double ruResult = threadTask(targetWeightMap, riskIndicatorSystemType, enterpriseInfo, calculateType, computeMap);
-                entRiskAssessResult = buildEntRiskAssessResult(enterpriseInfo.getId(), ruResult, targetWeight.getId());
-                entRiskAssessResultMapper.insert(entRiskAssessResult);
-            }
-        }
-        updateEnterpriseStatus(enterpriseInfo, StatusEnum.W_SURVEY.getCode());
+       // List<TargetWeight> targetWeightList = getTargetWeightByCodeAndTypeList(riskIndicatorSystemType, TargetEnum.R_U.getCode());
+        //List<String> targetWeightIds = listTargetWeightId(targetWeightList); 
+        //List<EntRiskAssessResult> entRiskAssessResult = listEntRiskAssessResults(enterpriseInfo, targetWeightIds);
+        // if (CollectionUtils.isEmpty(entRiskAssessResult)) {
+        double ruResult = threadTask(targetWeightMap, riskIndicatorSystemType, enterpriseInfo, computeMap);
+        // entRiskAssessResult = buildEntRiskAssessResult(enterpriseInfo.getId(), ruResult, targetWeight.getId());
+        //  createEntRiskAssessResult(enterpriseInfo, entRiskAssessResult, ruResult, targetWeightList.get(0).getId());
+        //entRiskAssessResultService.saveBatch(entRiskAssessResult);
+        //}
+        // updateEnterpriseStatus(enterpriseInfo, StatusEnum.W_SURVEY.getCode());
     }
 
     /**
      * thread run task
      */
     public double threadTask(Map<String, Double> targetWeightMap, List<String> riskIndicatorSystemType,
-                             EnterpriseVO enterpriseInfo, String calculateType, Map<String, Double> computeMap) {
+                             EnterpriseVO enterpriseInfo, Map<String, Double> computeMap) {
         BlockingQueue<Runnable> workQuene = new ArrayBlockingQueue<>(10);
         ThreadPoolExecutor executor = new ThreadPoolExecutor(THREAD_POOL_SIZE, MAX_THREAD_POOL_SIZE,
                 0, TimeUnit.MICROSECONDS, workQuene);
 
-        double r1w = targetWeightMap.getOrDefault(TargetEnum.RISK_FACTOR.getCode() + calculateType, DOUBLE_DEFAULT_VALUE);
-        double r2w = targetWeightMap.getOrDefault(TargetEnum.PRIMARY_CONTROL_MECHANISM.getCode() + calculateType, DOUBLE_DEFAULT_VALUE);
-        double r3w = targetWeightMap.getOrDefault(TargetEnum.SECONDARY_CONTROL_MECHANISM.getCode() + calculateType, DOUBLE_DEFAULT_VALUE);
-        double r4w = targetWeightMap.getOrDefault(TargetEnum.RECEPTOR_SENSITIVITY.getCode() + calculateType, DOUBLE_DEFAULT_VALUE);
+        double r1w = targetWeightMap.getOrDefault(TargetEnum.RISK_FACTOR.getCode() + 1, DOUBLE_DEFAULT_VALUE);
+        double r2w = targetWeightMap.getOrDefault(TargetEnum.PRIMARY_CONTROL_MECHANISM.getCode() + 1, DOUBLE_DEFAULT_VALUE);
+        double r3w = targetWeightMap.getOrDefault(TargetEnum.SECONDARY_CONTROL_MECHANISM.getCode() + 1, DOUBLE_DEFAULT_VALUE);
+        double r4w = targetWeightMap.getOrDefault(TargetEnum.RECEPTOR_SENSITIVITY.getCode() + 1, DOUBLE_DEFAULT_VALUE);
 
         CompletionService completionService = new ExecutorCompletionService(executor);
         List<String> list = Arrays.asList("R1", "R2", "R3", "R4");
@@ -181,16 +245,16 @@ public class GisForTest {
                 public Object call() throws Exception {
                     switch (type) {
                         case "R1":
-                            result = r1w * calculateRiskFactor(enterpriseInfo, calculateType, computeMap);
+                           // result = calculateRiskFactor(enterpriseInfo, riskIndicatorSystemType, computeMap, targetWeightMap);
                             break;
                         case "R2":
-                            result = r2w * calculateRtwo(enterpriseInfo, calculateType, computeMap);
+                           // result = r2w * calculateRtwo(enterpriseInfo, riskIndicatorSystemType, computeMap, targetWeightMap);
                             break;
                         case "R3":
-                            result = r3w * calculateSecondaryControlMechanism(enterpriseInfo, calculateType, targetWeightMap, computeMap);
+                            //result = r3w * calculateSecondaryControlMechanism(enterpriseInfo, riskIndicatorSystemType, targetWeightMap, computeMap);
                             break;
                         case "R4":
-                            result = r4w * calculateRFour(enterpriseInfo, calculateType, targetWeightMap, computeMap);
+                           // result = r4w * calculateRFour(enterpriseInfo, riskIndicatorSystemType, targetWeightMap, computeMap);
                             break;
                         default:
                             break;
@@ -327,15 +391,27 @@ public class GisForTest {
         return riskType;
     }
 
+   /* private String getTargetWeightId(List<TargetWeight> targetWeightList, String targetWeightType) { 
+        String targetWeightId = null; 
+        for (TargetWeight targetWeight : targetWeightList) { 
+            if (targetWeightType.equals(targetWeight.getType())) {
+                 targetWeightId = targetWeight.getId();
+                 } 
+        } 
+        return targetWeightId; }
+*/
+
     /**
      * calculate risk factor R1
      */
     private double calculateRiskFactor(EnterpriseVO enterprise,
-                                       String riskType, Map<String, Double> computeMap) {
-        TargetWeight targetWeight = getTargetWeightByCodeAndType(riskType, TargetEnum.RISK_FACTOR.getCode());
-        //obtain the existing R1 calculation results of the enterprise
-        EntRiskAssessResult riskAssessResultList = getEntRiskAssessResult(enterprise, targetWeight.getId());
-        if (ObjectUtils.isEmpty(riskAssessResultList)) {
+                                       List<String> riskType,
+                                       Map<String, Double> computeMap,
+                                       Map<String, Double> targetWeightMap) {
+        //List<TargetWeight> targetWeights = getTargetWeightByCodeAndTypeList(riskType, TargetEnum.RISK_FACTOR.getCode());
+        targetWeightMap.getOrDefault(TargetEnum.RISK_FACTOR.getCode() + 1, DOUBLE_DEFAULT_VALUE);
+        //EntRiskAssessResult riskAssessResultList = getEntRiskAssessResult(enterprise, targetWeight.getId());
+       /* if (ObjectUtils.isEmpty(riskAssessResultList)) {
             //calculate R1.1
             double onePointOneResult = firstStepOfRiskFactorCalculation(enterprise, riskType, computeMap);
             //calculate R1.2
@@ -343,23 +419,47 @@ public class GisForTest {
             EntRiskAssessResult riskAssessResult = buildEntRiskAssessResult(enterprise.getId(), onePointOneResult + onePointTwoResult, targetWeight.getId());
             entRiskAssessResultMapper.insert(riskAssessResult);
 
-
             return onePointOneResult + onePointTwoResult;
-        }
-        return riskAssessResultList.getAssessValue();
+        }*/
+       // return riskAssessResultList.getAssessValue();
+        return 0;
     }
 
     /**
      * calculate R1.1
      */
     private double firstStepOfRiskFactorCalculation(EnterpriseVO enterprise, String type, Map<String, Double> computeMap) {
+        Map<String, TargetMaxMin> maxMinMap = getMaxMinMap();
         List<String> riskTypes = new ArrayList<>();
+       /* List<TargetWeight> targetWeightList = 
+        obtainTargetWeight(riskTypes, TargetEnum.SECONDARY_INDICATORS_OF_RISK_FACTORS.getCode());
+        List<String> targetWeightIds = listTargetWeightId(targetWeightList); 
+        List<EntRiskAssessResult> riskResult = listEntRiskAssessResults(enterprise, targetWeightIds);
+        List<EntRiskAssessResult> entRiskParamValueList = new ArrayList<>();*/
+      /*  if (CollectionUtils.isEmpty(riskResult)) {
+            if (riskTypes.contains(TargetWeightType.PROGRESSIVE_RISK.getCode())) {
+                String progressiveTargetWeightId = getTargetWeightId(targetWeightList,
+                        TargetWeightType.PROGRESSIVE_RISK.getCode());
+
+                //calculate progressive risk R1.1
+                double progressiveResult =
+                        calculateProgressiveSecondaryIndicatorsOfRiskFactors(enterprise, entRiskParamValueList,
+                                riskMaterialList);
+                double standardizedResult = progressiveResult * 100 / r11max1;
+                EntRiskAssessResult entRiskAssessResult =
+                        createEntRiskAssessResult(enterprise, entRiskParamValueList, progressiveResult, );
+                buildEntRiskAssessResult(enterprise.getId(), standardizedResult, targetWeight.getId());
+                entRiskAssessResultMapper.insert(entRiskAssessResult);
+                return standardizedResult * targetWeight.getWeight();
+            }
+        }
+*/
+
         double r11max1 = computeMap.getOrDefault(ComputeConstantEnum.R_ONE_ONE_MAX_ONE.getCode(), 1.0);
 
         double r11max2 = computeMap.getOrDefault(ComputeConstantEnum.R_ONE_ONE_MAX_TWO.getCode(), 1.0);
         TargetWeight targetWeight =
                 getTargetWeightByCodeAndType(type, TargetEnum.SECONDARY_INDICATORS_OF_RISK_FACTORS.getCode());
-        List<TargetWeight> targetWeightList = obtainTargetWeight(riskTypes, TargetEnum.SECONDARY_INDICATORS_OF_RISK_FACTORS.getCode());
         EntRiskAssessResult riskAssessResultList = getEntRiskAssessResult(enterprise, targetWeight.getId());
         //if results is not found, calculate R1.1
         if (ObjectUtils.isEmpty(riskAssessResultList)) {
@@ -368,14 +468,7 @@ public class GisForTest {
             List<RiskMaterialVO> riskMaterialList = listRiskMaterial(enterprise, entRiskParamValueList);
             setRiskMaterialValueToEntRiskParamValueList(entRiskParamValueList, riskMaterialList);
             if (TargetWeightType.PROGRESSIVE_RISK.getCode().equals(type)) {
-                //calculate progressive risk R1.1
-                double progressiveResult =
-                        calculateProgressiveSecondaryIndicatorsOfRiskFactors(enterprise, entRiskParamValueList,
-                                riskMaterialList);
-                double standardizedResult = progressiveResult * 100 / r11max1;
-                EntRiskAssessResult entRiskAssessResult = buildEntRiskAssessResult(enterprise.getId(), standardizedResult, targetWeight.getId());
-                entRiskAssessResultMapper.insert(entRiskAssessResult);
-                return standardizedResult * targetWeight.getWeight();
+
             }
             if (TargetWeightType.SUDDEN_RISK.getCode().equals(type)) {
                 //calculate sudden risk R1.1
@@ -404,7 +497,6 @@ public class GisForTest {
             double result = calculateOnePointTwoSecondaryIndicatorsOfRiskFactors(enterprise);
             EntRiskAssessResult entRiskAssessResult = buildEntRiskAssessResult(enterprise.getId(), result * 100 / r12max, targetWeight.getId());
             entRiskAssessResultMapper.insert(entRiskAssessResult);
-
             return result * 100 / r12max * targetWeight.getWeight();
         }
         return riskAssessResult.getAssessValue() * targetWeight.getWeight();
@@ -1038,6 +1130,17 @@ public class GisForTest {
     }
 
     /**
+     * get targetWeight by type code
+     */
+   /* private List<TargetWeight> getTargetWeightByCodeAndTypeList(List riskTypes, String targetCode) {
+        List<TargetWeight> targetWeights = targetWeightMapper.select(new QueryWrapper<TargetWeight>()
+                .in("type", riskTypes)
+                .eq("code", targetCode)
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+        return targetWeights;
+    }*/
+
+    /**
      * obtain the existing calculation results
      */
     private EntRiskAssessResult getEntRiskAssessResult(EnterpriseVO enterprise, String targetId) {
@@ -1051,13 +1154,13 @@ public class GisForTest {
 
     private void createEntRiskAssessResult(EnterpriseVO enterprise, List<EntRiskAssessResult> entRiskAssessResults,
                                            double result, String targetWeightId) {
-        String resutLeve = getGradeLineLeve(result, targetWeightId);
+        String resultLevelId = getGradeLineLevel(result, targetWeightId);
         EntRiskAssessResult riskAssessResult = new EntRiskAssessResult();
         riskAssessResult.setId(StringUtil.getUUID());
         riskAssessResult.setEntId(enterprise.getId());
         riskAssessResult.setTargetWeightId(targetWeightId);
         riskAssessResult.setAssessValue(result);
-        riskAssessResult.setGradeLineId(resutLeve == null ? "" : resutLeve);
+        riskAssessResult.setGradeLineId(resultLevelId);
         riskAssessResult.setCreateTime(DateUtil.getNowTimestamp());
         riskAssessResult.setUpdateTime(DateUtil.getNowTimestamp());
         riskAssessResult.setValid((Integer) BaseEnum.VALID_YES.getCode());
@@ -1065,12 +1168,12 @@ public class GisForTest {
     }
 
     private EntRiskAssessResult buildEntRiskAssessResult(String entId, double result, String targetWeightId) {
-        String resultLevelId = getGradeLineLeve(result, targetWeightId);
+        String resultLevelId = getGradeLineLevel(result, targetWeightId);
         EntRiskAssessResult riskAssessResult = new EntRiskAssessResult();
         riskAssessResult.setId(StringUtil.getUUID());
         riskAssessResult.setEntId(entId);
         riskAssessResult.setTargetWeightId(targetWeightId);
-        riskAssessResult.setGradeLineId(resultLevelId == null ? "" : resultLevelId);
+        riskAssessResult.setGradeLineId(resultLevelId);
         riskAssessResult.setAssessValue(result);
         riskAssessResult.setCreateTime(DateUtil.getNowTimestamp());
         riskAssessResult.setUpdateTime(DateUtil.getNowTimestamp());
@@ -1423,51 +1526,33 @@ public class GisForTest {
         return Double.parseDouble(computeConstant.getValue());
     }
 
-    private String getGradeLineLeve(double score, String weightId) {
-
+    private String getGradeLineLevel(double score, String weightId) {
         TargetWeightGradeLine targetWeightGradeLine;
         if (score >= HIGH_SCORE) {
             targetWeightGradeLine = targetWeightGradeLineService.getOne(new QueryWrapper<TargetWeightGradeLine>()
                     .eq("target_weight_id", weightId)
                     .eq("result_code", GradeLineResultCode.HIGH.getCode())
                     .eq("valid", BaseEnum.VALID_YES.getCode()));
-
-            return targetWeightGradeLine == null ? "" : targetWeightGradeLine.getId();
+            if (ObjectUtils.isEmpty(targetWeightGradeLine)) {
+                targetWeightGradeLineService.getOne(new QueryWrapper<TargetWeightGradeLine>()
+                        .eq("type", GradeLineResultCode.TYPE_DEFAULT.getCode())
+                        .eq("result_code", GradeLineResultCode.HIGH.getCode())
+                        .eq("valid", BaseEnum.VALID_YES.getCode()));
+            }
+            return targetWeightGradeLine.getId();
         }
-
         targetWeightGradeLine = targetWeightGradeLineService.getOne(new QueryWrapper<TargetWeightGradeLine>()
                 .eq("target_weight_id", weightId)
-                .le("percent_start", score)
-                .gt("percent_end", score)
+                .lt("percent_start", score)
+                .ge("percent_end", score)
                 .eq("valid", BaseEnum.VALID_YES.getCode()));
-
-        return targetWeightGradeLine == null ? "" : targetWeightGradeLine.getId();
-    }
-
-
-    /**
-     * obtain index weight
-     */
-    private List<TargetWeight> obtainTargetWeight(List<String> riskTypes, String targetCode) {
-        if (CollectionUtils.isEmpty(riskTypes)) {
-            throw new BusinessException("The enterprise risk indicator system type cannot be empty!");
-        }
-        List<TargetWeight> result = new ArrayList<>();
-        if (riskTypes.contains(TargetWeightType.PROGRESSIVE_RISK.getCode())) {
-            TargetWeight targetWeight = targetWeightMapper.selectOne(new QueryWrapper<TargetWeight>()
-                    .eq("type", TargetWeightType.PROGRESSIVE_RISK.getCode())
-                    .eq("code", targetCode)
+        if (ObjectUtils.isEmpty(targetWeightGradeLine)) {
+            targetWeightGradeLineService.getOne(new QueryWrapper<TargetWeightGradeLine>()
+                    .eq("type", GradeLineResultCode.TYPE_DEFAULT.getCode())
+                    .lt("percent_start", score)
+                    .ge("percent_end", score)
                     .eq("valid", BaseEnum.VALID_YES.getCode()));
-            result.add(targetWeight);
         }
-        if (!TargetEnum.R_THREE_TWO.getCode().equals(targetCode)
-                && riskTypes.contains(TargetWeightType.SUDDEN_RISK.getCode())) {
-            TargetWeight targetWeight = targetWeightMapper.selectOne(new QueryWrapper<TargetWeight>()
-                    .eq("type", TargetWeightType.SUDDEN_RISK.getCode())
-                    .eq("code", targetCode)
-                    .eq("valid", BaseEnum.VALID_YES.getCode()));
-            result.add(targetWeight);
-        }
-        return result;
+        return targetWeightGradeLine.getId();
     }
 }

@@ -86,6 +86,8 @@ public class GradingServiceImpl implements IGradingService {
     private ITargetWeightService targetWeightService;
     @Autowired
     private ITargetWeightGradeLineService targetWeightGradeLineService;
+    @Autowired
+    private ITargetMaxMinService targetMaxMinService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -142,6 +144,62 @@ public class GradingServiceImpl implements IGradingService {
         }
         return riskTypeList;
     }
+
+    private Map<String, TargetMaxMin> getMaxMinMap() {
+        List<TargetMaxMin> list = targetMaxMinService.list(new QueryWrapper<TargetMaxMin>()
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+
+        if (org.springframework.util.CollectionUtils.isEmpty(list)) {
+            throw new BusinessException("list is null");
+        }
+
+        Map<String, TargetMaxMin> map = new HashMap<>(list.size());
+
+        for (TargetMaxMin targetMaxMin : list) {
+            map.put(targetMaxMin.getTargetId(), targetMaxMin);
+        }
+        return map;
+    }
+
+  /*  private List<TargetWeight> obtainTargetWeight(List<String> riskType, String targetCode) { 
+        if (CollectionUtils.isEmpty(riskType)) { 
+            throw new BusinessException("The enterprise risk indicator system type cannot be empty!"); 
+        } 
+        List<TargetWeight> result = new ArrayList<>(); 
+        if (riskType.contains(TargetWeightType.PROGRESSIVE_RISK.getCode())) {
+            TargetWeight targetWeight = targetWeightMapper.selectOne(new QueryWrapper<TargetWeight>()
+                    .eq("type", TargetWeightType.PROGRESSIVE_RISK.getCode())
+                    .eq("code", targetCode).eq("valid", BaseEnum.VALID_YES.getCode()));
+            result.add(targetWeight);
+
+        }
+        if (riskType.contains(TargetWeightType.SUDDEN_RISK.getCode())) {
+            TargetWeight targetWeight = targetWeightMapper.selectOne(new QueryWrapper<TargetWeight>()
+                    .eq("type", TargetWeightType.SUDDEN_RISK.getCode())
+                    .eq("code", targetCode).eq("valid", BaseEnum.VALID_YES.getCode()));
+            result.add(targetWeight);
+        }
+
+        return result; 
+    }*/
+
+   /* private List<String> listTargetWeightId(List<TargetWeight> targetWeightList) { 
+        List<String> targetWeightIds = new ArrayList<>(); 
+        for (TargetWeight targetWeight : targetWeightList) { 
+            targetWeightIds.add(targetWeight.getId()); 
+        } 
+        return targetWeightIds; 
+    }*/
+
+
+   /* private List<EntRiskAssessResult> listEntRiskAssessResults(EnterpriseVO enterprise, List<String> targetIds) { 
+        List<EntRiskAssessResult> list = entRiskAssessResultMapper.selectList(new QueryWrapper<EntRiskAssessResult>()
+                .eq("ent_id", enterprise.getId())
+                .in("target_weight_id", targetIds)
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+
+        return list; 
+    }*/
 
     /**
      * Ru >> R1*R1_w+R2*R2_w+R3*R3_w+R4*R4_w
@@ -363,6 +421,17 @@ public class GradingServiceImpl implements IGradingService {
      * calculate R1.1
      */
     private double firstStepOfRiskFactorCalculation(EnterpriseVO enterprise, String type, Map<String, Double> computeMap) {
+       /* Map<String, TargetMaxMin> maxMinMap = getMaxMinMap();
+        List<String> riskTypes = new ArrayList<>();
+        List<TargetWeight> targetWeightList = 
+        obtainTargetWeight(riskTypes, TargetEnum.SECONDARY_INDICATORS_OF_RISK_FACTORS.getCode());
+        List<String> targetWeightIds = listTargetWeightId(targetWeightList); 
+        List<EntRiskAssessResult> riskResult = listEntRiskAssessResults(enterprise, targetWeightIds);
+        if (CollectionUtils.isEmpty(riskResult)) {
+
+        }*/
+
+
         double r11max1 = computeMap.getOrDefault(ComputeConstantEnum.R_ONE_ONE_MAX_ONE.getCode(), 1.0);
 
         double r11max2 = computeMap.getOrDefault(ComputeConstantEnum.R_ONE_ONE_MAX_TWO.getCode(), 1.0);
