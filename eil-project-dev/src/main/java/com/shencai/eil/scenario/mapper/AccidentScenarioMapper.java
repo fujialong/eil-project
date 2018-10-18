@@ -8,13 +8,13 @@ import com.shencai.eil.scenario.model.AccidentScenarioVO;
 import java.util.List;
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
- *
  * @author fanhj
  * @since 2018-10-12
  */
 public interface AccidentScenarioMapper extends BaseMapper<AccidentScenario> {
     List<AccidentScenarioVO> listAccidentScenario(AccidentScenarioQueryParam queryParam);
+
+    int countTotalAccidentScenarioByEnterpriseId(String enterpriseId);
+
+    List<AccidentScenarioVO> listAccidentScenarioOfEnterprise(String enterpriseId);
 }

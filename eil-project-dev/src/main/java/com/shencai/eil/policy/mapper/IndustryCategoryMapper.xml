@@ -38,4 +38,14 @@
         valid=1
         order by code
     </select>
+
+    <select id="getClassificationById" resultType="com.shencai.eil.survey.model.IndustryCategoryClassifyVO">
+        select
+            (select name from industry_category where id = ic.level_two_id) levelTwoName,
+            (select name from industry_category where id = ic.level_three_id) levelThreeName,
+            (select name from industry_category where id = ic.level_four_id) levelFourName,
+            code categoryCode
+        from industry_category ic
+        where id = #{industryId}
+    </select>
 </mapper>

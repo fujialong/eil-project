@@ -1,7 +1,10 @@
 package com.shencai.eil.grading.mapper;
 
-import com.shencai.eil.grading.entity.TargetMaxMin;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.shencai.eil.grading.entity.TargetMaxMin;
+import com.shencai.eil.grading.model.TargetMaxValueVO;
+
+import java.util.List;
 
 /**
  * <p>
@@ -13,4 +16,5 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface TargetMaxMinMapper extends BaseMapper<TargetMaxMin> {
 
+    List<TargetMaxValueVO> listMaxMinMap();
 }

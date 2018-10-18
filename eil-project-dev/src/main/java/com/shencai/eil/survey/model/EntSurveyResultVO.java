@@ -34,4 +34,17 @@ public class EntSurveyResultVO implements Serializable {
 
     private Double emissionConcentration;
 
+    private String techniqueCell;
+
+    private String containerPressure;
+
+    private Double temperature;
+
+    private String height;
+
+    private String internalDiameterOfPipeline;
+
+    private String detectionSystemClassification;
+
+    private String isolationSystemClassification;
 }

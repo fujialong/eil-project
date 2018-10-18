@@ -8,7 +8,7 @@ import com.shencai.eil.system.model.DictionaryVO;
 import com.shencai.eil.system.service.ISysDictionaryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ObjectUtils;
+import com.shencai.eil.common.utils.ObjectUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +39,7 @@ public class SysDictionaryServiceImpl extends ServiceImpl<SysDictionaryMapper, S
     private List<DictionaryVO> listReturnData(List<DictionaryVO> dictionaryVOList) {
         List<DictionaryVO> returnList = new ArrayList<>();
         for (DictionaryVO dictionaryVO : dictionaryVOList) {
-            if (ObjectUtils.isEmpty(dictionaryVO.getParentCode())) {
+            if (ObjectUtil.isEmpty(dictionaryVO.getParentCode())) {
                 String code = dictionaryVO.getCode();
                 List<DictionaryVO> children = new ArrayList<>();
                 for (DictionaryVO childDictionary : dictionaryVOList) {

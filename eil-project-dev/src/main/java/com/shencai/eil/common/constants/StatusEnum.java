@@ -4,6 +4,12 @@ package com.shencai.eil.common.constants;
  * Created by zhoujx on 2018/9/20.
  */
 public enum StatusEnum {
+
+    /**
+     * Provided
+     */
+    TEMPORARY_STORAGE("1000", "暂存"),
+
     /**
      * Provided
      */

@@ -1,11 +1,10 @@
 package com.shencai.eil.survey.service.impl;
 
-import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shencai.eil.common.constants.*;
 import com.shencai.eil.common.utils.DateUtil;
+import com.shencai.eil.common.utils.ObjectUtil;
 import com.shencai.eil.common.utils.StringUtil;
 import com.shencai.eil.exception.BusinessException;
 import com.shencai.eil.grading.mapper.EntRiskAssessResultMapper;
@@ -19,6 +18,7 @@ import com.shencai.eil.policy.mapper.EnterpriseInfoMapper;
 import com.shencai.eil.policy.model.EnterpriseParam;
 import com.shencai.eil.policy.model.EnterpriseQueryParam;
 import com.shencai.eil.policy.model.EnterpriseVO;
+import com.shencai.eil.scenario.service.IScenarioSelectionInfoService;
 import com.shencai.eil.survey.constants.DefaultValueMapping;
 import com.shencai.eil.survey.entity.EntSurveyPlan;
 import com.shencai.eil.survey.mapper.EntSurveyPlanMapper;
@@ -40,10 +40,6 @@ import java.math.BigDecimal;
 import java.util.*;
 
 /**
- * <p>
- *  服务实现类
- * </p>
- *
  * @author fujl
  * @since 2018-09-27
  */
@@ -62,12 +58,14 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
     private EntRiskAssessResultMapper entRiskAssessResultMapper;
     @Autowired
     private BaseFileuploadMapper baseFileuploadMapper;
+    @Autowired
+    private IScenarioSelectionInfoService scenarioSelectionInfoService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public EnterpriseVO getEntSurveyInfo(String enterpriseId) {
         EnterpriseVO enterprise = getEnterpriseOfSurvey(enterpriseId);
-        if (ObjectUtils.isNull(enterprise)) {
+        if (ObjectUtil.isEmpty(enterprise)) {
             throw new BusinessException("The enterprise had been removed!");
         }
         if (StringUtil.isBlank(enterprise.getRiskLevel())) {
@@ -153,7 +151,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
     private void setAttachment(List<EntSurveyPlanVO> surveyPlanList) {
         List<String> sourceIds = new ArrayList<>();
         for (EntSurveyPlanVO planVO: surveyPlanList) {
-            if (ObjectUtils.isNotNull(planVO.getHasAttachment())
+            if (!ObjectUtil.isEmpty(planVO.getHasAttachment())
                     && planVO.getHasAttachment() ==  BaseEnum.VALID_YES.getCode()) {
                 sourceIds.add(planVO.getId());
             }
@@ -167,7 +165,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
                 for (BaseFileupload file: files) {
                     for (EntSurveyPlanVO planVO: surveyPlanList) {
                         List fileList = new ArrayList();
-                        if (ObjectUtils.isNotNull(planVO.getHasAttachment())
+                        if (!ObjectUtil.isEmpty(planVO.getHasAttachment())
                                 && planVO.getHasAttachment() ==  BaseEnum.VALID_YES.getCode()
                                 && planVO.getId().equals(file.getSourceId())) {
                             fileList.add(file);
@@ -215,7 +213,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
                     break;
                 }
             }
-            if (ObjectUtils.isNotNull(vo.getCategoryCode())) {
+            if (!ObjectUtil.isEmpty(vo.getCategoryCode())) {
                 setDefaultResult(enterprise, vo, plan, paramList);
             }
             Date now = DateUtil.getNowTimestamp();
@@ -273,7 +271,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
     private void combineDefaultResult(Double yield, EntSurveyPlan plan, List<ParamVO> paramList) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < paramList.size(); i++) {
-            if (ObjectUtils.isNotNull(yield)) {
+            if (!ObjectUtil.isEmpty(yield)) {
                 Double result = Double.valueOf(paramList.get(i).getValue()) * yield;
                 String[] splitArray = paramList.get(i).getRemark().split("/");
                 String name;
@@ -320,31 +318,23 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
 
     private List<EntSurveyPlan> generateSurveyPlanList(String enterpriseId, List<SurveyItemVO> surveyItemList, HashMap<String, EntRiskAssessResultVO> map) {
         List<EntSurveyPlan> surveyPlanList = new ArrayList<>();
-        Iterator iterator= map.entrySet().iterator();
         HashMap<String, Integer> indexMap = new HashMap<>();
-        while (iterator.hasNext()) {
-            Map.Entry entry = (Map.Entry) iterator.next();
-            EntRiskAssessResultVO assessResult = (EntRiskAssessResultVO) entry.getValue();
+        for (SurveyItemVO vo: surveyItemList) {
+            EntRiskAssessResultVO assessResult = map.get(vo.getTargetWeightCode());
             if (GradeLineResultCode.LOW.getCode().equals(assessResult.getGradeLineCode())) {
-                for (SurveyItemVO vo: surveyItemList) {
-                    if (assessResult.getTargetCode().equals(vo.getTargetWeightCode())
-                            && vo.getNeedSelected() == 1) {
-                        addSurveyPlan(enterpriseId, surveyPlanList, assessResult, vo, indexMap);
-                    }
+                if (assessResult.getTargetCode().equals(vo.getTargetWeightCode())
+                        && vo.getNeedSelected() == 1) {
+                    addSurveyPlan(enterpriseId, surveyPlanList, assessResult, vo, indexMap);
                 }
             } else {
                 if (TargetEnum.RISK_FACTOR.getCode().equals(assessResult.getTargetCode())) {
-                    for (SurveyItemVO vo: surveyItemList) {
-                        if (assessResult.getTargetCode().equals(vo.getTargetWeightCode())
-                                && vo.getNeedSelected() == 0) {
-                            addSurveyPlan(enterpriseId, surveyPlanList, assessResult, vo, indexMap);
-                        }
+                    if (assessResult.getTargetCode().equals(vo.getTargetWeightCode())
+                            && vo.getNeedSelected() == 0) {
+                        addSurveyPlan(enterpriseId, surveyPlanList, assessResult, vo, indexMap);
                     }
                 } else {
-                    for (SurveyItemVO vo: surveyItemList) {
-                        if (assessResult.getTargetCode().equals(vo.getTargetWeightCode())) {
-                            addSurveyPlan(enterpriseId, surveyPlanList, assessResult, vo, indexMap);
-                        }
+                    if (assessResult.getTargetCode().equals(vo.getTargetWeightCode())) {
+                        addSurveyPlan(enterpriseId, surveyPlanList, assessResult, vo, indexMap);
                     }
                 }
             }
@@ -355,7 +345,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
     private HashMap<String, EntRiskAssessResultVO> compareAssessResult(List<EntRiskAssessResultVO> riskAssessResultList) {
         HashMap<String, EntRiskAssessResultVO> map = new HashMap<>();
         for (EntRiskAssessResultVO vo: riskAssessResultList) {
-            if (ObjectUtils.isNotNull(map.get(vo.getTargetCode()))) {
+            if (!ObjectUtil.isEmpty(map.get(vo.getTargetCode()))) {
                 if (Double.valueOf(vo.getTargetResult()) > Double.valueOf(map.get(vo.getTargetCode()).getTargetResult())) {
                     map.put(vo.getTargetCode(), vo);
                 }
@@ -409,8 +399,8 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
         EnterpriseQueryParam queryParam = new EnterpriseQueryParam();
         queryParam.setEnterpriseId(enterpriseId);
         EnterpriseVO enterprise = enterpriseInfoMapper.getEnterprise(queryParam);
-        if (org.springframework.util.ObjectUtils.isEmpty(enterprise)) {
-            throw new BusinessException("The enterprise has been removed!");
+        if (ObjectUtil.isEmpty(enterprise)) {
+            throw new BusinessException("enterprise is not exist!");
         }
         return enterprise;
     }
@@ -419,11 +409,10 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
     @Override
     public void finishSurvey(String enterpriseId) {
         EnterpriseInfo enterpriseInfo = enterpriseInfoMapper.selectById(enterpriseId);
-        if (ObjectUtil.isNull(enterpriseInfo)) {
-            throw new BusinessException("enterprise is not exist");
+        if (ObjectUtil.isEmpty(enterpriseInfo)) {
+            throw new BusinessException("enterprise is not exist!");
         }
         List<BaseFileupload> files = listFiles(enterpriseId);
-
         if (RiskLevel.HIGH.getCode().equals(enterpriseInfo.getRiskLevel())) {
             if (CollectionUtils.isEmpty(files)) {
                 throw new BusinessException("please upload basic and intensive survey report!");
@@ -436,6 +425,11 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
                 throw new BusinessException("please upload basic survey report!");
             }
         }
+        updateEnterpriseStatus(enterpriseId, enterpriseInfo);
+        scenarioSelectionInfoService.initScenarioSelectionInfo(enterpriseId);
+    }
+
+    private void updateEnterpriseStatus(String enterpriseId, EnterpriseInfo enterpriseInfo) {
         enterpriseInfo.setStatus(StatusEnum.IN_DEPTH_EVALUATION.getCode());
         enterpriseInfo.setUpdateTime(DateUtil.getNowTimestamp());
         enterpriseInfoMapper.update(enterpriseInfo, new QueryWrapper<EnterpriseInfo>().eq("id", enterpriseId));

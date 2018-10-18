@@ -4,16 +4,26 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="com.shencai.eil.grading.entity.TargetMaxMin">
-        <id column="id" property="id" />
-        <result column="target_id" property="targetId" />
-        <result column="max_value" property="maxValue" />
-        <result column="min_value" property="minValue" />
-        <result column="industry_id" property="industryId" />
-        <result column="create_user_id" property="createUserId" />
-        <result column="create_time" property="createTime" />
-        <result column="update_user_id" property="updateUserId" />
-        <result column="update_time" property="updateTime" />
-        <result column="valid" property="valid" />
+        <id column="id" property="id"/>
+        <result column="target_id" property="targetId"/>
+        <result column="max_value" property="maxParamValue"/>
+        <result column="min_value" property="minParamValue"/>
+        <result column="industry_id" property="industryId"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="valid" property="valid"/>
     </resultMap>
+    <select id="listMaxMinMap" resultType="com.shencai.eil.grading.model.TargetMaxValueVO">
+        SELECT
+            w.id targetId,
+            w. CODE,
+            t.max_value maxParamValue,
+            t.min_value minParamValue
+        FROM
+            target_max_min t
+        LEFT JOIN target_weight w ON t.target_id = w.id and t.valid = 1 and t.valid = 1;
+    </select>
 
 </mapper>

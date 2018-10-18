@@ -118,4 +118,29 @@
         order by esp.excel_col_index
     </select>
 
+    <select id="listResultOfIntensiveParamsByRow" resultType="com.shencai.eil.survey.model.SurveyResultVO">
+        select
+            result.excel_row_index,
+            Max(case when item.code in ('S2', 'S52') then result.result else '' end) componentType,
+            Max(case when item.code in ('S3', 'S53') then result.result else '' end) componentLocation,
+            Max(case when item.code in ('S153') then result.result else '' end) wasteCollection,
+            Max(case when item.code in ('S154') then result.result else '' end) wastePrevent
+        from ent_survey_result result
+        inner join ent_survey_plan plan on result.survey_plan_id = plan.id and plan.valid = 1
+        inner join survey_item item on item.id = plan.survey_item_id and item.valid = 1
+        where result.valid = 1 and item.code in ('S2', 'S52', 'S3', 'S53', 'S153', 'S154') and plan.ent_id = #{enterpriseId}
+        group by result.excel_row_index, plan.ent_id
+    </select>
+
+    <select id="listResultOfBasicComponentByRow" resultType="com.shencai.eil.survey.model.SurveyResultVO">
+        select
+            result.excel_row_index,
+            Max(case when item.code in ('M2') then result.result else '' end) componentType,
+            Max(case when item.code in ('M3') then result.result else '' end) componentLocation
+        from ent_survey_result result
+        inner join ent_survey_plan plan on result.survey_plan_id = plan.id and plan.valid = 1
+        inner join survey_item item on item.id = plan.survey_item_id and item.valid = 1
+        where result.valid = 1 and item.code in ('M2', 'M3') and plan.ent_id = #{enterpriseId}
+        group by result.excel_row_index, plan.ent_id
+    </select>
 </mapper>

@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.ObjectUtils;
+import com.shencai.eil.common.utils.ObjectUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +52,7 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void savePolicy(PolicyParam param) {
+    public String savePolicy(PolicyParam param) {
         checkDataBeforeSave(param);
         computeEnterpriseScale(param);
         String enterpriseId = saveEnterpriseInfo(param);
@@ -60,6 +60,7 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         saveEnterpriseMappingTechnique(param, enterpriseId);
         saveEnterpriseMappingProducts(param, enterpriseId);
         saveEnterpriseAccidents(param, enterpriseId);
+        return enterpriseId;
     }
 
     private void saveFileupload(PolicyParam param, String enterpriseId) {
@@ -69,13 +70,20 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
 
     private void insertFileUpload(PolicyParam param, String enterpriseId) {
         List<BaseFileupload> attachmentList = param.getLicenceAttachmentList();
-        attachmentList.addAll(param.getEvaluationReportAttachmentList());
-        for (BaseFileupload attachment : attachmentList) {
-            attachment.setSourceId(enterpriseId);
-            attachment.setCreateTime(DateUtil.getNowTimestamp());
-            attachment.setUpdateTime(DateUtil.getNowTimestamp());
+        if (CollectionUtils.isEmpty(attachmentList)) {
+            attachmentList = param.getEvaluationReportAttachmentList();
+        } else {
+            List<BaseFileupload> evaluationReportAttachmentList = param.getEvaluationReportAttachmentList();
+            if (!CollectionUtils.isEmpty(evaluationReportAttachmentList)) {
+                attachmentList.addAll(evaluationReportAttachmentList);
+            }
         }
         if (!CollectionUtils.isEmpty(attachmentList)) {
+            for (BaseFileupload attachment : attachmentList) {
+                attachment.setSourceId(enterpriseId);
+                attachment.setCreateTime(DateUtil.getNowTimestamp());
+                attachment.setUpdateTime(DateUtil.getNowTimestamp());
+            }
             fileuploadService.updateBatchById(attachmentList);
         }
     }
@@ -118,21 +126,26 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
     }
 
     private void computeEnterpriseScale(PolicyParam param) {
-        List<EnterpriseScaleDivision> enterpriseScaleDivisionList = enterpriseScaleDivisionMapper.selectList(
-                new QueryWrapper<EnterpriseScaleDivision>()
-                        .eq("industry_code", param.getIndustryLargeCategoryCode())
-                        .eq("valid", BaseEnum.VALID_YES.getCode()));
-        for (EnterpriseScaleDivision enterpriseScaleDivision : enterpriseScaleDivisionList) {
-            if (param.getEmployeesNumber() >= enterpriseScaleDivision.getEmployeesNumberLowerLimit()
-                    && param.getIncome() >= enterpriseScaleDivision.getIncomeLowerLimit()) {
-                param.setScale(enterpriseScaleDivision.getScaleCode());
-                break;
+        Integer employeesNumber = param.getEmployeesNumber();
+        Double income = param.getIncome();
+        if (!ObjectUtil.isEmpty(employeesNumber)
+                && !ObjectUtil.isEmpty(income)) {
+            List<EnterpriseScaleDivision> enterpriseScaleDivisionList = enterpriseScaleDivisionMapper.selectList(
+                    new QueryWrapper<EnterpriseScaleDivision>()
+                            .eq("industry_code", param.getIndustryLargeCategoryCode())
+                            .eq("valid", BaseEnum.VALID_YES.getCode()));
+            for (EnterpriseScaleDivision enterpriseScaleDivision : enterpriseScaleDivisionList) {
+                if (employeesNumber >= enterpriseScaleDivision.getEmployeesNumberLowerLimit()
+                        && income >= enterpriseScaleDivision.getIncomeLowerLimit()) {
+                    param.setScale(enterpriseScaleDivision.getScaleCode());
+                    break;
+                }
             }
         }
     }
 
     private void checkDataBeforeSave(PolicyParam param) {
-        if (!ObjectUtils.isEmpty(param.getEnterpriseId())) {
+        if (!ObjectUtil.isEmpty(param.getEnterpriseId())) {
             updateCheck(param);
         } else {
             insertCheck(param);
@@ -167,12 +180,14 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         EnterpriseInfo enterpriseInfo = enterpriseInfoMapper.selectOne(new QueryWrapper<EnterpriseInfo>()
                 .eq("id", param.getEnterpriseId())
                 .eq("valid", BaseEnum.VALID_YES.getCode()));
-        if (ObjectUtils.isEmpty(enterpriseInfo)) {
+        if (ObjectUtil.isEmpty(enterpriseInfo)) {
             throw new BusinessException("The enterprise has been removed!");
         }
-        if (!StatusEnum.PROVIDED.getCode().equals(enterpriseInfo.getStatus())
-                && !StatusEnum.REJECTED.getCode().equals(enterpriseInfo.getStatus())) {
-            throw new BusinessException("The policy status has been changed and cannot be changed!");
+        String status = enterpriseInfo.getStatus();
+        if (!StatusEnum.TEMPORARY_STORAGE.getCode().equals(status)
+                && !StatusEnum.PROVIDED.getCode().equals(status)
+                && !StatusEnum.REJECTED.getCode().equals(status)) {
+            throw new BusinessException("The policy status has been changed!");
         }
     }
 
@@ -214,7 +229,7 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
             enterpriseMappingProduct.setId(StringUtil.getUUID());
             enterpriseMappingProduct.setEntId(enterpriseId);
             enterpriseMappingProduct.setProdId(productionId);
-            if (ObjectUtils.isEmpty(enterpriseMappingProductList)) {
+            if (ObjectUtil.isEmpty(enterpriseMappingProductList)) {
                 enterpriseMappingProduct.setIsMainProduct((Integer) BaseEnum.IS_MAIN_PRODUCT_YES.getCode());
             } else {
                 enterpriseMappingProduct.setIsMainProduct((Integer) BaseEnum.IS_MAIN_PRODUCT_NO.getCode());
@@ -251,6 +266,7 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         enterpriseInfo.setLatitude(param.getLatitude());
         enterpriseInfo.setHasRisksReport(param.getHasRisksReport());
         enterpriseInfo.setLinkPhone(param.getLinkPhone());
+        enterpriseInfo.setContacts(param.getContacts());
         enterpriseInfo.setYield(param.getYield());
         enterpriseInfo.setIncome(param.getIncome());
         enterpriseInfo.setEmployeesNumber(param.getEmployeesNumber());
@@ -260,8 +276,8 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         enterpriseInfo.setScale(param.getScale());
         enterpriseInfo.setEmissionModeId(param.getEmissionModeId());
         enterpriseInfo.setStartTime(param.getStartTime());
-        enterpriseInfo.setStatus(StatusEnum.PROVIDED.getCode());
-        if (ObjectUtils.isEmpty(param.getEnterpriseId())) {
+        enterpriseInfo.setStatus(param.getStatus());
+        if (ObjectUtil.isEmpty(param.getEnterpriseId())) {
             enterpriseInfo.setId(StringUtil.getUUID());
             enterpriseInfoMapper.insert(enterpriseInfo);
         } else {
@@ -312,19 +328,24 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
     }
 
     private void setHierarchicalCantonCode(PolicyVO policyVO) {
-        List<String> cantonCodeDefault = new ArrayList<>();
-        cantonCodeDefault.add(policyVO.getProvinceCode());
-        cantonCodeDefault.add(policyVO.getCityCode());
-        policyVO.setCantonCodeDefault(cantonCodeDefault);
+        if (!ObjectUtil.isEmpty(policyVO.getCityCode())) {
+            List<String> cantonCodeDefault = new ArrayList<>();
+            cantonCodeDefault.add(policyVO.getProvinceCode());
+            cantonCodeDefault.add(policyVO.getCityCode());
+            policyVO.setCantonCodeDefault(cantonCodeDefault);
+        }
     }
 
     private void setHierarchicalIndustryCategoryId(PolicyVO policyVO) {
-        List<String> industryIdDefault = new ArrayList<>();
-        industryIdDefault.add(policyVO.getIndustryCategoryId());
-        industryIdDefault.add(policyVO.getIndustryLargeCategoryId());
-        industryIdDefault.add(policyVO.getIndustrySmallCategoryId());
-        industryIdDefault.add(policyVO.getIndustryId());
-        policyVO.setIndustryIdDefault(industryIdDefault);
+        String industryId = policyVO.getIndustryId();
+        if (!ObjectUtil.isEmpty(industryId)) {
+            List<String> industryIdDefault = new ArrayList<>();
+            industryIdDefault.add(policyVO.getIndustryCategoryId());
+            industryIdDefault.add(policyVO.getIndustryLargeCategoryId());
+            industryIdDefault.add(policyVO.getIndustrySmallCategoryId());
+            industryIdDefault.add(industryId);
+            policyVO.setIndustryIdDefault(industryIdDefault);
+        }
     }
 
     private void setAttachmentList(PolicyQueryParam queryParam, PolicyVO policyVO) {
@@ -335,17 +356,19 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
                 .eq("source_id", queryParam.getEnterpriseId())
                 .in("stype", sourceTypeList)
                 .eq("valid", BaseEnum.VALID_YES.getCode()));
-        List<BaseFileupload> evaluationReportAttachmentList = new ArrayList<>();
-        List<BaseFileupload> licenceAttachmentList = new ArrayList<>();
-        for (BaseFileupload attachment : attachmentList) {
-            if (FileSourceType.EVALUATION_REPORT.getCode().equals(attachment.getStype())) {
-                evaluationReportAttachmentList.add(attachment);
-            } else {
-                licenceAttachmentList.add(attachment);
+        if (!CollectionUtils.isEmpty(attachmentList)) {
+            List<BaseFileupload> evaluationReportAttachmentList = new ArrayList<>();
+            List<BaseFileupload> licenceAttachmentList = new ArrayList<>();
+            for (BaseFileupload attachment : attachmentList) {
+                if (FileSourceType.EVALUATION_REPORT.getCode().equals(attachment.getStype())) {
+                    evaluationReportAttachmentList.add(attachment);
+                } else {
+                    licenceAttachmentList.add(attachment);
+                }
             }
+            policyVO.setEvaluationReportAttachmentList(evaluationReportAttachmentList);
+            policyVO.setLicenceAttachmentList(licenceAttachmentList);
         }
-        policyVO.setEvaluationReportAttachmentList(evaluationReportAttachmentList);
-        policyVO.setLicenceAttachmentList(licenceAttachmentList);
     }
 
     private void setEnterpriseAccidentList(PolicyQueryParam queryParam, PolicyVO policyVO) {
@@ -353,43 +376,51 @@ public class PolicyAdministrateServiceImpl implements IPolicyAdministrateService
         enterpriseAccidentQueryParam.setEnterpriseId(queryParam.getEnterpriseId());
         List<EnterpriseAccidentVO> enterpriseAccidentList =
                 enterpriseAccidentService.listEnterpriseAccident(enterpriseAccidentQueryParam);
-        policyVO.setEnterpriseAccidentList(enterpriseAccidentList);
-        policyVO.setEnterpriseAccidentCount(enterpriseAccidentList.size());
         if (CollectionUtils.isEmpty(enterpriseAccidentList)) {
             policyVO.setHasDamageEvent((Integer) BaseEnum.NO.getCode());
         } else {
+            policyVO.setEnterpriseAccidentList(enterpriseAccidentList);
+            policyVO.setEnterpriseAccidentCount(enterpriseAccidentList.size());
             policyVO.setHasDamageEvent((Integer) BaseEnum.YES.getCode());
         }
     }
 
     private void setCantonName(PolicyVO policyVO) {
-        policyVO.setCantonName(policyVO.getProvinceName() + "/" + policyVO.getCityName());
+        String cityName = policyVO.getCityName();
+        if (!ObjectUtil.isEmpty(cityName)) {
+            policyVO.setCantonName(policyVO.getProvinceName() + "/" + cityName);
+        }
     }
 
     private void setIndustryName(PolicyVO policyVO) {
-        policyVO.setIndustryName(policyVO.getIndustryCategoryName() + "/"
-                + policyVO.getIndustryLargeCategoryName() + "/"
-                + policyVO.getIndustrySmallCategoryName() + "/"
-                + policyVO.getIndustryName());
+        String industryName = policyVO.getIndustryName();
+        if (!ObjectUtil.isEmpty(industryName)) {
+            policyVO.setIndustryName(policyVO.getIndustryCategoryName() + "/"
+                    + policyVO.getIndustryLargeCategoryName() + "/"
+                    + policyVO.getIndustrySmallCategoryName() + "/"
+                    + industryName);
+        }
     }
 
     private void setProductNameList(PolicyQueryParam queryParam, PolicyVO policyVO) {
         EnterpriseMappingProductQueryParam qParam = new EnterpriseMappingProductQueryParam();
         qParam.setEnterpriseId(queryParam.getEnterpriseId());
         List<ProductVO> productList = enterpriseMappingProductService.listProduct(qParam);
-        List<String> productNameList = new ArrayList<>();
-        for (ProductVO productVO : productList) {
-            productNameList.add(productVO.getLargeClassName() + "/"
-                    + productVO.getSmallClassName() + "/"
-                    + productVO.getName());
-            List<String> productId = new ArrayList<>();
-            productId.add(productVO.getLargeClassId());
-            productId.add(productVO.getSmallClassId());
-            productId.add(productVO.getId());
-            productVO.setProductIdForVue(productId);
+        if (!CollectionUtils.isEmpty(productList)) {
+            List<String> productNameList = new ArrayList<>();
+            for (ProductVO productVO : productList) {
+                productNameList.add(productVO.getLargeClassName() + "/"
+                        + productVO.getSmallClassName() + "/"
+                        + productVO.getName());
+                List<String> productId = new ArrayList<>();
+                productId.add(productVO.getLargeClassId());
+                productId.add(productVO.getSmallClassId());
+                productId.add(productVO.getId());
+                productVO.setProductIdForVue(productId);
+            }
+            policyVO.setProductNameList(productNameList);
+            policyVO.setProductList(productList);
         }
-        policyVO.setProductNameList(productNameList);
-        policyVO.setProductList(productList);
     }
 
     private PolicyVO getPolicyVO(PolicyQueryParam queryParam) {

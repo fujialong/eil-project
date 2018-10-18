@@ -21,6 +21,7 @@ public class AccidentScenarioParam extends Model<AccidentScenarioParam> {
     private static final long serialVersionUID = 1L;
 
     private String id;
+
     @TableField("scenario_id")
     private String scenarioId;
 
@@ -29,16 +30,19 @@ public class AccidentScenarioParam extends Model<AccidentScenarioParam> {
     private String name;
 
     private String type;
+
     @TableField("value_type")
     private String valueType;
+
     @TableField("unit_name")
     private String unitName;
+
     @TableField("default_value")
     private Double defaultValue;
 
-    private Boolean revisable;
+    private Integer revisable;
 
-    private Boolean calculative;
+    private Integer calculative;
 
     private String remark;
 

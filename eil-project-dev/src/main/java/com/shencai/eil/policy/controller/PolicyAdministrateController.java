@@ -25,8 +25,8 @@ public class PolicyAdministrateController {
     @ResponseBody
     @RequestMapping("/savePolicy")
     public Result savePolicy(@RequestBody PolicyParam param) {
-        policyAdministrateService.savePolicy(param);
-        return Result.ok();
+        String enterpriseId = policyAdministrateService.savePolicy(param);
+        return Result.ok(enterpriseId);
     }
 
     @ResponseBody

@@ -21,4 +21,11 @@ public class EnterpriseAccidentVO implements Serializable {
 
     private Integer disposed;
 
+    private Integer thirdpartyPersonalInjury;
+
+    private Integer thirdpartyPropertyDamage;
+
+    private Integer soilPollution;
+
+    private Integer waterPollution;
 }

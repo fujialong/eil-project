@@ -10,7 +10,7 @@ import com.shencai.eil.policy.model.PolicyVO;
  */
 public interface IPolicyAdministrateService {
 
-    void savePolicy(PolicyParam param);
+    String savePolicy(PolicyParam param);
 
     Page<PolicyVO> pagePolicy(PolicyQueryParam queryParam);
 

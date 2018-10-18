@@ -4,13 +4,14 @@ import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.api.R;
 import com.shencai.eil.common.constants.BaseEnum;
+import com.shencai.eil.common.utils.ObjectUtil;
 import com.shencai.eil.constants.ResultStatus;
 import com.shencai.eil.exception.AccessExpiredException;
 import com.shencai.eil.login.entity.SystemBaseUser;
 import com.shencai.eil.login.service.ISystemBaseUserService;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.ObjectUtils;
+import com.shencai.eil.common.utils.ObjectUtil;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
@@ -86,7 +87,7 @@ public class LoginInterceptor implements HandlerInterceptor {
         HttpSession session = httpServletRequest.getSession();
         Map<String, String[]> map = httpServletRequest.getParameterMap();
         String[] ticket = map.get("ticket");
-        if (ObjectUtils.isEmpty(ticket)) {
+        if (ObjectUtil.isEmpty(ticket)) {
             printJson(httpServletResponse);
             return false;
         }
@@ -99,7 +100,7 @@ public class LoginInterceptor implements HandlerInterceptor {
         .eq("deleteFlag", 0)
         .eq("ticket",ticket[0]));
 
-        if (!ObjectUtils.isEmpty(user)) {
+        if (!ObjectUtil.isEmpty(user)) {
             return true;
         }
 

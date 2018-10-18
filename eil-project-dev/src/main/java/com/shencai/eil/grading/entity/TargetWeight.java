@@ -37,9 +37,13 @@ public class TargetWeight extends Model<TargetWeight> {
 
     private Integer valid;
 
+    private Integer visible;
+
     @TableField("create_user_id")
     private String createUserId;
 
+    @TableField("normalization_code")
+    private String normalizationCode;
 
     public String getId() {
         return id;

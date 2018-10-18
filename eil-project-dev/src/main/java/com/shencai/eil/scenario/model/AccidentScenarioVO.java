@@ -7,6 +7,11 @@ import lombok.Data;
  */
 @Data
 public class AccidentScenarioVO {
+
+    private String id;
+
     private String code;
+
     private String name;
+
 }

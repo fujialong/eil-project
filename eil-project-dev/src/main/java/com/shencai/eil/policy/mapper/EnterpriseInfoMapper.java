@@ -2,7 +2,7 @@ package com.shencai.eil.policy.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.shencai.eil.gis.model.GisValueVO;
+import com.shencai.eil.gis.model.EntGisInfo;
 import com.shencai.eil.policy.entity.EnterpriseInfo;
 import com.shencai.eil.policy.model.EnterpriseQueryParam;
 import com.shencai.eil.policy.model.EnterpriseVO;
@@ -32,7 +32,7 @@ public interface EnterpriseInfoMapper extends BaseMapper<EnterpriseInfo> {
      * @param entId
      * @return
      */
-    GisValueVO getEntLocation(String entId);
+    EntGisInfo getEntLocation(String entId);
 
     /**
      * Gets the coordinates of all existing enterprises in the system
@@ -41,7 +41,7 @@ public interface EnterpriseInfoMapper extends BaseMapper<EnterpriseInfo> {
      * @param entId
      * @return
      */
-    List<GisValueVO> listOtherEntLocation(String entId);
+    List<EntGisInfo> listOtherEntLocation(String entId);
 
     /**
      * Gets the coordinates of all existing enterprises in the system
@@ -49,5 +49,5 @@ public interface EnterpriseInfoMapper extends BaseMapper<EnterpriseInfo> {
      *
      * @return
      */
-    List<GisValueVO> listAllEntLocation();
+    List<EntGisInfo> listAllEntLocation();
 }

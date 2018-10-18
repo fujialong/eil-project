@@ -1,8 +1,8 @@
 package com.shencai.eil.gis.controller;
 
 
-import com.shencai.eil.gis.model.GisValueParam;
-import com.shencai.eil.gis.model.GisValueVO;
+import com.shencai.eil.gis.model.EntGisInfo;
+import com.shencai.eil.gis.model.GisValueQueryParam;
 import com.shencai.eil.gis.service.IGisValueService;
 import com.shencai.eil.model.Result;
 import com.shencai.eil.policy.service.IEnterpriseInfoService;
@@ -36,7 +36,7 @@ public class GisValueController {
      */
     @RequestMapping("/saveGisValue")
     @ResponseBody
-    public Result saveGisValue(@RequestBody GisValueParam requestParam) {
+    public Result saveGisValue(@RequestBody GisValueQueryParam requestParam) {
         gisValueService.saveGisValue(requestParam);
 
         return Result.ok();
@@ -47,11 +47,11 @@ public class GisValueController {
      * Gets the coordinates of the current enterprise
      *
      * @param entId
-     * @return Result<GisValueVO>
+     * @return Result<EntGisInfo>
      */
     @RequestMapping("/getBaseInfo")
     @ResponseBody
-    public Result<GisValueVO> getBaseInfo(String entId) {
+    public Result<EntGisInfo> getBaseInfo(String entId) {
 
         return Result.ok(enterpriseInfoService.getEntLocation(entId));
     }
@@ -65,7 +65,7 @@ public class GisValueController {
      */
     @RequestMapping("/listOtherEntLocation")
     @ResponseBody
-    public Result<List<GisValueVO>> listOtherEntLocation(String entId) {
+    public Result<List<EntGisInfo>> listOtherEntLocation(String entId) {
 
         return Result.ok(enterpriseInfoService.listOtherEntLocation(entId));
     }
@@ -78,7 +78,7 @@ public class GisValueController {
      */
     @RequestMapping("/listAllEntLocation")
     @ResponseBody
-    public Result<List<GisValueVO>> listAllEntLocation() {
+    public Result<List<EntGisInfo>> listAllEntLocation() {
 
         return Result.ok(enterpriseInfoService.listAllEntLocation());
     }

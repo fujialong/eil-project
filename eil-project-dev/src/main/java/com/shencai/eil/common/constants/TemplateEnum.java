@@ -13,7 +13,7 @@ public enum TemplateEnum {
     OTHER_EFFLUENT_INTENSITY("other_effluent_intensity", "其他污染物废水排放强度"),
     EMISSION_INTENSITY("emission_intensity", "重金属废气排放强度"),
     EFFLUENT_INTENSITY("effluent_intensity", "重金属废水排放强度"),
-
+    SCENARIO_SELECTION("scenario_selection", "情景和源项"),
     /**
      * A6
      */

@@ -7,7 +7,7 @@ import com.shencai.eil.common.utils.StringUtil;
 import com.shencai.eil.gis.entity.GisValue;
 import com.shencai.eil.gis.mapper.GisValueMapper;
 import com.shencai.eil.gis.model.ContainsCodeValue;
-import com.shencai.eil.gis.model.GisValueParam;
+import com.shencai.eil.gis.model.GisValueQueryParam;
 import com.shencai.eil.gis.service.IGisValueService;
 import com.shencai.eil.grading.model.CodeAndValueUseDouble;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class GisValueServiceImpl extends ServiceImpl<GisValueMapper, GisValue> i
 
 
     @Override
-    public void saveGisValue(GisValueParam requestParam) {
+    public void saveGisValue(GisValueQueryParam requestParam) {
         List<GisValue> preList = new ArrayList<>();
         List<ContainsCodeValue> containsCodeValues = requestParam.getParamList();
 
@@ -40,7 +40,6 @@ public class GisValueServiceImpl extends ServiceImpl<GisValueMapper, GisValue> i
             log.error("The list in the request parameter is empty ,In the saveGisValue method!");
             return;
         }
-
         for (ContainsCodeValue codeAndValue : containsCodeValues) {
             saveEntityToList(preList, requestParam, codeAndValue);
         }
@@ -66,11 +65,11 @@ public class GisValueServiceImpl extends ServiceImpl<GisValueMapper, GisValue> i
 
     @Override
     public List<CodeAndValueUseDouble> getGisValueCodeAndValue(String entId, List<String> selfGisCodes) {
-        return this.baseMapper.getGisValueCodeAndValue(entId,selfGisCodes);
+        return this.baseMapper.getGisValueCodeAndValue(entId, selfGisCodes);
     }
 
 
-    private void saveEntityToList(List<GisValue> preList, GisValueParam requestParam, ContainsCodeValue codeAndValue) {
+    private void saveEntityToList(List<GisValue> preList, GisValueQueryParam requestParam, ContainsCodeValue codeAndValue) {
         GisValue gisValue = new GisValue();
         Date date = DateUtil.getNowTimestamp();
 

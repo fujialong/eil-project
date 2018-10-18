@@ -52,6 +52,8 @@ public class EnterpriseInfo extends Model<EnterpriseInfo> {
     @TableField("link_phone")
     private String linkPhone;
 
+    private String contacts;
+
     private Double yield;
 
     private Double income;
@@ -67,8 +69,10 @@ public class EnterpriseInfo extends Model<EnterpriseInfo> {
     private String emissionModeId;
 
     private String status;
+
     @TableField("need_survey_upgrade")
     private Integer needSurveyUpgrade;
+
     @TableField("risk_level")
     private String riskLevel;
 

@@ -31,6 +31,7 @@ public class GradeTemplateParam extends Model<GradeTemplateParam> {
     private String paramCode;
     @TableField("param_content")
     private String paramContent;
+    private String type;
 
     @TableField("create_user_id")
     private String createUserId;

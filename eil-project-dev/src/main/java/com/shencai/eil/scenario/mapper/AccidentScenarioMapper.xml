@@ -19,6 +19,22 @@
     <select id="listAccidentScenario"
             parameterType="com.shencai.eil.scenario.model.AccidentScenarioQueryParam"
             resultType="com.shencai.eil.scenario.model.AccidentScenarioVO">
-        select code, name from accident_scenario accs where accs.valid = 1
+        select id, code, name from accident_scenario accs where accs.valid = 1
+    </select>
+
+    <select id="countTotalAccidentScenarioByEnterpriseId">
+        select count(1)
+        from accident_scenario_result asr
+        inner join scenario_selection_info info on asr.info_id = info.id and info.valid = 1 and info.ent_id = #{enterpriseId}
+        where asr.valid = 1
+    </select>
+
+    <select id="listAccidentScenarioOfEnterprise"
+            resultType="com.shencai.eil.scenario.model.AccidentScenarioVO">
+        select DISTINCT name
+        from accident_scenario accs
+        inner join accident_scenario_result accsr on accs.id = accsr.scenario_id and accsr.valid = 1
+        inner join scenario_selection_info info on info.id = accsr.info_id and info.valid = 1 and info.ent_id = #{enterpriseId}
+        where accs.valid = 1
     </select>
 </mapper>

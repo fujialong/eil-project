@@ -15,4 +15,47 @@
         <result column="valid" property="valid" />
     </resultMap>
 
+    <select id="getParamValue" resultType="string"
+            parameterType="com.shencai.eil.grading.model.RiskMaterialParamValueQueryParam">
+        select
+        rmpv.value
+        from risk_material_param_value rmpv
+        inner join risk_material rm on rmpv.material_id=rm.id
+        <if test="materialName != null and materialName != ''">
+            and rm.chinese_generic_name = #{materialName}
+        </if>
+        and rm.valid=1
+        inner join param on param.id=rmpv.param_id
+        <if test="paramCode != null and paramCode != ''">
+            and param.code = #{paramCode}
+        </if>
+        and param.valid=1
+        where
+        rmpv.valid=1
+    </select>
+    <select id="listRiskMaterialParamValue"
+            parameterType="com.shencai.eil.grading.model.RiskMaterialParamValueQueryParam"
+            resultType="com.shencai.eil.grading.model.RiskMaterialParamValueVO">
+        select
+            rm.chinese_generic_name materialName,
+            rmpv.`value` paramValue,
+            p.code paramCode,
+            p.name paramName
+        from risk_material rm
+            inner join risk_material_param_value rmpv on rmpv.material_id = rm.id and rmpv.valid = 1
+            inner join param p on rmpv.param_id = p.id and p.valid = 1
+            inner join template_mapping_param tmp on tmp.param_id = p.id and tmp.valid = 1
+            inner join param_template pt on pt.id = tmp.template_id and pt.valid = 1 and pt.code = #{templateCode}
+        where rm.valid = 1
+        <if test="materialName != null and materialName != ''">
+          and chinese_generic_name = #{materialName}
+        </if>
+        <if test="materialNameList != null and materialNameList.size > 0">
+            and chinese_generic_name in
+            <foreach collection="materialNameList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+    </select>
 </mapper>

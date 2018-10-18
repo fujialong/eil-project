@@ -35,14 +35,14 @@ public class GisTest extends BaseTest {
 
     @Test
     public void testGetEntLocation() {
-        GisValueVO map = enterpriseInfoService.getEntLocation("28834d513efc4758ad6ea2defc95b7fe");
-        log.info(map.toString());
+        //GisValueVO map = enterpriseInfoService.getEntLocation("28834d513efc4758ad6ea2defc95b7fe");
+       // log.info(map.toString());
     }
 
     @Test
     public void testListOtherEntLocation() {
-        List<GisValueVO> list = enterpriseInfoService.listOtherEntLocation("24ef051cc42048d0b17472c54c1ce8fb");
-        log.info(list.toString());
+       // List<GisValueVO> list = enterpriseInfoService.listOtherEntLocation("24ef051cc42048d0b17472c54c1ce8fb");
+      //  log.info(list.toString());
     }
 
     @Test

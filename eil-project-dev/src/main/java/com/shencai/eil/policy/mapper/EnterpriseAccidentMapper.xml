@@ -23,7 +23,11 @@
         ea.happen_time happenTime,
         ea.level,
         sd.name levelName,
-        ea.disposed
+        ea.disposed,
+        ea.thirdparty_personal_injury thirdpartyPersonalInjury,
+        ea.thirdparty_property_damage thirdpartyPropertyDamage,
+        ea.soil_pollution soilPollution,
+        ea.water_pollution waterPollution
         from enterprise_accident ea
         left join sys_dictionary sd on (sd.type_code='accident_rank'and ea.level=sd.code and sd.valid=1)
         where

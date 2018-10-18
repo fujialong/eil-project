@@ -29,17 +29,24 @@
         <if test="enterpriseId != null and enterpriseId != ''">
             and esp.ent_id=#{enterpriseId}
         </if>
-        <if test="sheetName != null and sheetName != ''">
+        <if test="sheetCode != null and sheetCode != ''">
             and esp.survey_item_id in (
-            select survey_item_id from survey_item_category where category_code=#{sheetName} and valid=1
+            select survey_item_id from survey_item_category where category_code=#{sheetCode} and valid=1
             )
         </if>
         and esp.valid=1
         inner join survey_item si on esp.survey_item_id = si.id and si.valid = 1
+        inner join survey_item_category sic on sic.survey_item_id=si.id
         <if test="categoryCode != null and categoryCode != ''">
-            inner join survey_item_category sic on sic.survey_item_id=si.id and sic.category_code=#{categoryCode} and
-            sic.valid=1
+            and sic.category_code=#{categoryCode}
         </if>
+        <if test="categoryCodeList != null and categoryCodeList.size > 0">
+            and sic.category_code in
+            <foreach collection="categoryCodeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        and sic.valid=1
         left join (select simo.survey_item_id,sio.code,sio.option_value from survey_item_mapping_option simo
         inner join survey_item_option sio on simo.option_id=sio.id and sio.valid=1
         where simo.valid = 1)o on (o.survey_item_id=si.id and o.option_value=esr.result)
@@ -87,4 +94,19 @@
         where esr.valid=1
     </select>
 
+    <select id="listEntSurveyResultForScenario"
+            parameterType="com.shencai.eil.survey.model.EntSurveyResultQueryParam"
+            resultType="com.shencai.eil.survey.model.EntSurveyResultVO">
+        select
+            esr.result,
+            esr.excel_row_index excelRowIndex,
+            si.`code` surveyItemCode,
+            si.`name` surveyItemName
+        from ent_survey_result esr
+            left join ent_survey_plan esp on esr.survey_plan_id = esp.id
+            left join survey_item si on esp.survey_item_id = si.id and si.valid = 1
+            inner join survey_item_category sic on sic.survey_item_id = si.id and sic.category_code = 'scenario_selection' and sic.valid = 1
+        where esr.valid = 1 and esp.valid = 1 and esp.ent_id = #{enterpriseId}
+        order by esr.excel_row_index, si.sort_num
+    </select>
 </mapper>

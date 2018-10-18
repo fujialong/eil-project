@@ -13,6 +13,7 @@
         <result column="social_credit_code" property="socialCreditCode"/>
         <result column="address" property="address"/>
         <result column="has_risks_report" property="hasRisksReport"/>
+        <result column="contacts" property="contacts"/>
         <result column="link_phone" property="linkPhone"/>
         <result column="yield" property="yield"/>
         <result column="income" property="income"/>
@@ -44,6 +45,7 @@
         (select name from sys_dictionary where type_code='ent_status' and code=ei.status and valid=1)statusName,
         ei.social_credit_code socialCreditCode,
         ei.link_phone linkPhone,
+        ei.contacts,
         ic.name industryCategoryName,
         ei.has_risks_report hasRisksReport,
         t.name techniqueName,
@@ -90,6 +92,7 @@
         t.name techniqueName,
         emt.tech_id techniqueId,
         ei.link_phone linkPhone,
+        ei.contacts,
         ei.postcode,
         (select name from sys_dictionary where type_code='canton' and code=sd.parent_code and valid=1)provinceName,
         sd.name cityName,
@@ -157,17 +160,17 @@
         where ei.id = #{enterpriseId} and ei.valid=1
     </select>
 
-    <select id="getEntLocation" resultType="com.shencai.eil.gis.model.GisValueVO">
+    <select id="getEntLocation" resultType="com.shencai.eil.gis.model.EntGisInfo">
         select id entId, latitude, longitude
         from enterprise_info
         where id = #{entId} and valid =1
     </select>
-    <select id="listOtherEntLocation" resultType="com.shencai.eil.gis.model.GisValueVO">
+    <select id="listOtherEntLocation" resultType="com.shencai.eil.gis.model.EntGisInfo">
          select id entId, latitude, longitude
         from enterprise_info
         where id != #{entId} and valid =1 and latitude is not null and longitude is not null
     </select>
-    <select id="listAllEntLocation" resultType="com.shencai.eil.gis.model.GisValueVO">
+    <select id="listAllEntLocation" resultType="com.shencai.eil.gis.model.EntGisInfo">
           select id entId, latitude, longitude
         from enterprise_info
         where valid =1  and latitude is not null and longitude is not null

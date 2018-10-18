@@ -2,22 +2,17 @@ package com.shencai.eil.gis.model;
 
 import lombok.Data;
 
-import java.util.List;
+import java.io.Serializable;
 
-/**
- * @program: eil-project
- * @description:
- * @author: fujl
- * @create: 2018-09-26 16:27
- **/
 @Data
-public class GisValueVO {
+public class GisValueVO implements Serializable {
+
+    private String code;
+
+    private Double value;
+
+    private String classCode;
 
     private String entId;
 
-    private Double latitude;
-
-    private Double longitude;
-
-    private List<String> hasSavedParamList;
 }

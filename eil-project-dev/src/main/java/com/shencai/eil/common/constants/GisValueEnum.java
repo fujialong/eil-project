@@ -8,6 +8,25 @@ package com.shencai.eil.common.constants;
  **/
 public enum GisValueEnum {
 
+
+    CLASS_ONE("1","初级控制机制相关gis数据","R2.2"),
+
+    CLASS_TWO("2","区域环境背景水平相关gis数据","R3.2.1"),
+
+    CLASS_THREE("3","是否有利于污染物扩散相关gis数据","R3.3"),
+
+    CLASS_FOUR("4","第三者人生损害相关gis数据","R4.1"),
+
+    CLASS_FIVE("5","第三者财产损失","R4.2"),
+
+    CLASS_SIX("6","生态环境损害和应急处置与清污费用（地表水）相关gis数据","R4.3_R4.4"),
+
+    DEM("dem","企业周围海拔","dem"),
+
+    POP("pop","企业周围的人口总量","pop"),
+
+    GDP("gpd","企业周围的GDP总产值","gdp"),
+
     /**
      * R2_2_01
      */

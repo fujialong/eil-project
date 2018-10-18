@@ -10,6 +10,7 @@
         <result column="result_code" property="resultCode" />
         <result column="param_code" property="paramCode" />
         <result column="param_content" property="paramContent" />
+        <result column="type" property="type" />
         <result column="create_user_id" property="createUserId" />
         <result column="create_time" property="createTime" />
         <result column="update_user_id" property="updateUserId" />
@@ -17,7 +18,7 @@
         <result column="valid" property="valid" />
     </resultMap>
 
-    <select id="listGradeTemplateParam"
+    <select id="listParamOfFastGradeReport"
             parameterType="com.shencai.eil.survey.model.GradeTemplateParamQueryParam"
             resultType="com.shencai.eil.survey.model.GradeTemplateParamVO">
         select
@@ -94,5 +95,417 @@
             where erar.ent_id = #{enterpriseId}
             and tw.code = 'R3' and gtp.result_code = 'low' and gtp.code in ('R3-g-level', 'R3-s-level')
         )
+    </select>
+
+
+    <select id="listParamOfFinalReport" resultType="com.shencai.eil.survey.model.GradeTemplateParamVO">
+        select
+            gtp.code,
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasGradualRisk' and gtp.result_code = (
+            select case when count(1) = 2 then 1 else 0 end total from ent_mapping_target_type
+            where ent_id = #{enterpriseId} and valid = 1
+            )
+        union ALL
+        select
+            gtp.param_code,
+            gtp.param_content
+        from grade_template_param gtp
+        where gtp.code = 'hasIntensiveTable' and gtp.result_code = (
+            select case when risk_level = '002' then 1 else 0 end riskLevel from enterprise_info
+            where id = #{enterpriseId} and valid = 1
+            )
+    </select>
+
+    <select id="listParamOfSceneSurvey" resultType="com.shencai.eil.survey.model.GradeTemplateParamVO">
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'entHappened' and gtp.result_code = (
+            select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+                select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+                left join ent_survey_plan plan on plan.id = result.survey_plan_id
+                left join survey_item si on si.id = plan.survey_item_id
+                where si.code = 'S180' and plan.ent_id = #{enterpriseId} and result = '是'
+                union ALL
+                select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+                left join ent_survey_plan plan on plan.id = result.survey_plan_id
+                left join survey_item si on si.id = plan.survey_item_id
+                where si.code = 'S180' and plan.ent_id = #{enterpriseId} and result = '否'
+                ) a
+            )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'locationHappened' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S183' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S183' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'entExisted' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S171' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S171' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'involvedRiskMaterial' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code in ('S249', 'S255') and plan.ent_id = #{enterpriseId}
+        and result in ('腐蚀性','毒性','易燃易爆性','辐射性','感染性')
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code in ('S249', 'S255') and plan.ent_id = #{enterpriseId}
+        and result in ('涉水性')
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasHighPressureDevice' and gtp.result_code = (
+        select case when sum(total) >0 then 1 else 0 end from (
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code in ('S6', 'S56', 'S11', 'S61') and plan.ent_id = #{enterpriseId} and result >= 9.8
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code in ('S7', 'S57', 'S12', 'S62') and plan.ent_id = #{enterpriseId} and result >= 510
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'unloadInvolved' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S155' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S155' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasSafeBasin' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S190' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S190' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'autoInBasin' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S192' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S192' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasCofferdam' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S196' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S196' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasStorage' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S162' and plan.ent_id = #{enterpriseId} and result = '永久储存场所'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S162' and plan.ent_id = #{enterpriseId} and result = '临时储存场所'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasAlarmSystem' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S130' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S130' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'professionalHandled' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S169' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S169' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'empSpecify' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S140' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S140' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasHospital' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S221' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S221' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasSchool' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S220' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S220' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasCommunity' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S222' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S222' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasFarm' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S231' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S231' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+    </select>
+
+
+    <select id="listParamWithoutSceneSurvey" resultType="com.shencai.eil.survey.model.GradeTemplateParamVO">
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasCleaned' and gtp.result_code = (
+        select
+        case when sum(total) = 110 then 3
+        when sum(total) = 100 then 2
+        when sum(total) = 1 then 1
+        else 0 end from (
+        select case when count(1) > 0 then 100 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'M48' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342' and result = '是'
+        union ALL
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'M49' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342' and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'M50' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342' and result = '是'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'involvedRiskMaterial' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'M56' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342'
+        and result in ('腐蚀性','毒性','易燃易爆性','辐射性','感染性')
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'M56' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342'
+        and result in ('涉水性')
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasBigFarm' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'M53' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342' and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'M53' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342' and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasIllegal' and gtp.result_code = (
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'M51' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342' and result > 0
+        )
+
     </select>
 </mapper>

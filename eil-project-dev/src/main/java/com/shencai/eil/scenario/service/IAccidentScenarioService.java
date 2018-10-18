@@ -8,10 +8,6 @@ import com.shencai.eil.scenario.model.AccidentScenarioVO;
 import java.util.List;
 
 /**
- * <p>
- *  服务类
- * </p>
- *
  * @author fanhj
  * @since 2018-10-12
  */

@@ -1555,4 +1555,56 @@ public class GisForTest {
         }
         return targetWeightGradeLine.getId();
     }
+
+
+    /*  private List<TargetWeight> obtainTargetWeight(List<String> riskType, String targetCode) { 
+        if (CollectionUtils.isEmpty(riskType)) { 
+            throw new BusinessException("The enterprise risk indicator system type cannot be empty!"); 
+        } 
+        List<TargetWeight> result = new ArrayList<>(); 
+        if (riskType.contains(TargetWeightType.PROGRESSIVE_RISK.getCode())) {
+            TargetWeight targetWeight = targetWeightMapper.selectOne(new QueryWrapper<TargetWeight>()
+                    .eq("type", TargetWeightType.PROGRESSIVE_RISK.getCode())
+                    .eq("code", targetCode).eq("valid", BaseEnum.VALID_YES.getCode()));
+            result.add(targetWeight);
+
+        }
+        if (riskType.contains(TargetWeightType.SUDDEN_RISK.getCode())) {
+            TargetWeight targetWeight = targetWeightMapper.selectOne(new QueryWrapper<TargetWeight>()
+                    .eq("type", TargetWeightType.SUDDEN_RISK.getCode())
+                    .eq("code", targetCode).eq("valid", BaseEnum.VALID_YES.getCode()));
+            result.add(targetWeight);
+        }
+
+        return result; 
+    }*/
+
+   /* private List<String> listTargetWeightId(List<TargetWeight> targetWeightList) { 
+        List<String> targetWeightIds = new ArrayList<>(); 
+        for (TargetWeight targetWeight : targetWeightList) { 
+            targetWeightIds.add(targetWeight.getId()); 
+        } 
+        return targetWeightIds; 
+    }*/
+
+
+   /* private List<EntRiskAssessResult> listEntRiskAssessResults(EnterpriseVO enterprise, List<String> targetIds) { 
+        List<EntRiskAssessResult> list = entRiskAssessResultMapper.selectList(new QueryWrapper<EntRiskAssessResult>()
+                .eq("ent_id", enterprise.getId())
+                .in("target_weight_id", targetIds)
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
+
+        return list; 
+    }*/
+
+
+          /* Map<String, TargetMaxMin> maxMinMap = getMaxMinMap();
+        List<String> riskTypes = new ArrayList<>();
+        List<TargetWeight> targetWeightList = 
+        obtainTargetWeight(riskTypes, TargetEnum.SECONDARY_INDICATORS_OF_RISK_FACTORS.getCode());
+        List<String> targetWeightIds = listTargetWeightId(targetWeightList); 
+        List<EntRiskAssessResult> riskResult = listEntRiskAssessResults(enterprise, targetWeightIds);
+        if (CollectionUtils.isEmpty(riskResult)) {
+
+        }*/
 }

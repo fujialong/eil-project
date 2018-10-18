@@ -28,11 +28,16 @@
         twgl.result_code riskGrade,
         twgl.percent_start lowerLimitOfRiskGrade,
         twgl.percent_end upperLimitOfRiskGrade,
-        tw.code
+        tw.code,
+        tw.normalization_code normalizationCode,
+        tw.weight,
+        tmm.max_value max,
+        tmm.min_value min
         from target_weight tw
         left join ent_risk_assess_result erar on
         (tw.id=erar.target_weight_id and erar.ent_id = #{enterpriseId} and erar.valid=1)
         left join target_weight_grade_line twgl on (twgl.id=erar.grade_line_id and twgl.valid=1)
+        LEFT JOIN target_max_min tmm ON tw.id = tmm.target_id AND tmm.valid = 1
         where
         <if test="targetTypeList != null and targetTypeList.size > 0">
             tw.type in

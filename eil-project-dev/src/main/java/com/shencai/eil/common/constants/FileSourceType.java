@@ -12,7 +12,9 @@ public enum FileSourceType {
     BASIC_SURVEY_PLAN_EXCEL("basic_survey_plan_excel", "基础勘查模板"),
     BASIC_SURVEY_PLAN_UPLOAD("basic_survey_plan_upload", "基础勘查模板上传"),
     INTENSIVE_SURVEY_PLAN_EXCEL("intensive_survey_plan_excel", "强化勘查模板"),
-    INTENSIVE_SURVEY_PLAN_UPLOAD("intensive_survey_plan_upload", "强化勘查模板上传");
+    INTENSIVE_SURVEY_PLAN_UPLOAD("intensive_survey_plan_upload", "强化勘查模板上传"),
+    SURVEY_COMPLETED_PHOTO("survey_completed_photo", "勘查完善上传的图片"),
+    ;
     private String code;
     private String name;
 

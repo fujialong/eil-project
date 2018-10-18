@@ -29,6 +29,7 @@
     </resultMap>
 
     <resultMap id="scenarioSelectionInfo" type="com.shencai.eil.scenario.model.ScenarioSelectionInfoVO">
+        <result column="id" property="id" />
         <result column="entId" property="entId" />
         <result column="matterName" property="matterName" />
         <result column="matterType" property="matterType" />

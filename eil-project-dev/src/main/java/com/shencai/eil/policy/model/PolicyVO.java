@@ -29,6 +29,8 @@ public class PolicyVO implements Serializable {
 
     private String linkPhone;
 
+    private String contacts;
+
     private String industryCategoryName;
 
     private String industryLargeCategoryName;
@@ -100,5 +102,7 @@ public class PolicyVO implements Serializable {
     private List<BaseFileupload> evaluationReportAttachmentList;
 
     private List<BaseFileupload> licenceAttachmentList;
+
+    private Date depthEvaluationTime;
 
 }

@@ -25,6 +25,7 @@ public class AccidentScenario extends Model<AccidentScenario> {
     private String code;
 
     private String name;
+
     @TableField("result_desc")
     private String resultDesc;
 

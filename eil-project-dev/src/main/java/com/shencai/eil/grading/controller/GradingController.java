@@ -4,6 +4,7 @@ import com.shencai.eil.grading.model.GradingParam;
 import com.shencai.eil.grading.model.GradingQueryParam;
 import com.shencai.eil.grading.model.GradingVO;
 import com.shencai.eil.grading.service.IGradingService;
+import com.shencai.eil.grading.service.IGradingService2;
 import com.shencai.eil.model.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -22,6 +23,9 @@ public class GradingController {
     @Autowired
     private IGradingService gradingService;
 
+    @Autowired
+    private IGradingService2 gradingService2;
+
     @ResponseBody
     @RequestMapping("/execute")
     public Result execute(GradingParam param) throws ExecutionException, InterruptedException {
@@ -32,8 +36,7 @@ public class GradingController {
     @ResponseBody
     @RequestMapping("/getGradingResult")
     public Result getGradingResult(GradingQueryParam queryParam) throws ExecutionException, InterruptedException {
-        GradingVO gradingVO = gradingService.getGradingResult(queryParam);
+        GradingVO gradingVO = gradingService2.getGradingResult2(queryParam);
         return Result.ok(gradingVO);
     }
-
 }

@@ -11,12 +11,14 @@ import java.util.List;
  * @create: 2018-09-22 13:59
  **/
 @Data
-public class GisValueParam {
+public class GisValueQueryParam {
 
     private String entId;
 
     private String type;
 
     private List<ContainsCodeValue> paramList;
+
+    private String classCode;
 
 }

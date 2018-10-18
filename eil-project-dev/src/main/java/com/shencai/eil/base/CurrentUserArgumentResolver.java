@@ -4,7 +4,7 @@ import com.github.jsonzou.jmockdata.JMockData;
 import com.shencai.eil.base.entity.UserInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
-import org.springframework.util.ObjectUtils;
+import com.shencai.eil.common.utils.ObjectUtil;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.support.WebArgumentResolver;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -22,7 +22,7 @@ public class CurrentUserArgumentResolver implements WebArgumentResolver {
     @Override
     public Object resolveArgument(MethodParameter methodParameter, NativeWebRequest nativeWebRequest) throws Exception {
 
-        if (!ObjectUtils.isEmpty(methodParameter.getParameter()) &&
+        if (!ObjectUtil.isEmpty(methodParameter.getParameter()) &&
                 methodParameter.getParameter().equals(UserInfo.class)) {
             HttpServletRequest request = nativeWebRequest.getNativeRequest(HttpServletRequest.class);
             String ticket = request.getParameter("ticket");

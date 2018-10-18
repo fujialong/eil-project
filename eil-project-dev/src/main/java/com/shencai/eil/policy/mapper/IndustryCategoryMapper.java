@@ -4,6 +4,7 @@ import com.shencai.eil.policy.entity.IndustryCategory;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.shencai.eil.policy.model.IndustryCategoryQueryParam;
 import com.shencai.eil.policy.model.IndustryCategoryVO;
+import com.shencai.eil.survey.model.IndustryCategoryClassifyVO;
 
 import java.util.List;
 
@@ -14,4 +15,6 @@ import java.util.List;
 public interface IndustryCategoryMapper extends BaseMapper<IndustryCategory> {
 
     List<IndustryCategoryVO> listIndustryCategory(IndustryCategoryQueryParam queryParam);
+
+    IndustryCategoryClassifyVO getClassificationById(String industryId);
 }

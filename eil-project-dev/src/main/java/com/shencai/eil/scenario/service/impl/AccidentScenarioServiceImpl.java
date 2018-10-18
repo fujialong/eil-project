@@ -12,10 +12,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * <p>
- *  服务实现类
- * </p>
- *
  * @author fanhj
  * @since 2018-10-12
  */

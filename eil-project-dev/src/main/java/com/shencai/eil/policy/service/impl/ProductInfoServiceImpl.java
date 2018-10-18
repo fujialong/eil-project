@@ -18,7 +18,7 @@ import com.shencai.eil.policy.service.IProductInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.ObjectUtils;
+import com.shencai.eil.common.utils.ObjectUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +62,7 @@ public class ProductInfoServiceImpl extends ServiceImpl<ProductInfoMapper, Produ
     private List<ProductVO> listReturnData(List<ProductVO> productVOList, List<ProductVO> productClassList) {
         List<ProductVO> returnList = new ArrayList<>();
         for (ProductVO productClass : productClassList) {
-            if (ObjectUtils.isEmpty(productClass.getParentId())) {
+            if (ObjectUtil.isEmpty(productClass.getParentId())) {
                 String largeProductClassId = productClass.getId();
                 List<ProductVO> childList = new ArrayList<>();
                 for (ProductVO smallProductClass : productClassList) {
@@ -105,7 +105,7 @@ public class ProductInfoServiceImpl extends ServiceImpl<ProductInfoMapper, Produ
                 .eq("name", param.getName())
                 .eq("prod_class_id", smallProductClass.getId())
                 .eq("valid", BaseEnum.VALID_YES.getCode()));
-        if (ObjectUtils.isEmpty(product)) {
+        if (ObjectUtil.isEmpty(product)) {
             product.setId(StringUtil.getUUID());
             product.setName(param.getName());
             product.setProdClassId(smallProductClass.getId());
@@ -122,7 +122,7 @@ public class ProductInfoServiceImpl extends ServiceImpl<ProductInfoMapper, Produ
                 .eq("name", param.getSmallClassName())
                 .eq("parent_id", largeProductClass.getId())
                 .eq("valid", BaseEnum.VALID_YES.getCode()));
-        if (ObjectUtils.isEmpty(smallProductClass)) {
+        if (ObjectUtil.isEmpty(smallProductClass)) {
             smallProductClass.setId(StringUtil.getUUID());
             smallProductClass.setName(param.getSmallClassName());
             smallProductClass.setCreateTime(DateUtil.getNowTimestamp());
@@ -138,7 +138,7 @@ public class ProductInfoServiceImpl extends ServiceImpl<ProductInfoMapper, Produ
                 .eq("name", param.getLargeClassName())
                 .isNull("parent_id")
                 .eq("valid", BaseEnum.VALID_YES.getCode()));
-        if (ObjectUtils.isEmpty(largeProductClass)) {
+        if (ObjectUtil.isEmpty(largeProductClass)) {
             largeProductClass.setId(StringUtil.getUUID());
             largeProductClass.setName(param.getLargeClassName());
             largeProductClass.setCreateTime(DateUtil.getNowTimestamp());

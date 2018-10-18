@@ -1,7 +1,7 @@
 package com.shencai.eil.policy.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.shencai.eil.gis.model.GisValueVO;
+import com.shencai.eil.gis.model.EntGisInfo;
 import com.shencai.eil.policy.entity.EnterpriseInfo;
 import com.shencai.eil.policy.model.PolicyQueryParam;
 
@@ -21,7 +21,7 @@ public interface IEnterpriseInfoService extends IService<EnterpriseInfo> {
      * @param entId
      * @return
      */
-    GisValueVO getEntLocation(String entId);
+    EntGisInfo getEntLocation(String entId);
 
     /**
      * Gets the coordinates of all existing enterprises in the system
@@ -30,7 +30,7 @@ public interface IEnterpriseInfoService extends IService<EnterpriseInfo> {
      * @param entId
      * @return
      */
-    List<GisValueVO> listOtherEntLocation(String entId);
+    List<EntGisInfo> listOtherEntLocation(String entId);
 
     /**
      * Gets the coordinates of all existing enterprises in the system
@@ -38,7 +38,7 @@ public interface IEnterpriseInfoService extends IService<EnterpriseInfo> {
      *
      * @return
      */
-    List<GisValueVO> listAllEntLocation();
+    List<EntGisInfo> listAllEntLocation();
 
     EnterpriseInfo getEnterpriseInfo(PolicyQueryParam queryParam);
 }

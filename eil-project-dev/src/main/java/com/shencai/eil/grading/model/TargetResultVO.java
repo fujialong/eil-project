@@ -31,4 +31,11 @@ public class TargetResultVO implements Serializable {
 
     private Double upperLimitOfRiskGrade;
 
+    private String normalizationCode;
+
+    private Double max;
+
+    private Double min;
+
+    private Double weight;
 }

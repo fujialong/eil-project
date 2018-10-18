@@ -42,6 +42,17 @@ public class EnterpriseAccident extends Model<EnterpriseAccident> {
 
     private Integer valid;
 
+    @TableField("thirdparty_personal_injury")
+    private Integer thirdpartyPersonalInjury;
+
+    @TableField("thirdparty_property_damage")
+    private Integer thirdpartyPropertyDamage;
+
+    @TableField("soil_pollution")
+    private Integer soilPollution;
+
+    @TableField("water_pollution")
+    private Integer waterPollution;
 
     public String getId() {
         return id;
@@ -129,6 +140,38 @@ public class EnterpriseAccident extends Model<EnterpriseAccident> {
 
     public void setValid(Integer valid) {
         this.valid = valid;
+    }
+
+    public Integer getThirdpartyPersonalInjury() {
+        return thirdpartyPersonalInjury;
+    }
+
+    public void setThirdpartyPersonalInjury(Integer thirdpartyPersonalInjury) {
+        this.thirdpartyPersonalInjury = thirdpartyPersonalInjury;
+    }
+
+    public Integer getThirdpartyPropertyDamage() {
+        return thirdpartyPropertyDamage;
+    }
+
+    public void setThirdpartyPropertyDamage(Integer thirdpartyPropertyDamage) {
+        this.thirdpartyPropertyDamage = thirdpartyPropertyDamage;
+    }
+
+    public Integer getSoilPollution() {
+        return soilPollution;
+    }
+
+    public void setSoilPollution(Integer soilPollution) {
+        this.soilPollution = soilPollution;
+    }
+
+    public Integer getWaterPollution() {
+        return waterPollution;
+    }
+
+    public void setWaterPollution(Integer waterPollution) {
+        this.waterPollution = waterPollution;
     }
 
     @Override

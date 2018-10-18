@@ -21,7 +21,7 @@ public class TestCallPython {
         System.out.println(address);
         String exe = "python";
         String command = System.getProperty("user.dir") + "\\eil-project-dev\\src\\main\\resources\\py\\Water_Model.py";
-        List<String> list = Arrays.asList(exe, command, "Thomas_Mode", "1","2", "3", "4","5", "6", "7", "8", "9", "10","12");
+        List<String> list = Arrays.asList(exe, command, "Thomas_Mode", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "12");
 
         String[] parmass = (String[]) list.toArray();
         Process process = Runtime.getRuntime().exec(parmass);

@@ -36,6 +36,7 @@ public enum BaseEnum {
 
     CONSTANT_K1("k1", "Computing coefficient for R1.1", "R1.1计算系数k1");
 
+
     private Object code;
     private String englishName;
     private String chineseName;

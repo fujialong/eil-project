@@ -2,7 +2,7 @@ package com.shencai.eil.gis.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.shencai.eil.gis.entity.GisValue;
-import com.shencai.eil.gis.model.GisValueParam;
+import com.shencai.eil.gis.model.GisValueQueryParam;
 import com.shencai.eil.grading.model.CodeAndValueUseDouble;
 
 import java.util.List;
@@ -22,7 +22,7 @@ public interface IGisValueService extends IService<GisValue> {
      *
      * @param requestParam request param
      */
-    void saveGisValue(GisValueParam requestParam);
+    void saveGisValue(GisValueQueryParam requestParam);
 
     /**
      * Find the gis data codes that the enterprise has uploaded

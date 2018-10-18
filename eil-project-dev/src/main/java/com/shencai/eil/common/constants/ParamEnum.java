@@ -5,7 +5,9 @@ package com.shencai.eil.common.constants;
  */
 public enum ParamEnum {
 
-    SUFFIX_OF_EMISSION_INTENSITY("排放强度（吨/万元）", "排放强度后缀");
+    SUFFIX_OF_EMISSION_INTENSITY("排放强度（吨/万元）", "排放强度后缀"),
+    MOLECULAR_WEIGHT("B4", "分子量"),
+    DENSITY("C5", "密度");
 
     private String code;
     private String name;

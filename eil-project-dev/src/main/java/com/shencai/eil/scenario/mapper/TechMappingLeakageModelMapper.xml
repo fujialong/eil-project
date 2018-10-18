@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.scenario.mapper.TechMappingLeakageModelMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.scenario.entity.TechMappingLeakageModel">
+        <id column="id" property="id" />
+        <result column="scenario_id" property="scenarioId" />
+        <result column="technique_component_code" property="techniqueComponentCode" />
+        <result column="technique_component_name" property="techniqueComponentName" />
+        <result column="leakage_model_code" property="leakageModelCode" />
+        <result column="leakage_model_name" property="leakageModelName" />
+        <result column="leakage_freq" property="leakageFreq" />
+        <result column="leakage_freq_unit" property="leakageFreqUnit" />
+        <result column="leakage_time" property="leakageTime" />
+        <result column="leakage_time_unit" property="leakageTimeUnit" />
+        <result column="leakage_velocity_unit" property="leakageVelocityUnit" />
+        <result column="compute_method_code" property="computeMethodCode" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+</mapper>

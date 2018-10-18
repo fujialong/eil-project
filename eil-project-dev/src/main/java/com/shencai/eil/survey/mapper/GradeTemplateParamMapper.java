@@ -16,5 +16,11 @@ import java.util.List;
  * @since 2018-10-04
  */
 public interface GradeTemplateParamMapper extends BaseMapper<GradeTemplateParam> {
-    List<GradeTemplateParamVO> listGradeTemplateParam(GradeTemplateParamQueryParam queryParam);
+    List<GradeTemplateParamVO> listParamOfFastGradeReport(GradeTemplateParamQueryParam queryParam);
+
+    List<GradeTemplateParamVO> listParamOfFinalReport(String enterpriseId);
+
+    List<GradeTemplateParamVO> listParamOfSceneSurvey(String enterpriseId);
+
+    List<GradeTemplateParamVO> listParamWithoutSceneSurvey(String enterpriseId);
 }

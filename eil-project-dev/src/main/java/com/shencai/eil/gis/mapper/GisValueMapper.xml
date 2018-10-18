@@ -31,5 +31,12 @@
         </foreach>
 
     </select>
+    <select id="getGisValueByEntIdAndClassCode" resultType="com.shencai.eil.gis.model.GisValueVO"
+            parameterType="com.shencai.eil.gis.model.GisValueQueryParam">
+        SELECT
+          g.code,g.value,gc.class_code AS classCode,g.ent_id AS entId
+        FROM gis_value g LEFT JOIN gis_value_class gc on g.code = gc.code
+        WHERE g.ent_id =  #{entId} and gc.class_code = #{classCode}
+    </select>
 
 </mapper>

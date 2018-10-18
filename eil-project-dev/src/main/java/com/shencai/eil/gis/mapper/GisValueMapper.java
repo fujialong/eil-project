@@ -2,11 +2,12 @@ package com.shencai.eil.gis.mapper;
 
 import com.shencai.eil.gis.entity.GisValue;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.shencai.eil.gis.model.GisValueQueryParam;
+import com.shencai.eil.gis.model.GisValueVO;
 import com.shencai.eil.grading.model.CodeAndValueUseDouble;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * <p>
@@ -51,4 +52,6 @@ public interface GisValueMapper extends BaseMapper<GisValue> {
      * @return
      */
     List<CodeAndValueUseDouble> getGisValueCodeAndValue(@Param("entId") String entId, @Param("list") List<String> selfGisCodes);
+
+    List<GisValueVO> getGisValueByEntIdAndClassCode(GisValueQueryParam param);
 }

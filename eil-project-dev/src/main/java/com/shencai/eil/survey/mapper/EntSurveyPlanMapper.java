@@ -5,6 +5,7 @@ import com.shencai.eil.survey.entity.EntSurveyPlan;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.shencai.eil.survey.model.EntSurveyPlanQueryParam;
 import com.shencai.eil.survey.model.EntSurveyPlanVO;
+import com.shencai.eil.survey.model.SurveyResultVO;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -26,4 +27,8 @@ public interface EntSurveyPlanMapper extends BaseMapper<EntSurveyPlan> {
     List<EntSurveyPlanVO> listIntensiveSurveyPlan(EntSurveyPlanQueryParam queryParam);
 
     List<EntSurveyPlanVO> listEntSurveyPlan(EntSurveyPlanQueryParam queryParam);
+
+    List<SurveyResultVO> listResultOfIntensiveParamsByRow(String enterpriseId);
+
+    List<SurveyResultVO> listResultOfBasicComponentByRow(String enterpriseId);
 }

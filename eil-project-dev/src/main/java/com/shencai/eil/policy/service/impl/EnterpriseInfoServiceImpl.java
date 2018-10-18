@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.shencai.eil.common.constants.BaseEnum;
 import com.shencai.eil.common.utils.DateUtil;
 import com.shencai.eil.exception.BusinessException;
-import com.shencai.eil.gis.model.GisValueVO;
+import com.shencai.eil.gis.model.EntGisInfo;
 import com.shencai.eil.gis.service.IGisValueClassService;
 import com.shencai.eil.gis.service.IGisValueService;
 import com.shencai.eil.policy.entity.EnterpriseInfo;
@@ -15,7 +15,7 @@ import com.shencai.eil.policy.service.IEnterpriseInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.ObjectUtils;
+import com.shencai.eil.common.utils.ObjectUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,27 +41,27 @@ public class EnterpriseInfoServiceImpl extends ServiceImpl<EnterpriseInfoMapper,
     }
 
     @Override
-    public GisValueVO getEntLocation(String entId) {
+    public EntGisInfo getEntLocation(String entId) {
         //This code category has been saved
         List<String> codes = gisValueService.getCodesByEntId(entId);
 
 
         List<String> classCodes = CollectionUtils.isEmpty(codes) ? new ArrayList<>() : gisValueClassService.getClassCodesByCodes(codes);
-        GisValueVO gisValueVO = this.baseMapper.getEntLocation(entId);
+        EntGisInfo entGisInfo = this.baseMapper.getEntLocation(entId);
 
-        if (!ObjectUtils.isEmpty(gisValueVO)) {
-            gisValueVO.setHasSavedParamList(classCodes);
+        if (!ObjectUtil.isEmpty(entGisInfo)) {
+            entGisInfo.setHasSavedParamList(classCodes);
         }
-        return gisValueVO;
+        return entGisInfo;
     }
 
     @Override
-    public List<GisValueVO> listOtherEntLocation(String entId) {
+    public List<EntGisInfo> listOtherEntLocation(String entId) {
         return this.baseMapper.listOtherEntLocation(entId);
     }
 
     @Override
-    public List<GisValueVO> listAllEntLocation() {
+    public List<EntGisInfo> listAllEntLocation() {
         return this.baseMapper.listAllEntLocation();
     }
 
@@ -70,7 +70,7 @@ public class EnterpriseInfoServiceImpl extends ServiceImpl<EnterpriseInfoMapper,
         EnterpriseInfo enterpriseInfo = this.getOne(new QueryWrapper<EnterpriseInfo>()
                 .eq("id", queryParam.getEnterpriseId())
                 .eq("valid", BaseEnum.VALID_YES.getCode()));
-        if (ObjectUtils.isEmpty(enterpriseInfo)) {
+        if (ObjectUtil.isEmpty(enterpriseInfo)) {
             throw new BusinessException("The enterprise has been removed!");
         }
         return enterpriseInfo;

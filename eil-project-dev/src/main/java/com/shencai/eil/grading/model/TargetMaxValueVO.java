@@ -13,7 +13,9 @@ public class TargetMaxValueVO {
 
     private String targetId;
 
-    private Double maxValue;
+    private Double maxParamValue;
 
-    private Double minValue;
+    private Double minParamValue;
+
+    private String code;
 }

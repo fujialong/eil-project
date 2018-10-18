@@ -17,6 +17,6 @@ public class EntSurveyResultQueryParam implements Serializable {
 
     private List<String> categoryCodeList;
 
-    private String sheetName;
+    private String sheetCode;
 
 }

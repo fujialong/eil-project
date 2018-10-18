@@ -11,7 +11,7 @@ import com.shencai.eil.login.service.ISystemBaseUserService;
 import com.shencai.eil.model.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.ObjectUtils;
+import com.shencai.eil.common.utils.ObjectUtil;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -44,7 +44,7 @@ public class SystemBaseUserController {
         Map<String, Object> map = new HashMap<>(1);
         SystemBaseUser user = systemBaseUserService.login(userParam);
 
-        if (ObjectUtils.isEmpty(user)) {
+        if (ObjectUtil.isEmpty(user)) {
             throw new LoginException("login failed");
         }
 

@@ -32,6 +32,8 @@ public class PolicyParam implements Serializable {
 
     private Double latitude;
 
+    private String contacts;
+
     private String linkPhone;
 
     private String industryId;
