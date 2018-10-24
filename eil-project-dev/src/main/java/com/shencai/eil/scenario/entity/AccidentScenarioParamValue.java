@@ -8,10 +8,6 @@ import java.util.Date;
 import java.io.Serializable;
 
 /**
- * <p>
- * 
- * </p>
- *
  * @author fanhj
  * @since 2018-10-12
  */
@@ -21,12 +17,15 @@ public class AccidentScenarioParamValue extends Model<AccidentScenarioParamValue
     private static final long serialVersionUID = 1L;
 
     private String id;
+
     @TableField("info_id")
     private String infoId;
+
     @TableField("scenario_param_id")
     private String scenarioParamId;
+
     @TableField("scenario_param_value")
-    private Double scenarioParamValue;
+    private String scenarioParamValue;
 
     private String remark;
 

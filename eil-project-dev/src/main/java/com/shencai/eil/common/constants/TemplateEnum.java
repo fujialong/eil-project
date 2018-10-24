@@ -14,6 +14,7 @@ public enum TemplateEnum {
     EMISSION_INTENSITY("emission_intensity", "重金属废气排放强度"),
     EFFLUENT_INTENSITY("effluent_intensity", "重金属废水排放强度"),
     SCENARIO_SELECTION("scenario_selection", "情景和源项"),
+    MODEL_MATCHING("model_matching", "模型匹配"),
     /**
      * A6
      */
@@ -40,7 +41,9 @@ public enum TemplateEnum {
     STABILITY("A5", "稳定性（是否稳定）"),
 
     TEMPLATE_ID_OF_GAS("L", "废气排放强度模板id"),
-    TEMPLATE_ID_OF_WATER("N", "废水排放强度模板id");
+    TEMPLATE_ID_OF_WATER("N", "废水排放强度模板id"),
+    TEMPLATE_ID_OF_HEAVY_METAL_GAS("K", "重金属废气排放强度模板id"),
+    TEMPLATE_ID_OF_HEAVY_METAL_WATER("M", "重金属废水排放强度模板id");
 
     private String code;
     private String name;

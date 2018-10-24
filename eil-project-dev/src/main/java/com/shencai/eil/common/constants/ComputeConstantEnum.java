@@ -177,7 +177,13 @@ public enum ComputeConstantEnum {
     /**
      * k1
      */
-    K_ONE("k1", "贮存系数", "k1");
+    K_ONE("k1", "贮存系数", "k1"),
+
+    /**
+     * damage assessment
+     */
+    DAMAGE_ASSESSMENT("damageAssessment", "贮存系数", "k1"),
+    ;
 
     private String code;
     private String name;

@@ -12,17 +12,10 @@ import java.util.List;
  */
 public interface IComputeConstantService extends IService<ComputeConstant> {
 
-    /**
-     * get value by code
-     *
-     * @param code
-     * @return
-     */
-    double getValueByCode(String code);
 
     /**
      * list code value
      * @return
      */
-    List<CodeAndValueUseDouble> listCodeValue();
+    List<CodeAndValueUseDouble> listCodeValue(String bisCode);
 }

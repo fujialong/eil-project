@@ -54,6 +54,30 @@
         order by si.sort_num
     </select>
 
+    <select id="listEntSurveyResultForModelMatching"
+            parameterType="com.shencai.eil.survey.model.EntSurveyResultQueryParam"
+            resultType="com.shencai.eil.survey.model.EntSurveyResultVO">
+        select
+        si.code surveyItemCode,
+        esr.result
+        from ent_survey_result esr
+        inner join ent_survey_plan esp on esp.id=esr.survey_plan_id
+        <if test="enterpriseId != null and enterpriseId != ''">
+            and esp.ent_id=#{enterpriseId}
+        </if>
+        and esp.valid=1
+        inner join survey_item si on esp.survey_item_id = si.id
+        <if test="surveyItemCodeList != null and surveyItemCodeList.size > 0">
+            and si.code in
+            <foreach collection="surveyItemCodeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        and si.valid = 1
+        where
+        esr.valid = 1
+    </select>
+
     <select id="logDelete"
             parameterType="com.shencai.eil.survey.model.EntSurveyResultParam">
         update ent_survey_result set valid=0, update_time=#{updateTime}
@@ -108,5 +132,17 @@
             inner join survey_item_category sic on sic.survey_item_id = si.id and sic.category_code = 'scenario_selection' and sic.valid = 1
         where esr.valid = 1 and esp.valid = 1 and esp.ent_id = #{enterpriseId}
         order by esr.excel_row_index, si.sort_num
+    </select>
+
+    <select id="getSingleValueBySurveyItemCode"
+            parameterType="com.shencai.eil.survey.model.EntSurveyResultQueryParam"
+            resultType="String">
+        select
+        DISTINCT esr.result
+        from ent_survey_result esr
+        left join ent_survey_plan esp on esr.survey_plan_id = esp.id and esp.valid = 1
+         and ent_id = #{enterpriseId}
+        inner join survey_item si on si.id = esp.survey_item_id and si.valid = 1
+        where esr.valid = 1 and si.code = #{surveyItemCode}
     </select>
 </mapper>

@@ -34,6 +34,12 @@ public class EntSurveyResultVO implements Serializable {
 
     private Double emissionConcentration;
 
+    private String emissionsFormOptionCode;
+
+    private String mainHeavyMetalPollutant;
+
+    private Double emissionOfHeavyMetal;
+
     private String techniqueCell;
 
     private String containerPressure;
@@ -47,4 +53,11 @@ public class EntSurveyResultVO implements Serializable {
     private String detectionSystemClassification;
 
     private String isolationSystemClassification;
+
+    private Integer pipeValveNumber;
+
+    private Double pipeLength;
+
+    private Double pipeLife;
+
 }

@@ -22,7 +22,7 @@
         select id, code, name from accident_scenario accs where accs.valid = 1
     </select>
 
-    <select id="countTotalAccidentScenarioByEnterpriseId">
+    <select id="countTotalAccidentScenarioByEnterpriseId" resultType="int">
         select count(1)
         from accident_scenario_result asr
         inner join scenario_selection_info info on asr.info_id = info.id and info.valid = 1 and info.ent_id = #{enterpriseId}

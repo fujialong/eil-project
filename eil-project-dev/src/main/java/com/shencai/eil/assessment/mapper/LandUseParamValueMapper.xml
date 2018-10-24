@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.assessment.mapper.LandUseParamValueMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shencai.eil.assessment.entity.LandUseParamValue">
+        <id column="id" property="id" />
+        <result column="land_use" property="landUse" />
+        <result column="param_id" property="paramId" />
+        <result column="param_value" property="paramValue" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+    <select id="listLandUseParam"
+            parameterType="com.shencai.eil.assessment.model.LandUseParamValueQueryParam"
+            resultType="com.shencai.eil.assessment.model.LandUseParamValueVO">
+        select p.code paramCode, lupv.param_value paramValue
+        from land_use_param_value lupv
+        left join param p on p.id = lupv.param_id
+        where lupv.valid = 1 and lupv.land_use = #{landUse}
+    </select>
+</mapper>

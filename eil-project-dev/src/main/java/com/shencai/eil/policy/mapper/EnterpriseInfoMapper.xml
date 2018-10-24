@@ -49,7 +49,8 @@
         ic.name industryCategoryName,
         ei.has_risks_report hasRisksReport,
         t.name techniqueName,
-        sd.name cityName
+        sd.name cityName,
+        ei.risk_level
         from enterprise_info ei
         left join industry_category ic on (ei.industry_id=ic.id and ic.valid=1)
         left join enterprise_mapping_technique emt on (ei.id=emt.ent_id and emt.valid=1)
@@ -67,6 +68,9 @@
         <if test="queryParam.comparatorFlag == 'gt'
                  and queryParam.status != null and queryParam.status != ''">
             ei.status &gt; #{queryParam.status} and
+        </if>
+        <if test="queryParam.riskLevel != null and queryParam.riskLevel != ''">
+            ei.risk_level = #{queryParam.riskLevel} and
         </if>
         ei.valid=1
         ORDER by ei.update_time desc

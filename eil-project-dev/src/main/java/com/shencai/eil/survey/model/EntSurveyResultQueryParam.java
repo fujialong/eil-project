@@ -13,10 +13,14 @@ public class EntSurveyResultQueryParam implements Serializable {
 
     private String enterpriseId;
 
+    private String surveyItemCode;
+
     private String categoryCode;
 
     private List<String> categoryCodeList;
 
     private String sheetCode;
+
+    private List<String> surveyItemCodeList;
 
 }

@@ -37,6 +37,13 @@
         <if test="scenarioId != null and scenarioId != ''">
             scenario_id = #{scenarioId} and
         </if>
+        <if test="isStorageTank == true and pipeParamCodeList != null and pipeParamCodeList.size > 0">
+            code not in
+            <foreach collection="pipeParamCodeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            and
+        </if>
         valid = 1
     </select>
 

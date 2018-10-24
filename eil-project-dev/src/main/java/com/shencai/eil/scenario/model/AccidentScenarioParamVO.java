@@ -12,6 +12,10 @@ public class AccidentScenarioParamVO implements Serializable {
 
     private String id;
 
+    private String paramValueId;
+
+    private String scenarioId;
+
     private String code;
 
     private String name;

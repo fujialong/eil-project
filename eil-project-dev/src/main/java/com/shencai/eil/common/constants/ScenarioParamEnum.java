@@ -20,7 +20,10 @@ public enum ScenarioParamEnum {
     LIQUID_DENSITY("ρ", "液体密度"),
     ENVIRONMENT_PRESSURE("P0", "环境压力"),
     GRAVITATIONAL_ACCELERATION("g", "重力加速度"),
-    LIQUID_HEIGHT("h", "裂口之上液位高度");
+    LIQUID_HEIGHT("h", "裂口之上液位高度"),
+    PIPE_LENGTH("L", "管道长度"),
+    PIPE_VALVE_NUMBER("N", "管道闸门数量"),
+    PIPE_LIFE("t", "管道使用年限");
 
     private String code;
     private String name;

@@ -1,7 +1,9 @@
 package com.shencai.eil.survey.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.shencai.eil.common.constants.*;
 import com.shencai.eil.common.utils.DateUtil;
 import com.shencai.eil.common.utils.ObjectUtil;
@@ -20,15 +22,16 @@ import com.shencai.eil.policy.model.EnterpriseQueryParam;
 import com.shencai.eil.policy.model.EnterpriseVO;
 import com.shencai.eil.scenario.service.IScenarioSelectionInfoService;
 import com.shencai.eil.survey.constants.DefaultValueMapping;
+import com.shencai.eil.survey.constants.ExcelImportStatus;
+import com.shencai.eil.survey.entity.EntSurveyExtendInfo;
 import com.shencai.eil.survey.entity.EntSurveyPlan;
+import com.shencai.eil.survey.entity.EntSurveyResult;
+import com.shencai.eil.survey.mapper.EntSurveyExtendInfoMapper;
 import com.shencai.eil.survey.mapper.EntSurveyPlanMapper;
 import com.shencai.eil.survey.mapper.SurveyItemMapper;
-import com.shencai.eil.survey.model.EntSurveyPlanQueryParam;
-import com.shencai.eil.survey.model.EntSurveyPlanVO;
-import com.shencai.eil.survey.model.SurveyItemQueryParam;
-import com.shencai.eil.survey.model.SurveyItemVO;
+import com.shencai.eil.survey.model.*;
 import com.shencai.eil.survey.service.IEntSurveyPlanService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.shencai.eil.survey.service.IEntSurveyResultService;
 import com.shencai.eil.system.entity.BaseFileupload;
 import com.shencai.eil.system.mapper.BaseFileuploadMapper;
 import org.apache.commons.collections.CollectionUtils;
@@ -38,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author fujl
@@ -60,6 +64,10 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
     private BaseFileuploadMapper baseFileuploadMapper;
     @Autowired
     private IScenarioSelectionInfoService scenarioSelectionInfoService;
+    @Autowired
+    private EntSurveyExtendInfoMapper entSurveyExtendInfoMapper;
+    @Autowired
+    private IEntSurveyResultService entSurveyResultService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -86,7 +94,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
     private void updateRiskLevel(String enterpriseId, List<EntRiskAssessResultVO> riskResultList) {
         EnterpriseInfo enterpriseInfo = new EnterpriseInfo();
         enterpriseInfo.setRiskLevel(RiskLevel.LOW.getCode());
-        for (EntRiskAssessResultVO entRiskAssessResultVO: riskResultList) {
+        for (EntRiskAssessResultVO entRiskAssessResultVO : riskResultList) {
             if (!GradeLineResultCode.LOW.getCode().equals(entRiskAssessResultVO.getGradeLineCode())) {
                 enterpriseInfo.setRiskLevel(RiskLevel.HIGH.getCode());
                 generateIntensiveSurveyPlan(enterpriseId);
@@ -148,11 +156,41 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
         return page;
     }
 
+    @Override
+    public SurveyFileVO getSurveyUploadFileStatus(String enterpriseId) {
+        SurveyFileVO resultVO = new SurveyFileVO();
+        List<BaseFileupload> fileList = listIntensiveUploadFile(enterpriseId);
+        if (CollectionUtils.isEmpty(fileList)) {
+            resultVO.setStatus(ExcelImportStatus.NOT_UPLOAD.getCode());
+        } else {
+            resultVO.setFileId(fileList.get(0).getId());
+            resultVO.setFileName(fileList.get(0).getFileName());
+            List<EntSurveyExtendInfo> surveyExtendInfoList = entSurveyExtendInfoMapper
+                    .selectList(new QueryWrapper<EntSurveyExtendInfo>()
+                            .eq("ent_id", enterpriseId)
+                            .eq("valid", BaseEnum.VALID_YES.getCode()));
+            if (CollectionUtils.isNotEmpty(surveyExtendInfoList)) {
+                resultVO.setStatus(ExcelImportStatus.COMPLETED.getCode());
+            } else {
+                resultVO.setStatus(ExcelImportStatus.UPLOADED.getCode());
+            }
+        }
+        return resultVO;
+    }
+
+    private List<BaseFileupload> listIntensiveUploadFile(String enterpriseId) {
+        return baseFileuploadMapper
+                .selectList(new QueryWrapper<BaseFileupload>()
+                        .eq("source_id", enterpriseId)
+                        .eq("stype", FileSourceType.INTENSIVE_SURVEY_PLAN_UPLOAD.getCode())
+                        .eq("valid", BaseEnum.VALID_YES.getCode()));
+    }
+
     private void setAttachment(List<EntSurveyPlanVO> surveyPlanList) {
         List<String> sourceIds = new ArrayList<>();
-        for (EntSurveyPlanVO planVO: surveyPlanList) {
+        for (EntSurveyPlanVO planVO : surveyPlanList) {
             if (!ObjectUtil.isEmpty(planVO.getHasAttachment())
-                    && planVO.getHasAttachment() ==  BaseEnum.VALID_YES.getCode()) {
+                    && planVO.getHasAttachment() == BaseEnum.VALID_YES.getCode()) {
                 sourceIds.add(planVO.getId());
             }
         }
@@ -162,11 +200,11 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
                             .in("source_id", sourceIds)
                             .eq("valid", BaseEnum.VALID_YES.getCode()));
             if (CollectionUtils.isNotEmpty(files)) {
-                for (BaseFileupload file: files) {
-                    for (EntSurveyPlanVO planVO: surveyPlanList) {
+                for (BaseFileupload file : files) {
+                    for (EntSurveyPlanVO planVO : surveyPlanList) {
                         List fileList = new ArrayList();
                         if (!ObjectUtil.isEmpty(planVO.getHasAttachment())
-                                && planVO.getHasAttachment() ==  BaseEnum.VALID_YES.getCode()
+                                && planVO.getHasAttachment() == BaseEnum.VALID_YES.getCode()
                                 && planVO.getId().equals(file.getSourceId())) {
                             fileList.add(file);
                             planVO.setAttachmentList(fileList);
@@ -180,6 +218,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
 
     /**
      * bind relation of basic survey item
+     *
      * @param enterpriseId
      */
     private void generateBasicSurveyPlan(String enterpriseId) {
@@ -206,7 +245,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
             plan.setId(StringUtil.getUUID());
             plan.setEntId(enterprise.getId());
             plan.setSurveyItemId(vo.getId());
-            for (SurveyItemVO item: exportItems) {
+            for (SurveyItemVO item : exportItems) {
                 if (vo.getId().equals(item.getId())) {
                     plan.setExcelColIndex(index);
                     index++;
@@ -249,7 +288,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
         List<ParamVO> paramList = new ArrayList<>();
         String[] templateArray = DefaultValueMapping.getTemplatesByCode(item.getCode());
         List<String> templateList = Arrays.asList(templateArray);
-        for (ParamVO vo: allDefaultParams) {
+        for (ParamVO vo : allDefaultParams) {
             if (templateList.indexOf(vo.getTemplateCode()) > -1) {
                 paramList.add(vo);
             }
@@ -319,7 +358,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
     private List<EntSurveyPlan> generateSurveyPlanList(String enterpriseId, List<SurveyItemVO> surveyItemList, HashMap<String, EntRiskAssessResultVO> map) {
         List<EntSurveyPlan> surveyPlanList = new ArrayList<>();
         HashMap<String, Integer> indexMap = new HashMap<>();
-        for (SurveyItemVO vo: surveyItemList) {
+        for (SurveyItemVO vo : surveyItemList) {
             EntRiskAssessResultVO assessResult = map.get(vo.getTargetWeightCode());
             if (GradeLineResultCode.LOW.getCode().equals(assessResult.getGradeLineCode())) {
                 if (assessResult.getTargetCode().equals(vo.getTargetWeightCode())
@@ -344,7 +383,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
 
     private HashMap<String, EntRiskAssessResultVO> compareAssessResult(List<EntRiskAssessResultVO> riskAssessResultList) {
         HashMap<String, EntRiskAssessResultVO> map = new HashMap<>();
-        for (EntRiskAssessResultVO vo: riskAssessResultList) {
+        for (EntRiskAssessResultVO vo : riskAssessResultList) {
             if (!ObjectUtil.isEmpty(map.get(vo.getTargetCode()))) {
                 if (Double.valueOf(vo.getTargetResult()) > Double.valueOf(map.get(vo.getTargetCode()).getTargetResult())) {
                     map.put(vo.getTargetCode(), vo);
@@ -418,15 +457,42 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
                 throw new BusinessException("please upload basic and intensive survey report!");
             } else if (files.size() != 2) {
                 throw new BusinessException(FileSourceType.BASIC_SURVEY_PLAN_UPLOAD.getCode().equals(files.get(0).getStype())
-                        ? "please upload intensive survey report!": "please upload basic survey report!");
+                        ? "please upload intensive survey report!" : "please upload basic survey report!");
             }
         } else {
             if (CollectionUtils.isEmpty(files)) {
                 throw new BusinessException("please upload basic survey report!");
             }
         }
+        if (RiskLevel.HIGH.getCode().equals(enterpriseInfo.getRiskLevel())) {
+            Integer extendCount = entSurveyExtendInfoMapper.selectCount(new QueryWrapper<EntSurveyExtendInfo>()
+                    .eq("ent_id", enterpriseId)
+                    .eq("valid", BaseEnum.VALID_YES.getCode()));
+            if (ObjectUtils.isNull(extendCount) || extendCount == 0) {
+                throw new BusinessException("please complete extend survey info!");
+            }
+        }
         updateEnterpriseStatus(enterpriseId, enterpriseInfo);
         scenarioSelectionInfoService.initScenarioSelectionInfo(enterpriseId);
+    }
+
+    @Override
+    public String getValue(String entId, List<String> surveyItemId) {
+        List<EntSurveyPlan> surveyPlans = entSurveyPlanMapper.selectList(
+                new QueryWrapper<EntSurveyPlan>()
+                        .eq("ent_id", entId)
+                        .eq("valid", BaseEnum.VALID_YES.getCode())
+                        .in("survey_item_id", surveyItemId));
+        if (CollectionUtils.isEmpty(surveyPlans)) {
+            throw new BusinessException("ent_survey_plan table not exit " + surveyItemId + " survey item of this enterprise");
+        }
+        List<String> planIds = surveyPlans.stream().map(EntSurveyPlan::getId).collect(Collectors.toList());
+        List<EntSurveyResult> surveyResults = entSurveyResultService.list(
+                new QueryWrapper<EntSurveyResult>()
+                        .in("survey_plan_id", planIds)
+                        .eq("valid", BaseEnum.VALID_YES.getCode()));
+        String value = CollectionUtils.isEmpty(surveyResults) ? null : surveyResults.get(0).getResult();
+        return value;
     }
 
     private void updateEnterpriseStatus(String enterpriseId, EnterpriseInfo enterpriseInfo) {
@@ -437,9 +503,9 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
 
     private List<BaseFileupload> listFiles(String enterpriseId) {
         return baseFileuploadMapper.selectList(new QueryWrapper<BaseFileupload>()
-                    .eq("source_id", enterpriseId)
-                    .in("stype", Arrays.asList(new String[]{FileSourceType.BASIC_SURVEY_PLAN_UPLOAD.getCode()
-                            , FileSourceType.INTENSIVE_SURVEY_PLAN_UPLOAD.getCode()}))
-                    .eq("valid", BaseEnum.VALID_YES.getCode()));
+                .eq("source_id", enterpriseId)
+                .in("stype", Arrays.asList(new String[]{FileSourceType.BASIC_SURVEY_PLAN_UPLOAD.getCode()
+                        , FileSourceType.INTENSIVE_SURVEY_PLAN_UPLOAD.getCode()}))
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
     }
 }

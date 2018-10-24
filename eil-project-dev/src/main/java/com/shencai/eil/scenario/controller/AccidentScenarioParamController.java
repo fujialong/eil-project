@@ -30,7 +30,17 @@ public class AccidentScenarioParamController {
         return Result.ok(scenarioParamVOS);
     }
 
-
+    /**
+     * Proportion of toxic and harmful substances released
+     * @param queryParam
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping("calculateRelatedParam")
+    public Result calculateRelatedParam(AccidentScenarioParamQueryParam queryParam) {
+        String relatedParamResult = accidentScenarioParamService.calculateRelatedParam(queryParam);
+        return Result.ok(relatedParamResult);
+    }
 
 }
 

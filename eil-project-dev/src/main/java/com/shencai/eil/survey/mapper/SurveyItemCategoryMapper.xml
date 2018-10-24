@@ -27,7 +27,7 @@
         from ent_survey_plan esp
         inner join survey_item si on esp.survey_item_id = si.id and si.valid = 1
         inner join survey_item_category sic on si.id = sic.survey_item_id and sic.valid = 1 and category_code = #{categoryCode}
-        where esp.ent_id = #{enterpriseId}
+        where esp.valid = 1 and esp.ent_id = #{enterpriseId}
         order by si.sort_num
     </select>
 </mapper>

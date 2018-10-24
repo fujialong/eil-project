@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.assessment.mapper.EntDiffusionModelInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.shencai.eil.assessment.entity.EntDiffusionModelInfo">
+        <id column="id" property="id" />
+        <result column="ent_id" property="entId" />
+        <result column="material" property="material" />
+        <result column="scenario_id" property="scenarioId" />
+        <result column="release_amount" property="releaseAmount" />
+        <result column="release_concentration" property="releaseConcentration" />
+        <result column="release_time" property="releaseTime" />
+        <result column="wading" property="wading" />
+        <result column="emission_mode_type" property="emissionModeType" />
+        <result column="exist_water_env" property="existWaterEnv" />
+        <result column="considering_water_env_risk" property="consideringWaterEnvRisk" />
+        <result column="surface_water_condition" property="surfaceWaterCondition" />
+        <result column="access_type" property="accessType" />
+        <result column="stability" property="stability" />
+        <result column="density" property="density" />
+        <result column="state" property="state" />
+        <result column="octan_water_partition" property="octanWaterPartition" />
+        <result column="pollutant_type" property="pollutantType" />
+        <result column="model_id" property="modelId" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+    <select id="listMaterialName" resultType="String">
+        select material from ent_diffusion_model_info where ent_id = #{enterpriseId} and valid = 1
+    </select>
+
+    <select id="pageEntDiffusionModelInfo" resultType="com.shencai.eil.assessment.model.EntDiffusionModelInfoVO"
+            parameterType="com.shencai.eil.assessment.model.EntDiffusionModelInfoQueryParam">
+        select
+        edmi.id,
+        edmi.material,
+        sce.name scenarioName,
+        edmi.release_amount releaseAmount,
+        (case when edmi.wading=1 then '是' else '否' end) wadingName,
+        (case when edmi.emission_mode_type='1' then '直接排放' else '间接排放' end)emissionModeTypeName,
+        (case when edmi.exist_water_env=1 then '是' else '否' end) existWaterEnvName,
+        (case when edmi.considering_water_env_risk=1 then '是' else '否' end) consideringWaterEnvRiskName,
+        (select name from sys_dictionary where type_code='surface_water_condition'
+          and code=edmi.surface_water_condition and valid=1) surfaceWaterConditionName,
+        (select name from sys_dictionary where type_code='access_surface_water_type'
+          and code=edmi.access_type and valid=1) accessTypeName,
+        (select name from sys_dictionary where type_code='pollutant_type'
+          and code=edmi.pollutant_type and valid=1) pollutantTypeName,
+        dm.name modelName
+        from ent_diffusion_model_info edmi
+        left join accident_scenario sce on (sce.id=edmi.scenario_id and sce.valid=1)
+        left join data_model dm on (dm.id=edmi.model_id and dm.valid=1)
+        where
+        <if test="queryParam.enterpriseId != null and queryParam.enterpriseId != ''">
+            edmi.ent_id = #{queryParam.enterpriseId} and
+        </if>
+        edmi.valid=1
+        ORDER by edmi.create_time desc
+    </select>
+
+
+    <select id="listModelOfInfo"
+            parameterType="com.shencai.eil.assessment.model.EntDiffusionModelInfoQueryParam"
+            resultType="com.shencai.eil.assessment.model.EntDiffusionModelInfoVO">
+        select dm.name modelName, dm.type modelType
+        from ent_diffusion_model_info info
+        left join data_model dm on info.model_id = dm.id and dm.valid = 1
+        where info.valid = 1 and info.ent_id = #{enterpriseId}
+    </select>
+</mapper>

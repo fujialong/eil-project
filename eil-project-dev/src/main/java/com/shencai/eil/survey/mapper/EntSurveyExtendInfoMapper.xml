@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.survey.mapper.EntSurveyExtendInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shencai.eil.survey.entity.EntSurveyExtendInfo">
+        <id column="id" property="id" />
+        <result column="ent_id" property="entId" />
+        <result column="survey_time" property="surveyTime" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+        <result column="chain_effective" property="chainEffective" />
+        <result column="chain_effective_reason" property="chainEffectiveReason" />
+        <result column="risk_level" property="riskLevel" />
+        <result column="high_risk_level_reason" property="highRiskLevelReason" />
+        <result column="control_risk_level" property="controlRiskLevel" />
+        <result column="high_control_risk_level_reason" property="highControlRiskLevelReason" />
+        <result column="receptor_risk_level" property="receptorRiskLevel" />
+        <result column="high_receptor_risk_level" property="highReceptorRiskLevel" />
+        <result column="technique_step_suggestion" property="techniqueStepSuggestion" />
+        <result column="pipeline_step_suggestion" property="pipelineStepSuggestion" />
+        <result column="danger_step_suggestion" property="dangerStepSuggestion" />
+        <result column="handling_process_suggestion" property="handlingProcessSuggestion" />
+        <result column="emergency_fac_suggestion" property="emergencyFacSuggestion" />
+    </resultMap>
+
+    <resultMap id="infoWithPhotos" type="com.shencai.eil.survey.model.EntSurveyExtendInfoVO">
+        <result column="survey_time" property="surveyTime" />
+        <result column="chain_effective" property="chainEffective" />
+        <result column="chain_effective_reason" property="chainEffectiveReason" />
+        <result column="risk_level" property="riskLevel" />
+        <result column="high_risk_level_reason" property="highRiskLevelReason" />
+        <result column="control_risk_level" property="controlRiskLevel" />
+        <result column="high_control_risk_level_reason" property="highControlRiskLevelReason" />
+        <result column="receptor_risk_level" property="receptorRiskLevel" />
+        <result column="high_receptor_risk_level" property="highReceptorRiskLevel" />
+        <result column="technique_step_suggestion" property="techniqueStepSuggestion" />
+        <result column="pipeline_step_suggestion" property="pipelineStepSuggestion" />
+        <result column="danger_step_suggestion" property="dangerStepSuggestion" />
+        <result column="handling_process_suggestion" property="handlingProcessSuggestion" />
+        <result column="emergency_fac_suggestion" property="emergencyFacSuggestion" />
+        <collection property="photoList" ofType="com.shencai.eil.survey.model.EntSurveyPhotoVO">
+            <result column="fileAddress" property="fileAddress" />
+            <result column="timeOfPhoto" property="timeOfPhoto" />
+            <result column="location" property="location" />
+            <result column="remark" property="remark" />
+        </collection>
+    </resultMap>
+    <select id="listEntSurveyExtendInfo" resultMap="infoWithPhotos">
+        select
+            info.survey_time,
+            info.chain_effective,
+            info.chain_effective_reason,
+            info.risk_level,
+            info.high_risk_level_reason,
+            info.control_risk_level,
+            info.high_control_risk_level_reason,
+            info.receptor_risk_level,
+            info.high_receptor_risk_level,
+            info.technique_step_suggestion,
+            info.pipeline_step_suggestion,
+            info.danger_step_suggestion,
+            info.handling_process_suggestion,
+            info.emergency_fac_suggestion,
+            file.file_adress fileAddress,
+            p.time_of_photo timeOfPhoto,
+            p.location,
+            p.remark
+        from ent_survey_extend_info info
+        left join ent_survey_photo p on info.id = p.survey_info_id and p.valid = 1
+        left join base_fileupload file on file.id = p.file_id and file.valid = 1
+        where info.valid = 1 and info.ent_id = #{enterpriseId}
+    </select>
+</mapper>

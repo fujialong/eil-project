@@ -124,11 +124,13 @@
             Max(case when item.code in ('S2', 'S52') then result.result else '' end) componentType,
             Max(case when item.code in ('S3', 'S53') then result.result else '' end) componentLocation,
             Max(case when item.code in ('S153') then result.result else '' end) wasteCollection,
-            Max(case when item.code in ('S154') then result.result else '' end) wastePrevent
+            Max(case when item.code in ('S154') then result.result else '' end) wastePrevent,
+            Max(case when item.code in ('S70') then result.result else '' end) hasFireAlarmSystem,
+            Max(case when item.code in ('S71') then result.result else '' end) hasOutFireSystem
         from ent_survey_result result
         inner join ent_survey_plan plan on result.survey_plan_id = plan.id and plan.valid = 1
         inner join survey_item item on item.id = plan.survey_item_id and item.valid = 1
-        where result.valid = 1 and item.code in ('S2', 'S52', 'S3', 'S53', 'S153', 'S154') and plan.ent_id = #{enterpriseId}
+        where result.valid = 1 and item.code in ('S2', 'S52', 'S3', 'S53', 'S153', 'S154', 'S70', 'S71') and plan.ent_id = #{enterpriseId}
         group by result.excel_row_index, plan.ent_id
     </select>
 

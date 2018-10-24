@@ -15,4 +15,5 @@ public interface IAccidentScenarioParamService extends IService<AccidentScenario
 
     List<AccidentScenarioParamVO> listScenarioParam(AccidentScenarioParamQueryParam queryParam);
 
+    String calculateRelatedParam(AccidentScenarioParamQueryParam queryParam);
 }

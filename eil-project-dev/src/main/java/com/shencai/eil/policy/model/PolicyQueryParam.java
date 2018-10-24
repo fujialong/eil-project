@@ -17,4 +17,6 @@ public class PolicyQueryParam extends PageParam implements Serializable {
 
     private String comparatorFlag;
 
+    private String riskLevel;
+
 }

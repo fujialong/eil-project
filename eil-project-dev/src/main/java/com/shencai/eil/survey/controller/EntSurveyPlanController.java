@@ -74,6 +74,12 @@ public class EntSurveyPlanController {
     }
 
     @ResponseBody
+    @RequestMapping("getSurveyUploadFileStatus")
+    public Result getSurveyUploadFileStatus(String enterpriseId) {
+       return Result.ok(entSurveyPlanService.getSurveyUploadFileStatus(enterpriseId));
+    }
+
+    @ResponseBody
     @RequestMapping("finishSurvey")
     public Result finishSurvey(String enterpriseId) {
         entSurveyPlanService.finishSurvey(enterpriseId);

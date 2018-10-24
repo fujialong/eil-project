@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.assessment.mapper.GridCalculationValueMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shencai.eil.assessment.entity.GridCalculationValue">
+        <id column="id" property="id" />
+        <result column="grid_id" property="gridId" />
+        <result column="bis_code" property="bisCode" />
+        <result column="cr_cwg" property="crCwg" />
+        <result column="cr_dgw" property="crDgw" />
+        <result column="hq_cwg" property="hqCwg" />
+        <result column="hq_dgw" property="hqDgw" />
+        <result column="cr" property="cr" />
+        <result column="hi" property="hi" />
+        <result column="loss_cr" property="lossCr" />
+        <result column="loss_hi" property="lossHi" />
+        <result column="esv" property="esv" />
+        <result column="bi" property="bi" />
+        <result column="cost" property="cost" />
+        <result column="remark" property="remark" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+        <result column="valid" property="valid" />
+    </resultMap>
+
+    <select id="listStatisticsValueByBisType" resultType="com.shencai.eil.assessment.model.GridCalculationValueVO">
+        select
+            gcv.bis_code bisCode,
+            sum(loss_cr) lossCr,
+            SUM(loss_hi) lossHi,
+            SUM(esv) esv,
+            SUM(bi) bi,
+            SUM(cost) cost
+        from grid_calculation_value gcv
+        inner join assess_gird ag on gcv.grid_id = ag.id and ag.ent_id = #{entId} and ag.valid = 1
+        group by gcv.bis_code
+    </select>
+</mapper>

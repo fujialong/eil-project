@@ -4,53 +4,53 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="com.shencai.eil.scenario.entity.ScenarioSelectionInfo">
-        <id column="id" property="id" />
-        <result column="ent_id" property="entId" />
-        <result column="matter_name" property="matterName" />
-        <result column="matter_type" property="matterType" />
-        <result column="technique_cell" property="techniqueCell" />
-        <result column="technique_component" property="techniqueComponent" />
-        <result column="component_location" property="componentLocation" />
-        <result column="online_content" property="onlineContent" />
-        <result column="matter_property" property="matterProperty" />
-        <result column="explosive_characteristic" property="explosiveCharacteristic" />
-        <result column="combustion_characteristic" property="combustionCharacteristic" />
-        <result column="melting_point" property="meltingPoint" />
-        <result column="boiling_point" property="boilingPoint" />
-        <result column="phase_state" property="phaseState" />
-        <result column="flashing_point" property="flashingPoint" />
-        <result column="density" property="density" />
-        <result column="remark" property="remark" />
-        <result column="create_user_id" property="createUserId" />
-        <result column="create_time" property="createTime" />
-        <result column="update_user_id" property="updateUserId" />
-        <result column="update_time" property="updateTime" />
-        <result column="valid" property="valid" />
+        <id column="id" property="id"/>
+        <result column="ent_id" property="entId"/>
+        <result column="matter_name" property="matterName"/>
+        <result column="matter_type" property="matterType"/>
+        <result column="technique_cell" property="techniqueCell"/>
+        <result column="technique_component" property="techniqueComponent"/>
+        <result column="component_location" property="componentLocation"/>
+        <result column="online_content" property="onlineContent"/>
+        <result column="matter_property" property="matterProperty"/>
+        <result column="explosive_characteristic" property="explosiveCharacteristic"/>
+        <result column="combustion_characteristic" property="combustionCharacteristic"/>
+        <result column="melting_point" property="meltingPoint"/>
+        <result column="boiling_point" property="boilingPoint"/>
+        <result column="phase_state" property="phaseState"/>
+        <result column="flashing_point" property="flashingPoint"/>
+        <result column="density" property="density"/>
+        <result column="remark" property="remark"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="valid" property="valid"/>
     </resultMap>
 
     <resultMap id="scenarioSelectionInfo" type="com.shencai.eil.scenario.model.ScenarioSelectionInfoVO">
-        <result column="id" property="id" />
-        <result column="entId" property="entId" />
-        <result column="matterName" property="matterName" />
-        <result column="matterType" property="matterType" />
-        <result column="techniqueCell" property="techniqueCell" />
-        <result column="techniqueComponent" property="techniqueComponent" />
-        <result column="componentLocation" property="componentLocation" />
-        <result column="onlineContent" property="onlineContent" />
-        <result column="matterProperty" property="matterProperty" />
-        <result column="explosiveCharacteristic" property="explosiveCharacteristic" />
-        <result column="combustionCharacteristic" property="combustionCharacteristic" />
-        <result column="meltingPoint" property="meltingPoint" />
-        <result column="boilingPoint" property="boilingPoint" />
-        <result column="phaseState" property="phaseState" />
-        <result column="flashingPoint" property="flashingPoint" />
-        <result column="density" property="density" />
-        <result column="remark" property="remark" />
+        <result column="id" property="id"/>
+        <result column="entId" property="entId"/>
+        <result column="matterName" property="matterName"/>
+        <result column="matterType" property="matterType"/>
+        <result column="techniqueCell" property="techniqueCell"/>
+        <result column="techniqueComponent" property="techniqueComponent"/>
+        <result column="componentLocation" property="componentLocation"/>
+        <result column="onlineContent" property="onlineContent"/>
+        <result column="matterProperty" property="matterProperty"/>
+        <result column="explosiveCharacteristic" property="explosiveCharacteristic"/>
+        <result column="combustionCharacteristic" property="combustionCharacteristic"/>
+        <result column="meltingPoint" property="meltingPoint"/>
+        <result column="boilingPoint" property="boilingPoint"/>
+        <result column="phaseState" property="phaseState"/>
+        <result column="flashingPoint" property="flashingPoint"/>
+        <result column="density" property="density"/>
+        <result column="remark" property="remark"/>
         <collection property="accidentScenarioResultList"
                     ofType="com.shencai.eil.scenario.model.AccidentScenarioResultVO">
-            <result column="scenarioName" property="scenarioName" />
-            <result column="scenarioResult" property="scenarioResult" />
-            <result column="scenarioResultDesc" property="scenarioResultDesc" />
+            <result column="scenarioName" property="scenarioName"/>
+            <result column="scenarioResult" property="scenarioResult"/>
+            <result column="scenarioResultDesc" property="scenarioResultDesc"/>
         </collection>
     </resultMap>
 
@@ -82,7 +82,35 @@
         from scenario_selection_info info
         left join accident_scenario_result accsr on accsr.info_id = info.id and accsr.valid = 1
         left join accident_scenario accs on accsr.scenario_id = accs.id and accs.valid = 1
-        where info.ent_id = #{param.enterpriseId}
-        order by info.create_time
+        where info.valid = 1 and info.ent_id = #{param.enterpriseId}
+        order by info.create_time, info.matter_name
     </select>
+
+    <select id="listScenarioSelectInfoAndResult" parameterType="string"
+            resultType="com.shencai.eil.assessment.entity.EntDiffusionModelInfo">
+        select
+        ssi.ent_id entId,
+        ssi.matter_name material,
+        asr.scenario_id scenarioId,
+        (CASE WHEN ssi.matter_property = '涉水性' THEN 1 ELSE 0 END)wading,
+        sum(asr.scenario_result) releaseAmount
+        from scenario_selection_info ssi
+        left join accident_scenario_result asr on (asr.info_id = ssi.id and asr.valid = 1)
+        where
+        ssi.ent_id = #{enterpriseId} and ssi.valid=1
+        group by ssi.matter_name, asr.scenario_id
+    </select>
+
+    <select id="getToalMaterialRelease" parameterType="string"
+            resultType="com.shencai.eil.scenario.model.ScenarioSelectionInfoKeyVavlueVO">
+        SELECT
+            density,
+            sum(asr.scenario_result) voDoubleValue
+        FROM
+            scenario_selection_info ssi
+        LEFT JOIN accident_scenario_result asr ON ssi.id = asr.info_id
+        WHERE
+            ssi.ent_id = #{entId} and matter_name =#{materialName}
+    </select>
+
 </mapper>

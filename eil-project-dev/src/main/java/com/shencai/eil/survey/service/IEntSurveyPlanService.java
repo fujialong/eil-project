@@ -7,6 +7,7 @@ import com.shencai.eil.survey.entity.EntSurveyPlan;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.shencai.eil.survey.model.EntSurveyPlanQueryParam;
 import com.shencai.eil.survey.model.EntSurveyPlanVO;
+import com.shencai.eil.survey.model.SurveyFileVO;
 
 import java.util.List;
 
@@ -27,5 +28,9 @@ public interface IEntSurveyPlanService extends IService<EntSurveyPlan> {
 
     Page<EntSurveyPlanVO> pageIntensiveSurveyPlan(EntSurveyPlanQueryParam queryParam);
 
+    SurveyFileVO getSurveyUploadFileStatus(String enterpriseId);
+
     void finishSurvey(String enterpriseId);
+
+    String getValue(String entId, List<String> surveyItemId);
 }

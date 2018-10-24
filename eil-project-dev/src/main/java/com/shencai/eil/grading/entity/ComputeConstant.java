@@ -22,6 +22,11 @@ public class ComputeConstant extends Model<ComputeConstant> {
 
     private String remark;
 
+    private String description;
+
+    @TableField("bis_code")
+    private String bisCode;
+
     @TableField("create_user_id")
     private String createUserId;
 
@@ -114,6 +119,22 @@ public class ComputeConstant extends Model<ComputeConstant> {
         return this.id;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getBisCode() {
+        return bisCode;
+    }
+
+    public void setBisCode(String bisCode) {
+        this.bisCode = bisCode;
+    }
+
     @Override
     public String toString() {
         return "ComputeConstant{" +
@@ -125,6 +146,8 @@ public class ComputeConstant extends Model<ComputeConstant> {
                 ", createTime=" + createTime +
                 ", updateUserId=" + updateUserId +
                 ", updateTime=" + updateTime +
+                ", bisCode=" + bisCode +
+                ", description=" + description +
                 ", valid=" + valid +
                 "}";
     }

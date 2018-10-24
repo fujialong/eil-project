@@ -17,13 +17,8 @@ import java.util.List;
 public class ComputeConstantServiceImpl extends ServiceImpl<ComputeConstantMapper, ComputeConstant> implements IComputeConstantService {
 
     @Override
-    public double getValueByCode(String code) {
-        return this.baseMapper.getValueByCode(code);
-    }
+    public List<CodeAndValueUseDouble> listCodeValue(String bisCode) {
 
-    @Override
-    public List<CodeAndValueUseDouble> listCodeValue() {
-
-        return this.baseMapper.listCodeValue();
+        return this.baseMapper.listCodeValue(bisCode);
     }
 }

@@ -42,15 +42,11 @@ public enum TemplateCategory {
     /**
      * intensity of gas emission
      */
-    EMISSION_INTENSITY("emission_intensity", "废气排放"),
+    WATER_DAMAGE_ASSESSMENT("water_damage_assessment", "水环境损害评估模板"),
     /**
      * intensity of effluent
      */
-    EFFLUENT_INTENSITY("effluent_intensity", "废水排放"),
-    /**
-     * intensity of heavy metal
-     */
-    HEAVY_METAL_INTENSITY("heavy_metal_intensity", "重金属排放"),
+    SOIL_DAMAGE_ASSESSMENT("soil_damage_assessment", "土壤环境损害评估模板"),
     ;
 
     private String code;

@@ -105,4 +105,6 @@ public class PolicyVO implements Serializable {
 
     private Date depthEvaluationTime;
 
+    private String riskLevel;
+
 }

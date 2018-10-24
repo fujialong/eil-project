@@ -151,4 +151,13 @@ public class CommonsUtil {
         List<String> typeList = Arrays.asList(types);
         return typeList.contains(field.getType().getName()) ? true : false;
     }
+
+    public static boolean isNumeric(String str) {
+        for (int i = 0; i < str.length(); i++) {
+            if (!Character.isDigit(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

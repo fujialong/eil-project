@@ -11,4 +11,7 @@ public interface IEntSurveyFileService {
 
     void importSurveyResults(String baseFileuploadId, String enterpriseId);
 
+    String downloadBasicSurveyResult(String enterpriseId);
+
+    String downloadIntensiveSurveyResult(String enterpriseId);
 }

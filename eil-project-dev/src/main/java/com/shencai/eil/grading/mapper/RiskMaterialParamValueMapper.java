@@ -1,12 +1,13 @@
 package com.shencai.eil.grading.mapper;
 
+import com.shencai.eil.assessment.model.RiskMaterialQueryParam;
+import com.shencai.eil.assessment.model.RiskMaterialVO;
 import com.shencai.eil.grading.entity.RiskMaterialParamValue;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.shencai.eil.grading.model.RiskMaterialParamValueQueryParam;
 import com.shencai.eil.grading.model.RiskMaterialParamValueVO;
 
 import java.util.List;
-import com.shencai.eil.grading.model.RiskMaterialParamValueQueryParam;
 
 /**
  * @author fujl
@@ -16,4 +17,5 @@ public interface RiskMaterialParamValueMapper extends BaseMapper<RiskMaterialPar
 
     String getParamValue(RiskMaterialParamValueQueryParam queryParam);
     List<RiskMaterialParamValueVO> listRiskMaterialParamValue(RiskMaterialParamValueQueryParam queryParam);
+    List<RiskMaterialVO> listRiskMaterial(RiskMaterialQueryParam queryParam);
 }

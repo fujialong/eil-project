@@ -12,4 +12,11 @@ public class AccidentScenarioResultVO {
     private String scenarioName;
     private Double scenarioResult;
     private String scenarioResultDesc;
+
+    private String id;
+
+    private String scenarioId;
+
+    private List<AccidentScenarioParamVO> scenarioParamList;
+
 }

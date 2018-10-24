@@ -100,7 +100,6 @@
 
     <select id="listParamOfFinalReport" resultType="com.shencai.eil.survey.model.GradeTemplateParamVO">
         select
-            gtp.code,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
@@ -110,8 +109,8 @@
             )
         union ALL
         select
-            gtp.param_code,
-            gtp.param_content
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'hasIntensiveTable' and gtp.result_code = (
             select case when risk_level = '002' then 1 else 0 end riskLevel from enterprise_info
@@ -121,11 +120,13 @@
 
     <select id="listParamOfSceneSurvey" resultType="com.shencai.eil.survey.model.GradeTemplateParamVO">
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'entHappened' and gtp.result_code = (
-            select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+            select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
                 select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
                 left join ent_survey_plan plan on plan.id = result.survey_plan_id
                 left join survey_item si on si.id = plan.survey_item_id
@@ -139,11 +140,13 @@
             )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'locationHappened' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -157,11 +160,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'entExisted' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -175,11 +180,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'involvedRiskMaterial' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -195,6 +202,8 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
@@ -213,11 +222,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'unloadInvolved' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -231,11 +242,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'hasSafeBasin' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -249,11 +262,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'autoInBasin' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -267,11 +282,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'hasCofferdam' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -285,11 +302,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'hasStorage' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -303,11 +322,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'hasAlarmSystem' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -321,11 +342,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'professionalHandled' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -339,11 +362,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'empSpecify' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -357,11 +382,33 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'hasSurfaceWater' and gtp.result_code = (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
+        select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S215' and plan.ent_id = #{enterpriseId} and result = '是'
+        union ALL
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code = 'S215' and plan.ent_id = #{enterpriseId} and result = '否'
+        ) a
+        )
+        union ALL
+        select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'hasHospital' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -375,11 +422,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'hasSchool' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -393,11 +442,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'hasCommunity' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -411,11 +462,13 @@
         )
         union ALL
         select
+            gtp.code,
+            gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'hasFarm' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -426,6 +479,19 @@
         left join survey_item si on si.id = plan.survey_item_id
         where si.code = 'S231' and plan.ent_id = #{enterpriseId} and result = '否'
         ) a
+        )
+        union all
+        select
+            gtp.code,
+            gtp.result_code resultCode,
+            gtp.param_code paramCode,
+            gtp.param_content paramContent
+        from grade_template_param gtp
+        where gtp.code = 'envRiskCount' and gtp.result_code = (
+        select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
+        left join ent_survey_plan plan on plan.id = result.survey_plan_id
+        left join survey_item si on si.id = plan.survey_item_id
+        where si.code in ('S215', 'S221', 'S220', 'S222', 'S231') and plan.ent_id = #{enterpriseId}
         )
     </select>
 
@@ -463,7 +529,7 @@
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'involvedRiskMaterial' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
@@ -483,7 +549,7 @@
             gtp.param_content paramContent
         from grade_template_param gtp
         where gtp.code = 'hasBigFarm' and gtp.result_code = (
-        select case when sum(total) >= 10 then 1 when sum(total) >= 0 then 0 else 2 end from (
+        select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id

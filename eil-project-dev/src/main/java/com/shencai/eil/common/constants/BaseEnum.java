@@ -11,6 +11,8 @@ public enum BaseEnum {
 
     VALID_NO(0, "effective", "无效"),
 
+    OTHER(2, "other", "其他"),
+
     YES(1, "yes", "是"),
 
     NO(0, "no", "否"),

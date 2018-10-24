@@ -12,5 +12,6 @@ public class SurveyResultVO {
     private String componentLocation;
     private String wasteCollection;
     private String wastePrevent;
-
+    private String hasFireAlarmSystem;
+    private String hasOutFireSystem;
 }

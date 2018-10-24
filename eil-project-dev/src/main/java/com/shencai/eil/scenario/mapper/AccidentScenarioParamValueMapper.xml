@@ -2,7 +2,6 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.shencai.eil.scenario.mapper.AccidentScenarioParamValueMapper">
 
-    <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="com.shencai.eil.scenario.entity.AccidentScenarioParamValue">
         <id column="id" property="id" />
         <result column="info_id" property="infoId" />
@@ -15,5 +14,27 @@
         <result column="update_time" property="updateTime" />
         <result column="valid" property="valid" />
     </resultMap>
+
+    <select id="listScenarioParamValue"
+            parameterType="com.shencai.eil.scenario.model.AccidentScenarioResultQueryParam"
+            resultType="com.shencai.eil.scenario.model.AccidentScenarioParamVO">
+        select
+        asp.id,
+        aspv.id paramValueId,
+        asp.scenario_id scenarioId,
+        asp.code,
+        asp.name,
+        asp.unit_name unitName,
+        aspv.scenario_param_value value,
+        asp.revisable,
+        asp.calculative
+        from accident_scenario_param_value aspv
+        left join accident_scenario_param asp on (asp.id=aspv.scenario_param_id and asp.valid=1)
+        where
+        <if test="scenarioSelectionInfoId != null and scenarioSelectionInfoId != ''">
+            aspv.info_id = #{scenarioSelectionInfoId} and
+        </if>
+        aspv.valid = 1
+    </select>
 
 </mapper>

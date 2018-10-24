@@ -15,6 +15,12 @@ public class FilePathConfig {
     @Value("#{fileSetting['file.intensive.fastGrading.modelPath']}")
     public String intensiveModelPath;
 
+    @Value("#{fileSetting['file.lowRisk.finalReport.modelPath']}")
+    public String lowRiskFinalReport;
+
+    @Value("#{fileSetting['file.highRisk.finalReport.modelPath']}")
+    public String highRiskFinalReport;
+
     @Value("#{fileSetting['file.destPath']}")
     public String destPath;
 }

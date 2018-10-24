@@ -11,10 +11,14 @@ import java.util.List;
 @Data
 public class AccidentScenarioResultParam implements Serializable {
 
+    private String id;
+
     private String scenarioId;
 
-    private String scenarioCode;
+    private String scenarioSelectionInfoId;
 
     private List<AccidentScenarioParamVO> scenarioParamList;
+
+    private Double scenarioResult;
 
 }

@@ -52,5 +52,4 @@ public class ScenarioCode {
      */
     public static final String S_FIVE = "S5";
 
-
 }

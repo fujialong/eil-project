@@ -42,7 +42,11 @@ public enum StatusEnum {
     /**
      * finish survey
      */
-    IN_DEPTH_EVALUATION("1070", "查勘中");
+    IN_DEPTH_EVALUATION("1070", "待深度评估"),
+
+    SCENARIO_SELECTION("1080", "情景选择中"),
+
+    PENDING_DAMAGE_ASSESSMENT("1090", "待损害评估");
 
 
     private String code;

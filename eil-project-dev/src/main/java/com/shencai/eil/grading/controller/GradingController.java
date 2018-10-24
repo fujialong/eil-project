@@ -1,10 +1,8 @@
 package com.shencai.eil.grading.controller;
 
-import com.shencai.eil.grading.model.GradingParam;
 import com.shencai.eil.grading.model.GradingQueryParam;
 import com.shencai.eil.grading.model.GradingVO;
 import com.shencai.eil.grading.service.IGradingService;
-import com.shencai.eil.grading.service.IGradingService2;
 import com.shencai.eil.model.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -21,17 +19,7 @@ import java.util.concurrent.ExecutionException;
 public class GradingController {
 
     @Autowired
-    private IGradingService gradingService;
-
-    @Autowired
-    private IGradingService2 gradingService2;
-
-    @ResponseBody
-    @RequestMapping("/execute")
-    public Result execute(GradingParam param) throws ExecutionException, InterruptedException {
-        gradingService.execute(param);
-        return Result.ok();
-    }
+    private IGradingService gradingService2;
 
     @ResponseBody
     @RequestMapping("/getGradingResult")
