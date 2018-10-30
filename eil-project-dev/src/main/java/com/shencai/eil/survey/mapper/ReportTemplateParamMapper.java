@@ -1,6 +1,6 @@
 package com.shencai.eil.survey.mapper;
 
-import com.shencai.eil.survey.entity.GradeTemplateParam;
+import com.shencai.eil.survey.entity.ReportTemplateParam;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.shencai.eil.survey.model.GradeTemplateParamQueryParam;
 import com.shencai.eil.survey.model.GradeTemplateParamVO;
@@ -15,7 +15,7 @@ import java.util.List;
  * @author fanhj
  * @since 2018-10-04
  */
-public interface GradeTemplateParamMapper extends BaseMapper<GradeTemplateParam> {
+public interface ReportTemplateParamMapper extends BaseMapper<ReportTemplateParam> {
     List<GradeTemplateParamVO> listParamOfFastGradeReport(GradeTemplateParamQueryParam queryParam);
 
     List<GradeTemplateParamVO> listParamOfFinalReport(String enterpriseId);

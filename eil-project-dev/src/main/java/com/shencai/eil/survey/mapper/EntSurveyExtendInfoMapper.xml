@@ -74,5 +74,6 @@
         left join ent_survey_photo p on info.id = p.survey_info_id and p.valid = 1
         left join base_fileupload file on file.id = p.file_id and file.valid = 1
         where info.valid = 1 and info.ent_id = #{enterpriseId}
+        order by p.time_of_photo
     </select>
 </mapper>

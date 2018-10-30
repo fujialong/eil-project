@@ -14,13 +14,9 @@ import java.util.List;
 @Data
 public class AssessGirdParam implements Serializable {
     private String entId;
-    private Double x;
-    private Double y;
     private String bisCode;
-    private String gridUseType;
+    private Double sandRate;
+    private Double clayRate;
+    private Double powderRate;
     private List<AssessGridChildParam> childParamList;
-    private Integer pointSortNum;
-
-    private Integer gridCode;
-    private String remark;
 }

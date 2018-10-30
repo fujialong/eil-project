@@ -144,7 +144,7 @@ public class AccidentScenarioResultServiceImpl extends ServiceImpl<AccidentScena
                 //QL2=Q1*1000/Tmax
                 double leakageRate = onlineContent * 1000 / T_MAX;
                 //泄漏量＝泄漏频率＊泄漏时间＊泄漏速率
-                leakage += leakageFreq * leakageTime * leakageRate;
+                leakage += leakageFreq * T_MAX * leakageRate;
             } else if (leakageModelCode == LEAKAGE_MODEL_CODE_THREE || leakageModelCode == LEAKAGE_MODEL_CODE_FIVE) {
                 //泄漏量＝泄漏频率＊物质在线量 Q1*1000
                 leakage += leakageFreq * onlineContent * 1000;
@@ -182,10 +182,14 @@ public class AccidentScenarioResultServiceImpl extends ServiceImpl<AccidentScena
     }
 
     private ScenarioSelectionInfo getScenarioSelectionInfo(AccidentScenarioResultParam param) {
-        return scenarioSelectionInfoMapper.selectOne(
-                new QueryWrapper<ScenarioSelectionInfo>()
-                        .eq("id", param.getScenarioSelectionInfoId())
-                        .eq("valid", BaseEnum.VALID_YES.getCode()));
+        ScenarioSelectionInfo scenarioSelectionInfo = param.getScenarioSelectionInfo();
+        if (ObjectUtil.isEmpty(scenarioSelectionInfo)) {
+            scenarioSelectionInfo = scenarioSelectionInfoMapper.selectOne(
+                    new QueryWrapper<ScenarioSelectionInfo>()
+                            .eq("id", param.getScenarioSelectionInfoId())
+                            .eq("valid", BaseEnum.VALID_YES.getCode()));
+        }
+        return scenarioSelectionInfo;
     }
 
     private List<TechMappingLeakageModel> listTechMappingLeakageModel(String scenarioId, String partType) {
@@ -247,7 +251,7 @@ public class AccidentScenarioResultServiceImpl extends ServiceImpl<AccidentScena
                 //QG2=Q1*1000/Tmax
                 double leakageRate = onlineContent * 1000 / T_MAX;
                 //泄漏量＝泄漏频率＊泄漏时间＊泄漏速率
-                leakage += leakageFreq * leakageTime * leakageRate;
+                leakage += leakageFreq * T_MAX * leakageRate;
             } else if (leakageModelCode == LEAKAGE_MODEL_CODE_THREE || leakageModelCode == LEAKAGE_MODEL_CODE_FIVE) {
                 //泄漏量＝泄漏频率＊物质在线量 Q1*1000
                 leakage += leakageFreq * onlineContent * 1000;

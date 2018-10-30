@@ -18,11 +18,11 @@
     <select id="listCantonParam"
             parameterType="com.shencai.eil.assessment.model.CantonParamQueryParam"
             resultType="com.shencai.eil.assessment.model.CantonParamVO">
-        select p.name paramCode, cpv.param_value paramValue
+        select p.code paramCode, cpv.param_value paramValue
         from canton_param_value cpv
         left join param p on p.id = cpv.param_id and p.valid = 1
-        inner join template_mapping_param tmp on tmp.param_id = rmpv.param_id and tmp.valid = 1
+        inner join template_mapping_param tmp on tmp.param_id = p.id and tmp.valid = 1
         inner join param_template_category ptc on ptc.param_template_id = tmp.template_id and ptc.valid = 1 and ptc.type = #{templateCategoryCode}
-        where rm.valid = 1 and area_code = #{cantonCode}
+        where cpv.valid = 1 and area_code = #{cantonCode}
     </select>
 </mapper>

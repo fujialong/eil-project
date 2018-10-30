@@ -34,9 +34,7 @@ public enum BaseEnum {
     /**
      * The year of first record
      */
-    RECORD_BEGIN_YEAR(2014, "The year of first record", "记录最初年份（2014）"),
-
-    CONSTANT_K1("k1", "Computing coefficient for R1.1", "R1.1计算系数k1");
+    RECORD_BEGIN_YEAR(2014, "The year of first record", "记录最初年份（2014）");
 
 
     private Object code;

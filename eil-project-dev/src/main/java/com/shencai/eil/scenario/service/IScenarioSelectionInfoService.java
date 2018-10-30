@@ -15,6 +15,6 @@ import com.shencai.eil.scenario.model.ScenarioSelectionInfoVO;
  * @since 2018-10-12
  */
 public interface IScenarioSelectionInfoService extends IService<ScenarioSelectionInfo> {
-    void initScenarioSelectionInfo(String enterpriseId);
+    void initScenarioSelectionInfo(String enterpriseId, boolean isComputeScenario);
     Page<ScenarioSelectionInfoVO> pageScenarioSelectionInfo(ScenarioSelectionInfoQueryParam queryParam);
 }

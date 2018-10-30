@@ -4,6 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.ExcelUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
 import com.shencai.eil.common.constants.*;
 import com.shencai.eil.common.utils.DateUtil;
 import com.shencai.eil.common.utils.EilFileUtil;
@@ -64,7 +65,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
     @Autowired
     private EntSurveyPlanMapper entSurveyPlanMapper;
     @Autowired
-    private GradeTemplateParamMapper gradeTemplateParamMapper;
+    private ReportTemplateParamMapper reportTemplateParamMapper;
     @Autowired
     private SurveyItemCategoryMapper surveyItemCategoryMapper;
     @Autowired
@@ -92,9 +93,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
 
     private static final int READ_EXCEL_START_ROW_INDEX = 1;
 
-    //    private static final int[] BASIC_TABLE_COL_WIDTH = new int[]{2200, 3200, 3000};
     private static final int[] BASIC_TABLE_COL_WIDTH = new int[]{3200, 4500};
-    //    private static final int[] INTENSIVE_TABLE_COL_WIDTH = new int[]{2000, 3000, 1000, 1000, 800, 1100};
     private static final int[] INTENSIVE_TABLE_COL_WIDTH = new int[]{3200, 4500};
     private static final String BASIC_SURVEY_TABLE_TITLE = "勘查基础项：";
     private static final String BASIC_SURVEY_TABLE_WIDTH = "9000";
@@ -108,10 +107,8 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
     private static final List<String> needFontColorCode
             = Arrays.asList(new String[]{"Ru-s-level", "Ru-g-level", "R1-s-leve", "R1-g-level", "R2-level"
             , "R3-s-level", "R3-g-level", "R4.1-level", "R4.2-level", "R4.3-level", "R4.4-level", "R4.5-level"});
-    //    private static final List<String> BASIC_TABLE_TH = Arrays.asList(new String[]{"勘查条目", "勘查内容", "默认值"});
     private static final List<String> BASIC_TABLE_TH = Arrays.asList(new String[]{"勘查条目", "勘查内容"});
     private static final List<String> INTENSIVE_TABLE_TH
-//            = Arrays.asList(new String[]{"勘查条目", "勘查内容", "重要性", "成本（元）", "分级", "分级评分"});
             = Arrays.asList(new String[]{"勘查条目", "勘查内容"});
     private static final String UPPER_LIMIT_OF_NUMERIC_VALIDATION = "999999999999";
     private static final String LOWER_LIMIT_OF_NUMERIC_VALIDATION = "-999999999999";
@@ -127,6 +124,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
     private static final List<String> SURVEY_ITEM_CODE_OF_MATERIAL_TYPE = Arrays.asList("M54", "S247", "S253");
     private static final List<String> SURVEY_ITEM_CODE_OF_MATERIAL_NAME = Arrays.asList("M55", "S248", "S254");
     private static final List<String> SURVEY_ITEM_CODE_OF_ANNUAL_INPUT_OR_OUTPUT = Arrays.asList("M57", "S250", "S256");
+    private static final String NEED_CONFIRM = "需要风险工程师判定是否需要进一步的现场风险查勘。";
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -170,14 +168,22 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
         Map<String, GradeTemplateParamVO> map = new HashMap<>();
         boolean needIntensiveTable = false;
         for (GradeTemplateParamVO vo : gradeTemplateParamBasicList) {
-            if (ObjectUtil.isEmpty(info.getRiskLevel())
-                    || ((ObjectUtil.isEmpty(info.getNeedSurveyUpgrade())
-                    || info.getNeedSurveyUpgrade().compareTo((Integer) BaseEnum.NO.getCode()) == 0)
-                    && RiskLevel.LOW.getCode().equals(info.getRiskLevel()))) {
+            if (ObjectUtil.isEmpty(info.getNeedSurveyUpgrade())
+                    || info.getNeedSurveyUpgrade().compareTo((Integer) BaseEnum.NO.getCode()) == 0) {
                 if (paramCodesOfLowRiskLevel.contains(vo.getCode())) {
-                    GradeTemplateParamVO specialVO = new GradeTemplateParamVO();
-                    specialVO.setParamContent("");
-                    map.put(vo.getParamCode(), specialVO);
+                    if (RISK_LEVEL_CODE.equals(vo.getCode())) {
+                        if (String.valueOf(BaseEnum.VALID_NO.getCode()).equals(vo.getResultCode())
+                                && ObjectUtils.isNull(info.getNeedSurveyUpgrade())) {
+                            vo.setParamContent(NEED_CONFIRM);
+                            map.put(vo.getParamCode(), vo);
+                        } else {
+                            map.put(vo.getParamCode(), vo);
+                        }
+                    } else {
+                        GradeTemplateParamVO specialVO = new GradeTemplateParamVO();
+                        specialVO.setParamContent("");
+                        map.put(vo.getParamCode(), specialVO);
+                    }
                 } else {
                     map.put(vo.getParamCode(), vo);
                 }
@@ -306,10 +312,6 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
             EntSurveyPlanVO plan = intensiveSurveyPlanList.get(i - 1);
             rowItem.getCell(0).setText(plan.getCode() + " " + plan.getName());
             rowItem.getCell(1).setText(plan.getDescription());
-//            rowItem.getCell(2).setText(ObjectUtil.isEmpty(plan.getImportance()) ? "--" : plan.getImportance().toString());
-//            rowItem.getCell(3).setText(ObjectUtil.isEmpty(plan.getCost()) ? "--" : plan.getCost().toString());
-//            rowItem.getCell(4).setText(plan.getTargetWeightCode());
-//            rowItem.getCell(5).setText(ObjectUtil.isEmpty(plan.getAssessValue()) ? "--" : BigDecimal.valueOf(plan.getAssessValue()).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
         }
     }
 
@@ -371,7 +373,6 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
             EntSurveyPlanVO plan = basicSurveyPlanList.get(i - 1);
             rowItem.getCell(0).setText(plan.getCode() + " " + plan.getName());
             rowItem.getCell(1).setText(plan.getDescription());
-//            rowItem.getCell(2).setText(StringUtil.isBlank(plan.getDefaultResult()) ? "--" : plan.getDefaultResult());
         }
     }
 
@@ -603,7 +604,7 @@ public class EntSurveyFileServiceImpl implements IEntSurveyFileService {
     private List<GradeTemplateParamVO> listReplaceValue(String enterpriseId) {
         GradeTemplateParamQueryParam queryParam = new GradeTemplateParamQueryParam();
         queryParam.setEnterpriseId(enterpriseId);
-        return gradeTemplateParamMapper.listParamOfFastGradeReport(queryParam);
+        return reportTemplateParamMapper.listParamOfFastGradeReport(queryParam);
     }
 
     @Override

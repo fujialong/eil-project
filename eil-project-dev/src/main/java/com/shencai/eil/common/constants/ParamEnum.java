@@ -10,8 +10,7 @@ public enum ParamEnum {
     DENSITY("C5", "密度"),
     PHASE_STATE_AT_ROOM_TEMPERATURE("C3", "常温下相态"),
     STABILITY("A5", "稳定性（是否稳定）"),
-    LOGP("LogP", "油水分配系数"),
-    LC50("LC50", "物质的LC50");
+    LC50("LC50", "LC50（大鼠）");
 
     private String code;
     private String name;

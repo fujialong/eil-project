@@ -34,6 +34,32 @@
         select material from ent_diffusion_model_info where ent_id = #{enterpriseId} and valid = 1
     </select>
 
+    <select id="listEntDiffusionModelInfoVO" resultType="com.shencai.eil.assessment.model.EntDiffusionModelInfoVO"
+            parameterType="com.shencai.eil.assessment.model.EntDiffusionModelInfoQueryParam">
+        select
+        edmi.id,
+        edmi.material,
+        sce.`code` scenarioCode,
+        edmi.release_amount releaseAmount,
+        edmi.wading,
+        edmi.emission_mode_type emissionModeType,
+        edmi.exist_water_env existWaterEnv,
+        edmi.considering_water_env_risk consideringWaterEnvRisk,
+        edmi.surface_water_condition surfaceWaterCondition,
+        edmi.access_type accessType,
+        edmi.pollutant_type pollutantType,
+        edmi.model_id modelId,
+        edmi.density
+        from ent_diffusion_model_info edmi
+        left join accident_scenario sce on (sce.id=edmi.scenario_id and sce.valid=1)
+        where
+        <if test="enterpriseId != null and enterpriseId != ''">
+            edmi.ent_id = #{enterpriseId} and
+        </if>
+        edmi.valid=1
+        ORDER by edmi.create_time desc, material, scenario_id
+    </select>
+
     <select id="pageEntDiffusionModelInfo" resultType="com.shencai.eil.assessment.model.EntDiffusionModelInfoVO"
             parameterType="com.shencai.eil.assessment.model.EntDiffusionModelInfoQueryParam">
         select
@@ -60,7 +86,7 @@
             edmi.ent_id = #{queryParam.enterpriseId} and
         </if>
         edmi.valid=1
-        ORDER by edmi.create_time desc
+        ORDER by edmi.create_time desc, material, scenario_id
     </select>
 
 
@@ -71,5 +97,8 @@
         from ent_diffusion_model_info info
         left join data_model dm on info.model_id = dm.id and dm.valid = 1
         where info.valid = 1 and info.ent_id = #{enterpriseId}
+        <if test="modelType != null and modelType == 'water'">
+            and info.considering_water_env_risk = 1
+        </if>
     </select>
 </mapper>

@@ -77,4 +77,10 @@
         where si.valid = 1 and sic.valid = 1 and sic.category_code = #{categoryCode}
         order by si.sort_num
     </select>
+
+    <update id="deleteIntensivePlan" parameterType="com.shencai.eil.survey.model.SurveyItemVO">
+        update ent_survey_plan a, survey_item b
+        set a.valid = 0, a.update_time = #{updateTime}
+        where a.survey_item_id = b.id and b.type = 'intensive' and a.ent_id = #{enterpriseId}
+    </update>
 </mapper>

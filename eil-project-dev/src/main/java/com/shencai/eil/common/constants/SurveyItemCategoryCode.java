@@ -15,6 +15,7 @@ public enum SurveyItemCategoryCode {
     EXCEL_VIEW_INTENSIVE_S2("Sheet2", "excel加强表其他2"),
     EXCEL_VIEW_INTENSIVE_S3("Sheet3", "excel加强表其他3"),
     SCENARIO_SELECTION("scenario_selection", "情景选择信息来源"),
+    DIFFUSION_MODEL("diffusion_model","扩散模型使用数据")
     ;
 
     private String code;

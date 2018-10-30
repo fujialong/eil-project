@@ -20,4 +20,7 @@ public class TemplateGridConcentrationVO {
     private String gridUseType;
     private Double acreage;
     private Double ecoValue;
+    private Double fisheryArea;
+    private Double agriculturalArea;
+    private Double forestryArea;
 }

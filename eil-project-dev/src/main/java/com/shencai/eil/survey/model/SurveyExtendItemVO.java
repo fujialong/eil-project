@@ -12,4 +12,5 @@ public class SurveyExtendItemVO {
     private boolean hasControlRiskLevel;
     private boolean hasReceptorRiskLevel;
     private boolean hasLicence;
+    private boolean hasEvaluationReport;
 }

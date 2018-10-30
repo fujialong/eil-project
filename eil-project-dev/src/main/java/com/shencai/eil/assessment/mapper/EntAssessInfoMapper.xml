@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shencai.eil.assessment.mapper.EntAssessInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shencai.eil.assessment.entity.EntAssessInfo">
+        <id column="id" property="id"/>
+        <result column="distance_of_outlet" property="distanceOfOutlet"/>
+        <result column="ent_id" property="entId"/>
+        <result column="river_width" property="riverWidth"/>
+        <result column="bi" property="bi"/>
+        <result column="esv" property="esv"/>
+        <result column="pi" property="pi"/>
+        <result column="cost" property="cost"/>
+        <result column="remark" property="remark"/>
+        <result column="water_direction" property="waterDirection"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="valid" property="valid"/>
+    </resultMap>
+    <select id="gisBaseInfo" resultType="com.shencai.eil.assessment.model.AssessGridVO" parameterType="string">
+        select
+          i.name entName,
+          e.ent_id entId,
+          i.latitude lat,
+          i.longitude lon,
+          e.distance_of_outlet distanceOfOutlet,
+          e.river_width riverWidth,
+					e.water_direction flowDirection,
+					dt.name flowDirectionName
+        from ent_assess_info e left join enterprise_info i on e.ent_id = i.id
+			and e.valid =1  and i.valid =1
+		LEFT JOIN sys_dictionary dt ON e.water_direction = dt.code and dt.valid = 1
+		and dt.type_code='direction'
+		where ent_id=#{entId}  ORDER BY dt.sort_num ASC
+
+    </select>
+
+</mapper>

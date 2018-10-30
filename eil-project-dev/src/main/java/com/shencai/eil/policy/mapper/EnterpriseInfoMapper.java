@@ -50,4 +50,6 @@ public interface EnterpriseInfoMapper extends BaseMapper<EnterpriseInfo> {
      * @return
      */
     List<EntGisInfo> listAllEntLocation();
+
+    void surveyDemote(EnterpriseInfo info);
 }

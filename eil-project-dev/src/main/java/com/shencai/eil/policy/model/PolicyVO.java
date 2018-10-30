@@ -103,7 +103,7 @@ public class PolicyVO implements Serializable {
 
     private List<BaseFileupload> licenceAttachmentList;
 
-    private Date depthEvaluationTime;
+    private String depthEvaluationTime;
 
     private String riskLevel;
 

@@ -19,7 +19,19 @@
     <select id="listAccidentScenario"
             parameterType="com.shencai.eil.scenario.model.AccidentScenarioQueryParam"
             resultType="com.shencai.eil.scenario.model.AccidentScenarioVO">
-        select id, code, name from accident_scenario accs where accs.valid = 1
+        select
+        id, code, name
+        from accident_scenario
+        where
+        <if test="isStorageTank == true and pipeScenarioCodeList != null and pipeScenarioCodeList.size > 0">
+            code not in
+            <foreach collection="pipeScenarioCodeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            and
+        </if>
+        valid = 1
+        order by code
     </select>
 
     <select id="countTotalAccidentScenarioByEnterpriseId" resultType="int">

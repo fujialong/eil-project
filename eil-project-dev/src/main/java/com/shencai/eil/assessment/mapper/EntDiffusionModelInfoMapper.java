@@ -19,4 +19,6 @@ public interface EntDiffusionModelInfoMapper extends BaseMapper<EntDiffusionMode
     List<EntDiffusionModelInfoVO> pageEntDiffusionModelInfo(Page<EntDiffusionModelInfoVO> page, @Param("queryParam") EntDiffusionModelInfoQueryParam queryParam);
 
     List<EntDiffusionModelInfoVO> listModelOfInfo(EntDiffusionModelInfoQueryParam queryParam);
+
+    List<EntDiffusionModelInfoVO> listEntDiffusionModelInfoVO(EntDiffusionModelInfoQueryParam queryParam);
 }

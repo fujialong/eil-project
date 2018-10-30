@@ -180,9 +180,14 @@ public enum ComputeConstantEnum {
     K_ONE("k1", "贮存系数", "k1"),
 
     /**
+     * t
+     */
+    T("t", "土壤模型时间维度", "t"),
+
+    /**
      * damage assessment
      */
-    DAMAGE_ASSESSMENT("damageAssessment", "贮存系数", "k1"),
+    DAMAGE_ASSESSMENT("damageAssessment", "损害评估常量", ""),
     ;
 
     private String code;

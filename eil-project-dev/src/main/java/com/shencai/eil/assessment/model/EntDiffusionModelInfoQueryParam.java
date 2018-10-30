@@ -13,4 +13,6 @@ public class EntDiffusionModelInfoQueryParam extends PageParam implements Serial
 
     private String enterpriseId;
 
+    private String modelType;
+
 }

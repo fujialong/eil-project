@@ -3,23 +3,27 @@ package com.shencai.eil.assessment.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.shencai.eil.assessment.entity.EntDiffusionModelInfo;
-import com.shencai.eil.assessment.entity.WaterDiffModelCondition;
+import com.shencai.eil.assessment.constants.DiffusionModelBisCode;
+import com.shencai.eil.assessment.entity.*;
+import com.shencai.eil.assessment.mapper.EntAssessInfoMapper;
 import com.shencai.eil.assessment.mapper.EntDiffusionModelInfoMapper;
+import com.shencai.eil.assessment.mapper.SoilModelPointMapper;
 import com.shencai.eil.assessment.mapper.WaterDiffModelConditionMapper;
 import com.shencai.eil.assessment.model.EntDiffusionModelInfoQueryParam;
 import com.shencai.eil.assessment.model.EntDiffusionModelInfoVO;
+import com.shencai.eil.assessment.service.IAssessGirdService;
 import com.shencai.eil.assessment.service.IEntDiffusionModelInfoService;
 import com.shencai.eil.common.constants.*;
 import com.shencai.eil.common.utils.DateUtil;
 import com.shencai.eil.common.utils.ObjectUtil;
 import com.shencai.eil.common.utils.StringUtil;
+import com.shencai.eil.grading.entity.ComputeConstant;
+import com.shencai.eil.grading.mapper.ComputeConstantMapper;
 import com.shencai.eil.grading.mapper.RiskMaterialParamValueMapper;
 import com.shencai.eil.grading.model.RiskMaterialParamValueQueryParam;
 import com.shencai.eil.grading.model.RiskMaterialParamValueVO;
 import com.shencai.eil.policy.entity.EnterpriseInfo;
 import com.shencai.eil.policy.mapper.EnterpriseInfoMapper;
-import com.shencai.eil.policy.model.PolicyVO;
 import com.shencai.eil.scenario.entity.AccidentScenario;
 import com.shencai.eil.scenario.mapper.AccidentScenarioMapper;
 import com.shencai.eil.scenario.mapper.ScenarioSelectionInfoMapper;
@@ -31,10 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author zhoujx
@@ -57,17 +58,36 @@ public class EntDiffusionModelInfoServiceImpl extends ServiceImpl<EntDiffusionMo
     private EnterpriseInfoMapper enterpriseInfoMapper;
     @Autowired
     private EntDiffusionModelInfoMapper entDiffusionModelInfoMapper;
+    @Autowired
+    private SoilModelPointMapper soilModelPointMapper;
+    @Autowired
+    private ComputeConstantMapper constantMapper;
+    @Autowired
+    private IAssessGirdService assessGirdService;
+    @Autowired
+    private EntAssessInfoMapper entAssessInfoMapper;
 
-    //survey item code for the discharge of pollutants into the surface water around the enterprise
+    //survey item code
     private static final String CODE_FOR_EMISSION_MODE_TYPE = "S206";
-    //survey item code for the type of surface water into the discharge port of the enterprise
     private static final String CODE_FOR_TYPE_OF_SURFACE_WATER_INTO_DISCHARGE_PORT = "S207";
-    //the distance from the discharge port of the enterprise to the shore
     private static final String CODE_FOR_DISTANCE = "S208";
-    //Is there any surface water within 1km of the company
+    private static final String CODE_FOR_WATER_WIDTH = "S302";
+    private static final String CODE_FOR_RIVER_DIRECTION = "S313";
     private static final String CODE_FOR_IS_THERE_ANY_SURFACE_WATER = "S265";
-    //Surface water type within 1km of the surrounding area of the enterprise
     private static final String CODE_FOR_SURFACE_WATER_TYPE_WITHIN_1KM = "S266";
+    private static final String CODE_FOR_WATER_WIDTH_WITHIN_1KM = "S306";
+    private static final String CODE_FOR_RIVER_DIRECTION_WITHIN_1KM = "S311";
+
+    private static final String MAP_KEY_FOR_EMISSION_MODE_TYPE = "emissionModeType";
+    private static final String MAP_KEY_FOR_EXIST_WATER_ENV = "existWaterEnv";
+    private static final String MAP_KEY_FOR_SURFACE_WATER_INTO_DISCHARGE_PORT_TYPE = "typeOfSurfaceWaterIntoDischargePort";
+    private static final String MAP_KEY_FOR_SURFACE_WATER_TYPE_WITHIN_1KM = "surfaceWaterTypeWithin1KM";
+    private static final String MAP_KEY_FOR_ACCESS_TYPE = "accessType";
+    private static final String MAP_KEY_FOR_DISTANCE = "distanceOfOutlet";
+    private static final String MAP_KEY_FOR_WATER_WIDTH = "waterWidth";
+    private static final String MAP_KEY_FOR_RIVER_DIRECTION = "riverDirection";
+    private static final String MAP_KEY_FOR_WIDTH_WITHIN_1KM = "waterWidthWithin1KM";
+    private static final String MAP_KEY_FOR_DIRECTION_WITHIN_1KM = "riverDirectionWithin1KM";
 
     private static final String SURVEY_RESULT_INDIRECT_EMISSIONS = "接管";
     private static final String LIQUID_STATE = "液态";
@@ -88,6 +108,11 @@ public class EntDiffusionModelInfoServiceImpl extends ServiceImpl<EntDiffusionMo
                 riskMaterialParamValueVOS, surveyResultMap);
         matchingModel(entDiffusionModelInfoList);
         saveEntDiffusionModelInfoList(entDiffusionModelInfoList);
+        List<SoilModelPoint> soilModelPointList = listSoilModelPoint();
+        Double t = getT();
+        List<AssessGird> assessGirdList = listAssessGird(enterpriseId, soilModelPointList, t);
+        saveAssessGird(assessGirdList);
+        saveEntAssessInfo(enterpriseId, surveyResultMap);
     }
 
     @Override
@@ -142,17 +167,17 @@ public class EntDiffusionModelInfoServiceImpl extends ServiceImpl<EntDiffusionMo
                                                     Map<String, String> surveyResultMap) {
         for (EntDiffusionModelInfo entDiffusionModelInfo : entDiffusionModelInfoList) {
             entDiffusionModelInfo.setId(StringUtil.getUUID());
-            entDiffusionModelInfo.setEmissionModeType(surveyResultMap.get("emissionModeType"));
-            entDiffusionModelInfo.setExistWaterEnv(Integer.valueOf(surveyResultMap.get("existWaterEnv")));
+            entDiffusionModelInfo.setEmissionModeType(surveyResultMap.get(MAP_KEY_FOR_EMISSION_MODE_TYPE));
+            entDiffusionModelInfo.setExistWaterEnv(Integer.valueOf(surveyResultMap.get(MAP_KEY_FOR_EXIST_WATER_ENV)));
             int isConsideringWaterEnvRisk = getIsConsideringWaterEnvRisk(scenarioIdForS1, surveyResultMap, entDiffusionModelInfo);
             entDiffusionModelInfo.setConsideringWaterEnvRisk(isConsideringWaterEnvRisk);
             if (isConsideringWaterEnvRisk == (Integer) BaseEnum.YES.getCode()) {
                 if (scenarioIdForS1.equals(entDiffusionModelInfo.getScenarioId())
-                        && EmissionModeType.DIRECT.getCode().equals(surveyResultMap.get("emissionModeType"))) {
-                    entDiffusionModelInfo.setSurfaceWaterCondition(surveyResultMap.get("typeOfSurfaceWaterIntoDischargePort"));
-                    entDiffusionModelInfo.setAccessType(surveyResultMap.get("accessType"));
+                        && EmissionModeType.DIRECT.getCode().equals(surveyResultMap.get(MAP_KEY_FOR_EMISSION_MODE_TYPE))) {
+                    entDiffusionModelInfo.setSurfaceWaterCondition(surveyResultMap.get(MAP_KEY_FOR_SURFACE_WATER_INTO_DISCHARGE_PORT_TYPE));
+                    entDiffusionModelInfo.setAccessType(surveyResultMap.get(MAP_KEY_FOR_ACCESS_TYPE));
                 } else {
-                    entDiffusionModelInfo.setSurfaceWaterCondition(surveyResultMap.get("surfaceWaterTypeWithin1KM"));
+                    entDiffusionModelInfo.setSurfaceWaterCondition(surveyResultMap.get(MAP_KEY_FOR_SURFACE_WATER_TYPE_WITHIN_1KM));
                     entDiffusionModelInfo.setAccessType(DictionaryEnum.ACCESS_SURFACE_WATER_TYPE.getCode());
                 }
                 String material = entDiffusionModelInfo.getMaterial();
@@ -162,7 +187,7 @@ public class EntDiffusionModelInfoServiceImpl extends ServiceImpl<EntDiffusionMo
                         String paramValue = riskMaterialParamValue.getParamValue();
                         if (ParamEnum.STABILITY.getCode().equals(paramCode)) {
                             entDiffusionModelInfo.setStability(paramValue);
-                            if (paramValue == BaseEnum.YES.getCode()) {
+                            if (Integer.valueOf(paramValue) == BaseEnum.YES.getCode()) {
                                 entDiffusionModelInfo.setPollutantType(DictionaryEnum.POLLUTANT_TYPE_STABILITY.getCode());
                             } else {
                                 entDiffusionModelInfo.setPollutantType(DictionaryEnum.POLLUTANT_TYPE_NO_STABILITY.getCode());
@@ -178,11 +203,12 @@ public class EntDiffusionModelInfoServiceImpl extends ServiceImpl<EntDiffusionMo
                 }
                 if (LIQUID_STATE.equals(entDiffusionModelInfo.getState())
                         && Double.valueOf(entDiffusionModelInfo.getDensity()) < DENSITY_OF_WATER
-                        && entDiffusionModelInfo.getOctanWaterPartition() == BaseEnum.NO.getCode()) {
+                        && Integer.valueOf(entDiffusionModelInfo.getOctanWaterPartition()) == BaseEnum.NO.getCode()) {
                     entDiffusionModelInfo.setPollutantType(DictionaryEnum.POLLUTANT_TYPE_OILS.getCode());
                 }
             }
             entDiffusionModelInfo.setValid((Integer) BaseEnum.VALID_YES.getCode());
+            entDiffusionModelInfo.setCreateTime(DateUtil.getNowTimestamp());
             entDiffusionModelInfo.setUpdateTime(DateUtil.getNowTimestamp());
         }
     }
@@ -193,11 +219,11 @@ public class EntDiffusionModelInfoServiceImpl extends ServiceImpl<EntDiffusionMo
             isConsideringWaterEnvRisk = (Integer) BaseEnum.NO.getCode();
         } else {
             if (scenarioIdForS1.equals(entDiffusionModelInfo.getScenarioId())
-                    && EmissionModeType.INDIRECT.getCode().equals(surveyResultMap.get("emissionModeType"))) {
+                    && EmissionModeType.INDIRECT.getCode().equals(surveyResultMap.get(MAP_KEY_FOR_EMISSION_MODE_TYPE))) {
                 isConsideringWaterEnvRisk = (Integer) BaseEnum.NO.getCode();
             }
             if (!scenarioIdForS1.equals(entDiffusionModelInfo.getScenarioId())
-                    && Integer.valueOf(surveyResultMap.get("existWaterEnv")) == 0) {
+                    && Integer.valueOf(surveyResultMap.get(MAP_KEY_FOR_EXIST_WATER_ENV)) == 0) {
                 isConsideringWaterEnvRisk = (Integer) BaseEnum.NO.getCode();
             }
         }
@@ -245,21 +271,35 @@ public class EntDiffusionModelInfoServiceImpl extends ServiceImpl<EntDiffusionMo
                         surfaceWaterTypeWithin1KM = DictionaryEnum.SURFACE_WATER_CONDITION_ESTUARY.getCode();
                     }
                     break;
-                default:
-                    if (!ObjectUtil.isEmpty(result)
-                            && DISTANCE_ZERO == Double.valueOf(result)) {
+                case CODE_FOR_DISTANCE:
+                    if (DISTANCE_ZERO == Double.valueOf(result)) {
                         accessType = DictionaryEnum.ACCESS_SURFACE_WATER_TYPE_SHORE.getCode();
                     } else {
                         accessType = DictionaryEnum.ACCESS_SURFACE_WATER_TYPE_NON_SHORE.getCode();
                     }
+                    surveyResultMap.put(MAP_KEY_FOR_DISTANCE, result);
+                    break;
+                case CODE_FOR_WATER_WIDTH:
+                    surveyResultMap.put(MAP_KEY_FOR_WATER_WIDTH, result);
+                    break;
+                case CODE_FOR_RIVER_DIRECTION:
+                    surveyResultMap.put(MAP_KEY_FOR_RIVER_DIRECTION, DictionaryEnum.getCodeByName(result));
+                    break;
+                case CODE_FOR_WATER_WIDTH_WITHIN_1KM:
+                    surveyResultMap.put(MAP_KEY_FOR_WIDTH_WITHIN_1KM, result);
+                    break;
+                case CODE_FOR_RIVER_DIRECTION_WITHIN_1KM:
+                    surveyResultMap.put(MAP_KEY_FOR_DIRECTION_WITHIN_1KM, DictionaryEnum.getCodeByName(result));
+                    break;
+                default:
                     break;
             }
         }
-        surveyResultMap.put("emissionModeType", emissionModeType);
-        surveyResultMap.put("existWaterEnv", existWaterEnv);
-        surveyResultMap.put("typeOfSurfaceWaterIntoDischargePort", typeOfSurfaceWaterIntoDischargePort);
-        surveyResultMap.put("surfaceWaterTypeWithin1KM", surfaceWaterTypeWithin1KM);
-        surveyResultMap.put("accessType", accessType);
+        surveyResultMap.put(MAP_KEY_FOR_EMISSION_MODE_TYPE, emissionModeType);
+        surveyResultMap.put(MAP_KEY_FOR_EXIST_WATER_ENV, existWaterEnv);
+        surveyResultMap.put(MAP_KEY_FOR_SURFACE_WATER_INTO_DISCHARGE_PORT_TYPE, typeOfSurfaceWaterIntoDischargePort);
+        surveyResultMap.put(MAP_KEY_FOR_SURFACE_WATER_TYPE_WITHIN_1KM, surfaceWaterTypeWithin1KM);
+        surveyResultMap.put(MAP_KEY_FOR_ACCESS_TYPE, accessType);
     }
 
     private List<RiskMaterialParamValueVO> listRiskMaterialParamValue(List<EntDiffusionModelInfo> entDiffusionModelInfoList) {
@@ -287,6 +327,10 @@ public class EntDiffusionModelInfoServiceImpl extends ServiceImpl<EntDiffusionMo
         surveyItemCodeList.add(CODE_FOR_DISTANCE);
         surveyItemCodeList.add(CODE_FOR_IS_THERE_ANY_SURFACE_WATER);
         surveyItemCodeList.add(CODE_FOR_SURFACE_WATER_TYPE_WITHIN_1KM);
+        surveyItemCodeList.add(CODE_FOR_WATER_WIDTH);
+        surveyItemCodeList.add(CODE_FOR_RIVER_DIRECTION);
+        surveyItemCodeList.add(CODE_FOR_WATER_WIDTH_WITHIN_1KM);
+        surveyItemCodeList.add(CODE_FOR_RIVER_DIRECTION_WITHIN_1KM);
         EntSurveyResultQueryParam queryParam = new EntSurveyResultQueryParam();
         queryParam.setEnterpriseId(enterpriseId);
         queryParam.setSurveyItemCodeList(surveyItemCodeList);
@@ -304,6 +348,82 @@ public class EntDiffusionModelInfoServiceImpl extends ServiceImpl<EntDiffusionMo
         List<EntDiffusionModelInfoVO> entDiffusionModelInfoVOList =
                 entDiffusionModelInfoMapper.pageEntDiffusionModelInfo(page, queryParam);
         page.setRecords(entDiffusionModelInfoVOList);
+    }
+
+    private List<SoilModelPoint> listSoilModelPoint() {
+        return soilModelPointMapper.selectList(
+                new QueryWrapper<SoilModelPoint>()
+                        .eq("valid", BaseEnum.VALID_YES.getCode())
+                        .orderByAsc("z", "x"));
+    }
+
+    private void saveAssessGird(List<AssessGird> assessGirdList) {
+        if (!CollectionUtils.isEmpty(assessGirdList)) {
+            assessGirdService.saveBatch(assessGirdList);
+        }
+    }
+
+    private List<AssessGird> listAssessGird(String enterpriseId, List<SoilModelPoint> soilModelPointList, Double t) {
+        List<AssessGird> assessGirdList = new ArrayList<>();
+        Date nowTime = DateUtil.getNowTimestamp();
+        double x0 = 0;
+        double acreage = 0;
+        for (SoilModelPoint soilModelPoint : soilModelPointList) {
+            Double x = soilModelPoint.getX();
+            if (x > x0) {
+                acreage = Math.PI * Math.pow((x - x0) * 2, 2) - acreage;
+            } else {
+                acreage = Math.PI * Math.pow(x * 2, 2);
+            }
+            x0 = x;
+            AssessGird assessGird = new AssessGird();
+            assessGird.setId(StringUtil.getUUID());
+            assessGird.setEntId(enterpriseId);
+            assessGird.setX(x);
+            assessGird.setY(soilModelPoint.getY());
+            assessGird.setZ(soilModelPoint.getZ());
+            assessGird.setT(t);
+            assessGird.setBisCode(DiffusionModelBisCode.SOIL.getCode());
+            assessGird.setPointSortNum(soilModelPointList.indexOf(soilModelPoint) + 1);
+            assessGird.setAcreage(acreage);
+            assessGird.setCreateTime(nowTime);
+            assessGird.setUpdateTime(nowTime);
+            assessGird.setValid((Integer) BaseEnum.VALID_YES.getCode());
+            assessGirdList.add(assessGird);
+        }
+        return assessGirdList;
+    }
+
+    private Double getT() {
+        ComputeConstant computeConstant = constantMapper.selectOne(
+                new QueryWrapper<ComputeConstant>()
+                        .eq("code", ComputeConstantEnum.T.getCode())
+                        .eq("valid", BaseEnum.VALID_YES.getCode()));
+        return Double.valueOf(computeConstant.getValue());
+    }
+
+    private void saveEntAssessInfo(String enterpriseId, Map<String, String> surveyResultMap) {
+        EntAssessInfo entAssessInfo = new EntAssessInfo();
+        entAssessInfo.setId(StringUtil.getUUID());
+        entAssessInfo.setEntId(enterpriseId);
+        if (EmissionModeType.DIRECT.getCode().equals(surveyResultMap.get(MAP_KEY_FOR_EMISSION_MODE_TYPE))) {
+            entAssessInfo.setDistanceOfOutlet(Double.valueOf(surveyResultMap.get(MAP_KEY_FOR_DISTANCE)));
+        }
+        if (Integer.valueOf(surveyResultMap.get(MAP_KEY_FOR_EXIST_WATER_ENV)) == 0) {
+            String waterWidth = surveyResultMap.get(MAP_KEY_FOR_WATER_WIDTH);
+            Double riverWidth = ObjectUtil.isEmpty(waterWidth) ? null : Double.valueOf(waterWidth);
+            entAssessInfo.setRiverWidth(riverWidth);
+            entAssessInfo.setWaterDirection(surveyResultMap.get(MAP_KEY_FOR_RIVER_DIRECTION));
+        } else {
+            String waterWidth = surveyResultMap.get(MAP_KEY_FOR_WIDTH_WITHIN_1KM);
+            Double riverWidth = ObjectUtil.isEmpty(waterWidth) ? null : Double.valueOf(waterWidth);
+            entAssessInfo.setRiverWidth(riverWidth);
+            entAssessInfo.setWaterDirection(surveyResultMap.get(MAP_KEY_FOR_DIRECTION_WITHIN_1KM));
+        }
+        entAssessInfo.setCreateTime(DateUtil.getNowTimestamp());
+        entAssessInfo.setUpdateTime(DateUtil.getNowTimestamp());
+        entAssessInfo.setValid((Integer) BaseEnum.VALID_YES.getCode());
+        entAssessInfoMapper.insert(entAssessInfo);
     }
 
 }

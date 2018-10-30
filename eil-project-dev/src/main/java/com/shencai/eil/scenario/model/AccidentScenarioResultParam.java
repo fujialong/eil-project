@@ -1,5 +1,6 @@
 package com.shencai.eil.scenario.model;
 
+import com.shencai.eil.scenario.entity.ScenarioSelectionInfo;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -20,5 +21,7 @@ public class AccidentScenarioResultParam implements Serializable {
     private List<AccidentScenarioParamVO> scenarioParamList;
 
     private Double scenarioResult;
+
+    private ScenarioSelectionInfo scenarioSelectionInfo;
 
 }

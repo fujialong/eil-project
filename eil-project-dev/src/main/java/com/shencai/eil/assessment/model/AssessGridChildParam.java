@@ -18,21 +18,25 @@ public class AssessGridChildParam implements Serializable {
 
     private Double len;
 
-    private String sandRate;
-
-    private String clayRate;
-
-    private String powderRate;
-
     private Double pop;
 
-    private Integer sensitiveArea;
-
-    private String waterZoning;
+    private Double sensitiveArea;
 
     private Double acreage;
 
-    private String ecoValue;
+    private Double ecoValue;
 
     private String waterType;
+
+    private Double fisheryArea;
+
+    private Double forestryArea;
+
+    private Double agriculturalArea;
+
+    private Double waterQuality;
+
+    private int pointSortNum;
+
+    private Integer gridCode;
 }

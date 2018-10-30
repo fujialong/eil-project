@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.shencai.eil.assessment.mapper.EntAssessResultMapper">
+<mapper namespace="com.shencai.eil.scenario.mapper.PollutantParamValueMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="com.shencai.eil.assessment.entity.EntAssessResult">
+    <resultMap id="BaseResultMap" type="com.shencai.eil.scenario.entity.PollutantParamValue">
         <id column="id" property="id" />
-        <result column="bi" property="bi" />
-        <result column="esv" property="esv" />
-        <result column="pi" property="pi" />
-        <result column="cost" property="cost" />
-        <result column="remark" property="remark" />
+        <result column="pollutant_name" property="pollutantName" />
+        <result column="param_id" property="paramId" />
+        <result column="param_value" property="paramValue" />
         <result column="create_user_id" property="createUserId" />
         <result column="create_time" property="createTime" />
         <result column="update_user_id" property="updateUserId" />

@@ -1,7 +1,8 @@
 package com.shencai.eil.assessment.service;
 
-import com.shencai.eil.assessment.entity.EntAssessResult;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.shencai.eil.assessment.entity.EntAssessInfo;
+import com.shencai.eil.assessment.model.AssessGridVO;
 
 /**
  * <p>
@@ -11,6 +12,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @author fanhj
  * @since 2018-10-21
  */
-public interface IEntAssessResultService extends IService<EntAssessResult> {
+public interface IEntAssessResultService extends IService<EntAssessInfo> {
 
+    AssessGridVO gisBaseInfo(String entId);
 }

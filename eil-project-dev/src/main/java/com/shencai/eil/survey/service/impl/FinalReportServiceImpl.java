@@ -2,9 +2,8 @@ package com.shencai.eil.survey.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.api.R;
-import com.shencai.eil.assessment.entity.EntAssessResult;
-import com.shencai.eil.assessment.mapper.EntAssessResultMapper;
+import com.shencai.eil.assessment.entity.EntAssessInfo;
+import com.shencai.eil.assessment.mapper.EntAssessInfoMapper;
 import com.shencai.eil.assessment.mapper.EntDiffusionModelInfoMapper;
 import com.shencai.eil.assessment.mapper.GridCalculationValueMapper;
 import com.shencai.eil.assessment.model.EntDiffusionModelInfoQueryParam;
@@ -26,10 +25,10 @@ import com.shencai.eil.policy.mapper.IndustryCategoryMapper;
 import com.shencai.eil.scenario.mapper.AccidentScenarioMapper;
 import com.shencai.eil.scenario.model.AccidentScenarioVO;
 import com.shencai.eil.survey.constants.FinalReportParam;
-import com.shencai.eil.survey.entity.GradeTemplateParam;
+import com.shencai.eil.survey.entity.ReportTemplateParam;
 import com.shencai.eil.survey.mapper.EntSurveyExtendInfoMapper;
 import com.shencai.eil.survey.mapper.EntSurveyPlanMapper;
-import com.shencai.eil.survey.mapper.GradeTemplateParamMapper;
+import com.shencai.eil.survey.mapper.ReportTemplateParamMapper;
 import com.shencai.eil.survey.model.*;
 import com.shencai.eil.survey.service.IFinalReportService;
 import com.shencai.eil.system.entity.BaseFileupload;
@@ -53,15 +52,14 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.title.TextTitle;
-import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.jfree.data.general.DatasetUtilities;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.*;
 import java.io.*;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
@@ -76,7 +74,7 @@ public class FinalReportServiceImpl implements IFinalReportService {
     @Autowired
     private IndustryCategoryMapper industryCategoryMapper;
     @Autowired
-    private GradeTemplateParamMapper gradeTemplateParamMapper;
+    private ReportTemplateParamMapper reportTemplateParamMapper;
     @Autowired
     private EntMappingTargetTypeMapper entMappingTargetTypeMapper;
     @Autowired
@@ -90,7 +88,7 @@ public class FinalReportServiceImpl implements IFinalReportService {
     @Autowired
     private EntRiskAssessResultMapper entRiskAssessResultMapper;
     @Autowired
-    private EntAssessResultMapper entAssessResultMapper;
+    private EntAssessInfoMapper entAssessResultMapper;
     @Autowired
     private EntDiffusionModelInfoMapper entDiffusionModelInfoMapper;
     @Autowired
@@ -143,7 +141,7 @@ public class FinalReportServiceImpl implements IFinalReportService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public String getFinalReport(String enterpriseId) {
+    public String getFinalReport(String enterpriseId) throws Exception {
         List<BaseFileupload> fileList = listExistFiles(enterpriseId, FileSourceType.FINAL_REPORT.getCode());
         String pdfAddress = null;
         if (org.springframework.util.CollectionUtils.isEmpty(fileList) || fileList.size() != 2) {
@@ -165,31 +163,84 @@ public class FinalReportServiceImpl implements IFinalReportService {
                 .eq("valid", BaseEnum.VALID_YES.getCode()));
     }
 
-    private String generateFinalReport(String enterpriseId) {
+    private String generateFinalReport(String enterpriseId) throws Exception {
         HashMap<String, Object> replaceMap = new HashMap<>();
         HashMap<String, Integer> needSpecialHandleMap = new HashMap<>();
         EnterpriseInfo enterpriseInfo = getEnterpriseInfo(enterpriseId);
-        EntSurveyExtendInfoVO infoVO = getEntSurveyExtendInfo(enterpriseId);
+        EntSurveyExtendInfoVO infoVO = null;
+        if (RiskLevel.HIGH.getCode().equals(enterpriseInfo.getRiskLevel())) {
+            infoVO = getEntSurveyExtendInfo(enterpriseId);
+        }
         int totalRiskType = getTotalType(enterpriseId);
         setEnterpriseInfoParams(enterpriseInfo, replaceMap);
         setAssessmentProgressInfo(enterpriseId, replaceMap, totalRiskType, infoVO);
-        //深度评估结果
-        setDepthAssessment(enterpriseId, replaceMap);
-        List<GridCalculationValueVO> calculationValueList = gridCalculationValueMapper.listStatisticsValueByBisType(enterpriseId);
-        if (CollectionUtils.isEmpty(calculationValueList)) {
-            throw new BusinessException("do not finish calculate formula of simulation!");
+        setFastGradingResult(enterpriseId, replaceMap, totalRiskType);
+        if (RiskLevel.HIGH.getCode().equals(enterpriseInfo.getRiskLevel())) {
+            //result of assessment
+            setDepthAssessment(enterpriseId, replaceMap);
+            List<GridCalculationValueVO> calculationValueList = gridCalculationValueMapper.listStatisticsValueByBisType(enterpriseId);
+            if (CollectionUtils.isEmpty(calculationValueList)) {
+                throw new BusinessException("do not finish calculate formula of simulation!");
+            }
+            //value of assessment
+            setGreatestLossDesc(replaceMap, calculationValueList);
+            //differ of assessment
+            setCostDescByComparing(replaceMap, calculationValueList);
+            //param from sql
+            setSomeParams(enterpriseId, replaceMap, needSpecialHandleMap);
+            //param need special handle
+            setIntensiveParam(enterpriseId, replaceMap, needSpecialHandleMap);
+            //judge risk level, show message or not
+            setRiskJudgement(replaceMap, needSpecialHandleMap, infoVO);
+            //suggestions
+            setSuggestions(replaceMap, infoVO);
+            //attachments of survey
+            setPictures(replaceMap, infoVO);
+            replaceMap.put(FinalReportParam.NEED_UPGRADE.getCode(), FinalReportParam.NEED_UPGRADE.getDefaultValue());
+        } else {
+            List<GradeTemplateParamVO> paramList = reportTemplateParamMapper.listParamWithoutSceneSurvey(enterpriseId);
+            for (GradeTemplateParamVO param: paramList) {
+                replaceMap.put(param.getParamCode(), param.getParamContent());
+            }
+            setBasicParam(enterpriseId, replaceMap);
+            replaceMap.put(FinalReportParam.NEED_UPGRADE.getCode(), "");
+            replaceMap.put(FinalReportParam.HAS_SIMULATION.getCode(), "");
         }
-        //损害评估损害最大类型
-        setGreatestLossDesc(replaceMap, calculationValueList);
-        //比较土壤和水损失差设置GREATEST_MEDIUM_LOSS 和 MEDIUM
-        setCostDescByComparing(replaceMap, calculationValueList);
 
+        String fileName = StringUtil.getUUID();
+        String srcPath;
+        if (RiskLevel.HIGH.getCode().equals(enterpriseInfo.getRiskLevel())) {
+            srcPath = filePathConfig.highRiskFinalReport;
+        } else {
+            srcPath = filePathConfig.lowRiskFinalReport;
+        }
+        String destDocPath = filePathConfig.destPath + fileName + ".docx";
+        String destPdfPath = filePathConfig.destPath + fileName + ".pdf";
+        CustomXWPFDocument doc = new CustomXWPFDocument(POIXMLDocument.openPackage(srcPath));
+        replaceWords(replaceMap, doc);
+        OutputStream os = new FileOutputStream(new File(destDocPath));
+        doc.write(os);
+        os.close();
+        EilFileUtil.word2pdf(destDocPath, destPdfPath);
+
+        deleteFiles(enterpriseId, FileSourceType.FINAL_REPORT.getCode());
+        insertFile(enterpriseId, fileName + ".docx"
+                , FileSourceType.FINAL_REPORT.getCode(), buildFileName(FILE_NAME));
+        String pdfAddress = insertFile(enterpriseId, fileName + ".pdf"
+                , FileSourceType.FINAL_REPORT.getCode(), buildFileName(FILE_NAME));
+        return pdfAddress;
+    }
+
+    private void setFastGradingResult(String enterpriseId, HashMap<String, Object> replaceMap, int totalRiskType) {
         List<EntRiskAssessResultVO> assessResultList = listEntRiskAssessResult(enterpriseId);
         String gradualRiskInfo = "";
         if (totalRiskType > 1) {
             gradualRiskInfo = FinalReportParam.EXIST_GRADUAL_RISK.getDefaultValue();
         }
+
+        List<String> judgedCodes = new ArrayList<>();
         StringBuilder importantPoints = new StringBuilder();
+        List<RiskRankingFileVO> rankingFileList = new ArrayList<>();
         for (EntRiskAssessResultVO assessResult: assessResultList) {
             if (TargetEnum.R_U.getCode().equals(assessResult.getTargetCode())) {
                 if (TargetWeightType.PROGRESSIVE_RISK.getCode().equals(assessResult.getTargetType())) {
@@ -199,6 +250,10 @@ public class FinalReportServiceImpl implements IFinalReportService {
                         } else {
                             gradualRiskInfo = gradualRiskInfo.replace(FinalReportParam.GRADUAL_RISK_LEVEL.getCode(), HIGHER);
                         }
+                        RiskRankingFileVO rankingFile = new RiskRankingFileVO();
+                        rankingFile.setFilePath(filePathConfig.noPicPath);
+                        rankingFile.setRemark("图* 在全行业企业渐进环境风险中的排位情况");
+                        rankingFileList.add(rankingFile);
                     }
                 } else {
                     if (GradeLineResultCode.LOW.getCode().equals(assessResult.getGradeLineCode())) {
@@ -206,82 +261,59 @@ public class FinalReportServiceImpl implements IFinalReportService {
                     } else {
                         replaceMap.put(FinalReportParam.SUDDEN_RISK_LEVEL.getCode(), HIGHER);
                     }
+                    RiskRankingFileVO rankingFile = new RiskRankingFileVO();
+                    rankingFile.setFilePath(filePathConfig.noPicPath);
+                    rankingFile.setRemark("图* 在全行业企业突发环境风险中的排位情况");
+                    rankingFileList.add(rankingFile);
                 }
-            } else if (TargetEnum.RISK_FACTOR.getCode().equals(assessResult.getTargetCode())
+            } else if (!judgedCodes.contains(assessResult.getTargetCode())
+                    && TargetEnum.RISK_FACTOR.getCode().equals(assessResult.getTargetCode())
                     && !GradeLineResultCode.LOW.getCode().equals(assessResult.getGradeLineCode())) {
                 importantPoints.append(RISK_FACTOR_MAPPING_CONTENT);
-            } else if (TargetEnum.PRIMARY_CONTROL_MECHANISM.getCode().equals(assessResult.getTargetCode())
+                judgedCodes.add(assessResult.getTargetCode());
+            } else if (!judgedCodes.contains(assessResult.getTargetCode())
+                    && TargetEnum.PRIMARY_CONTROL_MECHANISM.getCode().equals(assessResult.getTargetCode())
                     && !GradeLineResultCode.LOW.getCode().equals(assessResult.getGradeLineCode())) {
                 importantPoints.append(PRIMARY_CONTROL_MECHANISM_MAPPING_CONTENT);
-            } else if (TargetEnum.SECONDARY_CONTROL_MECHANISM.getCode().equals(assessResult.getTargetCode())
+                judgedCodes.add(assessResult.getTargetCode());
+            } else if (!judgedCodes.contains(assessResult.getTargetCode())
+                    && TargetEnum.SECONDARY_CONTROL_MECHANISM.getCode().equals(assessResult.getTargetCode())
                     && !GradeLineResultCode.LOW.getCode().equals(assessResult.getGradeLineCode())) {
                 importantPoints.append(SECONDARY_CONTROL_MECHANISM_MAPPING_CONTENT);
-            } else if (TargetEnum.R_FOUR_ONE.getCode().equals(assessResult.getTargetCode())
+                judgedCodes.add(assessResult.getTargetCode());
+            } else if (!judgedCodes.contains(assessResult.getTargetCode())
+                    && TargetEnum.R_FOUR_ONE.getCode().equals(assessResult.getTargetCode())
                     && !GradeLineResultCode.LOW.getCode().equals(assessResult.getGradeLineCode())) {
                 importantPoints.append(R_FOUR_ONE_MAPPING_CONTENT);
-            } else if (TargetEnum.R_FOUR_TWO.getCode().equals(assessResult.getTargetCode())
+                judgedCodes.add(assessResult.getTargetCode());
+            } else if (!judgedCodes.contains(assessResult.getTargetCode())
+                    && TargetEnum.R_FOUR_TWO.getCode().equals(assessResult.getTargetCode())
                     && !GradeLineResultCode.LOW.getCode().equals(assessResult.getGradeLineCode())) {
                 importantPoints.append(R_FOUR_TWO_MAPPING_CONTENT);
-            } else if (TargetEnum.R_FOUR_THREE.getCode().equals(assessResult.getTargetCode())
+                judgedCodes.add(assessResult.getTargetCode());
+            } else if (!judgedCodes.contains(assessResult.getTargetCode())
+                    && TargetEnum.R_FOUR_THREE.getCode().equals(assessResult.getTargetCode())
                     && !GradeLineResultCode.LOW.getCode().equals(assessResult.getGradeLineCode())) {
                 importantPoints.append(R_FOUR_THREE_MAPPING_CONTENT);
+                judgedCodes.add(assessResult.getTargetCode());
             } else if (TargetEnum.R_FOUR_FOUR.getCode().equals(assessResult.getTargetCode())
                     && !GradeLineResultCode.LOW.getCode().equals(assessResult.getGradeLineCode())) {
                 importantPoints.append(R_FOUR_FOUR_MAPPING_CONTENT);
-            } else if (TargetEnum.R_FOUR_FIVE.getCode().equals(assessResult.getTargetCode())
+                judgedCodes.add(assessResult.getTargetCode());
+            } else if (!judgedCodes.contains(assessResult.getTargetCode())
+                    && TargetEnum.R_FOUR_FIVE.getCode().equals(assessResult.getTargetCode())
                     && !GradeLineResultCode.LOW.getCode().equals(assessResult.getGradeLineCode())) {
                 importantPoints.append(R_FOUR_FIVE_MAPPING_CONTENT);
+                judgedCodes.add(assessResult.getTargetCode());
             }
         }
+        replaceMap.put(FinalReportParam.RANKING_OF_RISK.getCode(), rankingFileList);
         if (StringUtil.isNotBlank(importantPoints.toString())) {
             replaceMap.put(FinalReportParam.IMPORTANCE_ON.getCode(), importantPoints.toString().substring(0, importantPoints.length() - 1));
         } else {
             replaceMap.put(FinalReportParam.IMPORTANCE_ON.getCode(), "");
         }
         replaceMap.put(FinalReportParam.EXIST_GRADUAL_RISK.getCode(), gradualRiskInfo);
-        replaceMap.put(FinalReportParam.RANKING_OF_RISK.getCode(), "(开发中...)");
-        if (RiskLevel.HIGH.getCode().equals(enterpriseInfo.getRiskLevel())) {
-            setSomeParams(enterpriseId, replaceMap, needSpecialHandleMap);
-            setIntensiveParam(enterpriseId, replaceMap, needSpecialHandleMap);
-            setRiskJudgement(replaceMap, needSpecialHandleMap, infoVO);
-            setSuggestions(replaceMap, infoVO);
-            setPictures(replaceMap, infoVO);
-            replaceMap.put(FinalReportParam.NEED_UPGRADE.getCode(), FinalReportParam.NEED_UPGRADE.getDefaultValue());
-        } else {
-            List<GradeTemplateParamVO> paramList = gradeTemplateParamMapper.listParamWithoutSceneSurvey(enterpriseId);
-            for (GradeTemplateParamVO param: paramList) {
-                replaceMap.put(param.getParamCode(), param.getParamContent());
-            }
-            setBasicParam(enterpriseId, replaceMap);
-            replaceMap.put(FinalReportParam.NEED_UPGRADE.getCode(), "");
-        }
-        String fileName = StringUtil.getUUID();
-        try {
-            String srcPath;
-            if (RiskLevel.HIGH.getCode().equals(enterpriseInfo.getRiskLevel())) {
-                srcPath = filePathConfig.highRiskFinalReport;
-            } else {
-                srcPath = filePathConfig.lowRiskFinalReport;
-            }
-            String destDocPath = filePathConfig.destPath + fileName + ".docx";
-            String destPdfPath = filePathConfig.destPath + fileName + ".pdf";
-            CustomXWPFDocument doc = new CustomXWPFDocument(POIXMLDocument.openPackage(srcPath));
-            replaceWords(replaceMap, doc);
-            OutputStream os = new FileOutputStream(new File(destDocPath));
-            doc.write(os);
-            os.close();
-            EilFileUtil.word2pdf(destDocPath, destPdfPath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        deleteFiles(enterpriseId, FileSourceType.FINAL_REPORT.getCode());
-        insertFile(enterpriseId, fileName + ".docx"
-                , FileSourceType.FINAL_REPORT.getCode(), buildFileName(FILE_NAME));
-        String pdfAddress = insertFile(enterpriseId, fileName + ".pdf"
-                , FileSourceType.FINAL_REPORT.getCode(), buildFileName(FILE_NAME));
-        return pdfAddress;
     }
 
     private void setCostDescByComparing(HashMap<String, Object> replaceMap, List<GridCalculationValueVO> calculationValueList) {
@@ -330,6 +362,7 @@ public class FinalReportServiceImpl implements IFinalReportService {
                             , FinalReportParam.MEDIUM.getCode(), String.valueOf(BaseEnum.OTHER.getCode()));
             }
         }
+        replaceMap.put(FinalReportParam.MEDIUM_LOSS_CHART.getCode(), Arrays.asList(new String[]{filePathConfig.noPicPath}));
     }
 
     private void setGreatestLossDesc(HashMap<String, Object> replaceMap, List<GridCalculationValueVO> calculationValueList) {
@@ -368,22 +401,22 @@ public class FinalReportServiceImpl implements IFinalReportService {
     }
 
     private void setDepthAssessment(String enterpriseId, HashMap<String, Object> replaceMap) {
-        List<EntAssessResult> entAssessResultList = entAssessResultMapper
-                .selectList(new QueryWrapper<EntAssessResult>()
+        List<EntAssessInfo> entAssessResultList = entAssessResultMapper
+                .selectList(new QueryWrapper<EntAssessInfo>()
                         .eq("ent_id", enterpriseId)
                         .eq("valid", BaseEnum.VALID_YES.getCode()));
         if (CollectionUtils.isEmpty(entAssessResultList)) {
             throw new BusinessException("do not finish simulation of model!");
         }
-        EntAssessResult entAssessResult = entAssessResultList.get(0);
-        replaceMap.put(FinalReportParam.COST.getCode(), String.valueOf(entAssessResult.getCost()));
-        replaceMap.put(FinalReportParam.ESV.getCode(), String.valueOf(entAssessResult.getEsv()));
-        replaceMap.put(FinalReportParam.BI.getCode(), String.valueOf(entAssessResult.getBi()));
-        replaceMap.put(FinalReportParam.PI.getCode(), String.valueOf(entAssessResult.getPi()));
+        EntAssessInfo entAssessResult = entAssessResultList.get(0);
+        replaceMap.put(FinalReportParam.COST.getCode(), BigDecimal.valueOf(entAssessResult.getCost()).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
+        replaceMap.put(FinalReportParam.ESV.getCode(), BigDecimal.valueOf(entAssessResult.getEsv()).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
+        replaceMap.put(FinalReportParam.BI.getCode(), BigDecimal.valueOf(entAssessResult.getBi()).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
+        replaceMap.put(FinalReportParam.PI.getCode(), BigDecimal.valueOf(entAssessResult.getPi()).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
         setLossChartParam(replaceMap, entAssessResult);
     }
 
-    private void setLossChartParam(HashMap<String, Object> replaceMap, EntAssessResult entAssessResult) {
+    private void setLossChartParam(HashMap<String, Object> replaceMap, EntAssessInfo entAssessResult) {
         DefaultCategoryDataset dataSet=new DefaultCategoryDataset();
         dataSet.setValue(entAssessResult.getCost(),"财产损失","应急处置和清污费用");
         dataSet.setValue(entAssessResult.getEsv(),"财产损失","生态环境损害");
@@ -465,7 +498,7 @@ public class FinalReportServiceImpl implements IFinalReportService {
     }
 
     private void setSomeParams(String enterpriseId, HashMap<String, Object> replaceMap, HashMap<String, Integer> needSpecialHandleMap) {
-        List<GradeTemplateParamVO> paramList = gradeTemplateParamMapper.listParamOfSceneSurvey(enterpriseId);
+        List<GradeTemplateParamVO> paramList = reportTemplateParamMapper.listParamOfSceneSurvey(enterpriseId);
         for (GradeTemplateParamVO param: paramList) {
             if (CHAIN_EFFECTIVE.equals(param.getCode())) {
                 if (YES.equals(param.getResultCode())) {
@@ -520,7 +553,7 @@ public class FinalReportServiceImpl implements IFinalReportService {
         }
         if (needSpecialHandleMap.containsKey(RISK_LEVEL_FLAG)
                 && needSpecialHandleMap.get(RISK_LEVEL_FLAG) < LOW_RISK_LEVEL_LIMIT) {
-            replaceMap.put(FinalReportParam.COMMON_RISK_LEVEL.getCode(), LOW_RISK);
+            replaceMap.put(FinalReportParam.COMMON_RISK_LEVEL.getCode(), HIGH_RISK);
             replaceMap.put(FinalReportParam.HIGH_RISK_LEVEL_REASON.getCode(), "");
         } else {
             if (RiskLevel.HIGH.getCode().equals(infoVO.getRiskLevel())) {
@@ -533,7 +566,7 @@ public class FinalReportServiceImpl implements IFinalReportService {
         }
         if (needSpecialHandleMap.containsKey(CONTROL_RISK_LEVEL_FLAG)
                 && needSpecialHandleMap.get(CONTROL_RISK_LEVEL_FLAG) < LOW_CONTROL_RISK_LEVEL_LIMIT) {
-            replaceMap.put(FinalReportParam.CONTROL_RISK_LEVEL.getCode(), LOW_RISK);
+            replaceMap.put(FinalReportParam.CONTROL_RISK_LEVEL.getCode(), HIGH_RISK);
             replaceMap.put(FinalReportParam.HIGH_CONTROL_RISK_LEVEL_REASON.getCode(), "");
         } else {
             if (RiskLevel.HIGH.getCode().equals(infoVO.getControlRiskLevel())) {
@@ -544,9 +577,9 @@ public class FinalReportServiceImpl implements IFinalReportService {
                 replaceMap.put(FinalReportParam.HIGH_CONTROL_RISK_LEVEL_REASON.getCode(), "");
             }
         }
-        if (needSpecialHandleMap.containsKey(RECEPTOR_RISK_LEVEL_FLAG)
-                && needSpecialHandleMap.get(RECEPTOR_RISK_LEVEL_FLAG) > LOW_RECEPTOR_RISK_LEVEL_LIMIT) {
-            replaceMap.put(FinalReportParam.RECEPTOR_RISK_LEVEL.getCode(), HIGH_RISK);
+        if (!needSpecialHandleMap.containsKey(RECEPTOR_RISK_LEVEL_FLAG)
+                || needSpecialHandleMap.get(RECEPTOR_RISK_LEVEL_FLAG) < LOW_RECEPTOR_RISK_LEVEL_LIMIT) {
+            replaceMap.put(FinalReportParam.RECEPTOR_RISK_LEVEL.getCode(), LOW_RISK);
             replaceMap.put(FinalReportParam.HIGH_RECEPTOR_RISK_LEVEL_REASON.getCode(), "");
         } else {
             if (RiskLevel.HIGH.getCode().equals(infoVO.getReceptorRiskLevel())) {
@@ -670,7 +703,7 @@ public class FinalReportServiceImpl implements IFinalReportService {
     }
 
     private void searchAndSetParam(HashMap<String, Object> replaceMap, String paramType, String paramCode, String resultCode) {
-        List<GradeTemplateParam> params = gradeTemplateParamMapper.selectList(new QueryWrapper<GradeTemplateParam>()
+        List<ReportTemplateParam> params = reportTemplateParamMapper.selectList(new QueryWrapper<ReportTemplateParam>()
                 .eq("type", paramType)
                 .eq("param_code", paramCode)
                 .eq("result_code", resultCode)
@@ -683,7 +716,7 @@ public class FinalReportServiceImpl implements IFinalReportService {
 
     private void setAssessmentProgressInfo(String enterpriseId, HashMap<String, Object> replaceMap
             , int totalRiskType, EntSurveyExtendInfoVO infoVO) {
-        List<GradeTemplateParamVO> paramList = gradeTemplateParamMapper.listParamOfFinalReport(enterpriseId);
+        List<GradeTemplateParamVO> paramList = reportTemplateParamMapper.listParamOfFinalReport(enterpriseId);
         for (int i = 0; i < paramList.size(); i++) {
             GradeTemplateParamVO param = paramList.get(i);
             if (FinalReportParam.SURVEY_INFO.getCode()
@@ -716,10 +749,11 @@ public class FinalReportServiceImpl implements IFinalReportService {
                     content = content.replace(FinalReportParam.TOTAL_RISK_TYPE.getCode(), "0");
                     content = content.replace(FinalReportParam.SCENARIO.getCode(), "");
                 }
-                List<EntDiffusionModelInfoVO> infoList = listDiffusionModelInfo(enterpriseId);
+                List<EntDiffusionModelInfoVO> waterModelList = listDiffusionModelInfo(enterpriseId, DataModelType.WATER_TYPE.getCode());
+                List<EntDiffusionModelInfoVO> soilModelList = listDiffusionModelInfo(enterpriseId, DataModelType.SOIL_TYPE.getCode());
                 List<String> waterModelNameList = new ArrayList<>();
                 int totalModel = 0;
-                for (EntDiffusionModelInfoVO vo: infoList) {
+                for (EntDiffusionModelInfoVO vo: waterModelList) {
                     totalModel++;
                     if (!waterModelNameList.contains(vo.getModelName())) {
                         waterModelNameList.add(vo.getModelName());
@@ -733,14 +767,15 @@ public class FinalReportServiceImpl implements IFinalReportService {
                     content = content.replace(FinalReportParam.WATER_SIMULATION_TIMES.getCode(), String.valueOf(totalModel));
                     content = content.replace(FinalReportParam.SOIL_MODELS.getCode(), FinalReportParam.SOIL_MODELS.getDefaultValue());
                     content = content.replace(FinalReportParam.SOIL_SIMULATION.getCode(), FinalReportParam.SOIL_SIMULATION.getDefaultValue());
-                    content = content.replace(FinalReportParam.SOIL_SIMULATION_TIMES.getCode(), String.valueOf(totalModel));
+                    content = content.replace(FinalReportParam.SOIL_SIMULATION_TIMES.getCode(), String.valueOf(soilModelList.size()));
                     replaceMap.put(FinalReportParam.HAS_SIMULATION.getCode(), FinalReportParam.HAS_SIMULATION.getDefaultValue());
                 } else {
                     content = content.replace(FinalReportParam.WATER_MODELS.getCode(), "");
                     content = content.replace(FinalReportParam.WATER_SIMULATION.getCode(), "");
-                    content.replace(FinalReportParam.SOIL_MODELS.getCode(), "");
-                    content = content.replace(FinalReportParam.SOIL_SIMULATION.getCode(), "");
-                    replaceMap.put(FinalReportParam.HAS_SIMULATION.getCode(), "");
+                    content = content.replace(FinalReportParam.SOIL_MODELS.getCode(), FinalReportParam.SOIL_MODELS.getDefaultValue());
+                    content = content.replace(FinalReportParam.SOIL_SIMULATION.getCode(), FinalReportParam.SOIL_SIMULATION.getDefaultValue());
+                    content = content.replace(FinalReportParam.SOIL_SIMULATION_TIMES.getCode(), String.valueOf(soilModelList.size()));
+                    replaceMap.put(FinalReportParam.HAS_SIMULATION.getCode(), FinalReportParam.HAS_SIMULATION.getDefaultValue());
                 }
                 replaceMap.put(param.getParamCode(), content);
             } else {
@@ -749,9 +784,10 @@ public class FinalReportServiceImpl implements IFinalReportService {
         }
     }
 
-    private List<EntDiffusionModelInfoVO> listDiffusionModelInfo(String enterpriseId) {
+    private List<EntDiffusionModelInfoVO> listDiffusionModelInfo(String enterpriseId, String modelType) {
         EntDiffusionModelInfoQueryParam queryParam = new EntDiffusionModelInfoQueryParam();
         queryParam.setEnterpriseId(enterpriseId);
+        queryParam.setModelType(modelType);
         return entDiffusionModelInfoMapper.listModelOfInfo(queryParam);
     }
 
@@ -795,10 +831,13 @@ public class FinalReportServiceImpl implements IFinalReportService {
         if (ObjectUtil.isNull(enterpriseInfo)) {
             throw new BusinessException("enterprise is not exist");
         }
+        if (!StatusEnum.FINISH_ASSESSMENT.getCode().equals(enterpriseInfo.getStatus())) {
+            throw new BusinessException("this enterprise has not finish assessment!");
+        }
         return enterpriseInfo;
     }
 
-    private static void replaceWords(Map<String, Object> replaceMap, CustomXWPFDocument doc) {
+    private void replaceWords(Map<String, Object> replaceMap, CustomXWPFDocument doc) {
         Iterator itPara = doc.getParagraphsIterator();
         while (itPara.hasNext()) {
             XWPFParagraph paragraph = (XWPFParagraph) itPara.next();
@@ -813,8 +852,12 @@ public class FinalReportServiceImpl implements IFinalReportService {
                         if (FinalReportParam.SURVEY_ATTACHMENT.getCode().equals(key)) {
                             setAttachmentToDoc(replaceMap, doc, paragraph, key, run, i);
                             break paragraph;
-                        } else if (FinalReportParam.LOSS_CHART.getCode().equals(key)) {
+                        } else if (FinalReportParam.LOSS_CHART.getCode().equals(key)
+                                || FinalReportParam.MEDIUM_LOSS_CHART.getCode().equals(key)) {
                             setPicturesToDoc(replaceMap, doc, paragraph, key, run, i);
+                            break paragraph;
+                        } else if (FinalReportParam.RANKING_OF_RISK.getCode().equals(key)) {
+                            setRankingChartToDoc(replaceMap, doc, paragraph, key, run, i);
                             break paragraph;
                         } else {
                             String text = (String) replaceMap.get(key);
@@ -826,7 +869,7 @@ public class FinalReportServiceImpl implements IFinalReportService {
         }
     }
 
-    private static void setAttachmentToDoc(Map<String, Object> replaceMap, CustomXWPFDocument doc, XWPFParagraph paragraph, String key, List<XWPFRun> run, int i) {
+    private void setAttachmentToDoc(Map<String, Object> replaceMap, CustomXWPFDocument doc, XWPFParagraph paragraph, String key, List<XWPFRun> run, int i) {
         if (ObjectUtil.isNotNull(replaceMap.get(key))) {
             List<EntSurveyPhotoVO> picList = (List<EntSurveyPhotoVO>) replaceMap.get(key);
             run.get(i).setText("", 0);
@@ -834,21 +877,27 @@ public class FinalReportServiceImpl implements IFinalReportService {
             try {
                 for (int k = 0; k < picList.size(); k++) {
                     EntSurveyPhotoVO photo = picList.get(k);
-                    is = new FileInputStream(new File(photo.getFileAddress()));
+                    try {
+                        is = new FileInputStream(new File(photo.getFileAddress()));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                        is = new FileInputStream(new File(filePathConfig.noPicPath));
+                    }
                     addPictureDataToDoc(doc, is, photo.getFileAddress());
-                    doc.createPicture(paragraph,doc.getAllPictures().size()-1, 400, 400,"");
+                    doc.createPicture(paragraph,doc.getAllPictures().size()-1, 400, 300,"");
                     paragraph.createRun().addCarriageReturn();
                     XWPFRun itemRun = paragraph.createRun();
                     itemRun.setText("图"+ (k + 1) +" 现场查勘时拍摄");
                     itemRun.addCarriageReturn();
                     XWPFRun phoneTime = paragraph.createRun();
                     phoneTime.setText(DateUtil.formatDateToStr(photo.getTimeOfPhoto()
-                            , "yyyy-MM-dd HH:mm:ss     "));
+                            , "yyyy-MM-dd           "));
                     XWPFRun phoneAddress = paragraph.createRun();
                     phoneAddress.setText(photo.getLocation());
                     paragraph.createRun().addCarriageReturn();
                     XWPFRun remark = paragraph.createRun();
                     remark.setText("说明：" + photo.getRemark());
+                    paragraph.createRun().addCarriageReturn();
                     paragraph.createRun().addCarriageReturn();
                 }
             } catch (FileNotFoundException e) {
@@ -861,18 +910,45 @@ public class FinalReportServiceImpl implements IFinalReportService {
         }
     }
 
-    private static void setPicturesToDoc(Map<String, Object> replaceMap, CustomXWPFDocument doc, XWPFParagraph paragraph, String key, List<XWPFRun> run, int i) {
+    private void setPicturesToDoc(Map<String, Object> replaceMap, CustomXWPFDocument doc, XWPFParagraph paragraph, String key, List<XWPFRun> run, int i) {
         if (ObjectUtil.isNotNull(replaceMap.get(key))) {
             List<String> pathList = (List<String>) replaceMap.get(key);
             run.get(i).setText("", 0);
             InputStream is = null;
             try {
                 for (int k = 0; k < pathList.size(); k++) {
-                    String path = pathList.get(k);
+                    //use default pic path
+                    String path = filePathConfig.noPicPath;
                     is = new FileInputStream(new File(path));
                     addPictureDataToDoc(doc, is, path);
                     doc.createPicture(paragraph,doc.getAllPictures().size()-1, 300, 220,"");
                     paragraph.createRun().addCarriageReturn();
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (InvalidFormatException e) {
+                e.printStackTrace();
+            }
+        } else {
+            run.get(i).setText("", 0);
+        }
+    }
+
+    private static void setRankingChartToDoc(Map<String, Object> replaceMap, CustomXWPFDocument doc, XWPFParagraph paragraph, String key, List<XWPFRun> run, int i) {
+        if (ObjectUtil.isNotNull(replaceMap.get(key))) {
+            List<RiskRankingFileVO> fileList = (List<RiskRankingFileVO>) replaceMap.get(key);
+            run.get(i).setText("", 0);
+            InputStream is = null;
+            try {
+                for (int k = 0; k < fileList.size(); k++) {
+                    RiskRankingFileVO file = fileList.get(k);
+                    is = new FileInputStream(new File(file.getFilePath()));
+                    addPictureDataToDoc(doc, is, file.getFilePath());
+                    doc.createPicture(paragraph,doc.getAllPictures().size()-1, 300, 220,"");
+                    paragraph.createRun().addCarriageReturn();
+                    XWPFRun itemRun = paragraph.createRun();
+                    itemRun.setText(file.getRemark());
+                    itemRun.addCarriageReturn();
                 }
             } catch (FileNotFoundException e) {
                 e.printStackTrace();

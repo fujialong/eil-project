@@ -1,9 +1,10 @@
 package com.shencai.eil.assessment.service.impl;
 
-import com.shencai.eil.assessment.entity.EntAssessResult;
-import com.shencai.eil.assessment.mapper.EntAssessResultMapper;
-import com.shencai.eil.assessment.service.IEntAssessResultService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.shencai.eil.assessment.entity.EntAssessInfo;
+import com.shencai.eil.assessment.mapper.EntAssessInfoMapper;
+import com.shencai.eil.assessment.model.AssessGridVO;
+import com.shencai.eil.assessment.service.IEntAssessResultService;
 import org.springframework.stereotype.Service;
 
 /**
@@ -15,6 +16,10 @@ import org.springframework.stereotype.Service;
  * @since 2018-10-21
  */
 @Service
-public class EntAssessResultServiceImpl extends ServiceImpl<EntAssessResultMapper, EntAssessResult> implements IEntAssessResultService {
+public class EntAssessResultServiceImpl extends ServiceImpl<EntAssessInfoMapper, EntAssessInfo> implements IEntAssessResultService {
 
+    @Override
+    public AssessGridVO gisBaseInfo(String entId) {
+        return this.baseMapper.gisBaseInfo(entId);
+    }
 }

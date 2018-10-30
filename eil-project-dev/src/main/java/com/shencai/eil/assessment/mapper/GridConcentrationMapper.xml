@@ -27,18 +27,25 @@
             ag.z,
             ag.pop,
             ag.sensitive_area sensitiveArea,
-            ag.water_zoning waterZoning,
-            ag.grid_use_type waterZoning,
-            ag.acreage waterZoning,
+            ag.water_quality waterQuality,
+            ag.acreage acreage,
             ag.eco_value ecoValue,
+            ag.fishery_area fisheryArea,
+            ag.agricultural_area agriculturalArea,
+            ag.forestry_area forestryArea,
             accs.code scenarioCode,
             edmi.emission_mode_type emissionModeType,
-            gc.concentration
+            gc.concentration,
+            gc.avg_concentration avgConcentration,
+            ag.grid_code gridCode
         from grid_concentration gc
         inner join assess_gird ag on ag.id = gc.grid_id and ag.valid = 1 and ag.bis_code = #{bisCode}
-        inner join ent_diffusion_model_info edmi on edmi.id = gc.info_id and edmi.valid = 1 and edmi.ent_id = #{entId}
+        inner join ent_diffusion_model_info edmi
+          on edmi.id = gc.info_id and edmi.valid = 1 and edmi.ent_id = #{entId}
+            <if test="bisCode != null and bisCode == 'water'">
+                and considering_water_env_risk = 1
+            </if>
         left join accident_scenario accs on accs.id = edmi.scenario_id and accs.valid = 1
         where gc.valid = 1
-        order by ag.x, ag.y
     </select>
 </mapper>

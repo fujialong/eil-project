@@ -22,13 +22,17 @@ import java.util.List;
 public interface IEntSurveyPlanService extends IService<EntSurveyPlan> {
     EnterpriseVO getEntSurveyInfo(String enterpriseId);
 
+    void initSurveyPlan(String enterpriseId);
+
     void surveyUpgrade(EnterpriseParam param);
+
+    void surveyDemote(EnterpriseParam param);
 
     Page<EntSurveyPlanVO> pageBasicSurveyPlan(EntSurveyPlanQueryParam queryParam);
 
     Page<EntSurveyPlanVO> pageIntensiveSurveyPlan(EntSurveyPlanQueryParam queryParam);
 
-    SurveyFileVO getSurveyUploadFileStatus(String enterpriseId);
+    SurveyFileVO getSurveyUploadFileStatus(String enterpriseId, String sourceType);
 
     void finishSurvey(String enterpriseId);
 

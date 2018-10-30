@@ -21,6 +21,16 @@ public class FilePathConfig {
     @Value("#{fileSetting['file.highRisk.finalReport.modelPath']}")
     public String highRiskFinalReport;
 
+    @Value("#{fileSetting['file.noPic.Path']}")
+    public String noPicPath;
+
     @Value("#{fileSetting['file.destPath']}")
     public String destPath;
+
+    @Value("#{fileSetting['file.python.waterModel']}")
+    public String waterModel;
+
+    @Value("#{fileSetting['file.python.soilModel']}")
+    public String soilModel;
+
 }

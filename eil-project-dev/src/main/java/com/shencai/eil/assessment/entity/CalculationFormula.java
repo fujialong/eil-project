@@ -33,6 +33,8 @@ public class CalculationFormula extends Model<CalculationFormula> {
     private Integer sortNum;
     @TableField("sort_num")
     private Boolean needSum;
+    @TableField("used_condition")
+    private String usedCondition;
 
     private String description;
 
@@ -67,6 +69,7 @@ public class CalculationFormula extends Model<CalculationFormula> {
         ", bisCode=" + bisCode +
         ", sortNum=" + sortNum +
         ", needSum=" + needSum +
+        ", usedCondition=" + usedCondition +
         ", description=" + description +
         ", remark=" + remark +
         ", createUserId=" + createUserId +

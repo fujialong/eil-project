@@ -12,15 +12,21 @@ public class EntDiffusionModelInfoVO implements Serializable {
 
     private String id;
 
+    private String modelId;
+
     private String material;
 
     private String scenarioName;
+
+    private String scenarioCode;
 
     private Double releaseAmount;
 
     private String wadingName;
 
     private String emissionModeTypeName;
+
+    private String emissionModeType;
 
     private String existWaterEnvName;
 
@@ -35,4 +41,6 @@ public class EntDiffusionModelInfoVO implements Serializable {
     private String modelName;
 
     private String modelType;
+
+    private Double density;
 }

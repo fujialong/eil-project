@@ -19,4 +19,16 @@ public class PolicyQueryParam extends PageParam implements Serializable {
 
     private String riskLevel;
 
+    private String enterpriseName;
+
+    private String socialCreditCode;
+
+    private String cantonCode;
+
+    private String industryId;
+
+    private String techniqueId;
+
+    private String mainProductId;
+
 }

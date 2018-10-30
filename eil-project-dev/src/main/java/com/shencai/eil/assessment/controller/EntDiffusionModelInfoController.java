@@ -4,6 +4,7 @@ package com.shencai.eil.assessment.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shencai.eil.assessment.model.EntDiffusionModelInfoQueryParam;
 import com.shencai.eil.assessment.model.EntDiffusionModelInfoVO;
+import com.shencai.eil.assessment.service.ICalculationService;
 import com.shencai.eil.assessment.service.IEntDiffusionModelInfoService;
 import com.shencai.eil.model.Result;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,8 @@ public class EntDiffusionModelInfoController {
 
     @Autowired
     private IEntDiffusionModelInfoService entDiffusionModelInfoService;
+    @Autowired
+    private ICalculationService calculationService;
 
     @ResponseBody
     @RequestMapping("/matchingWaterQualityModel")
@@ -39,5 +42,11 @@ public class EntDiffusionModelInfoController {
         return Result.ok(entDiffusionModelInfoPage);
     }
 
+    @ResponseBody
+    @RequestMapping("/calculationLoss")
+    public Result calculationLoss(String enterpriseId) {
+        calculationService.calculate(enterpriseId);
+        return Result.ok();
+    }
 }
 

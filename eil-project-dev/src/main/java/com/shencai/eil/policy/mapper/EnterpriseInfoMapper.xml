@@ -50,12 +50,23 @@
         ei.has_risks_report hasRisksReport,
         t.name techniqueName,
         sd.name cityName,
-        ei.risk_level
+        ei.risk_level,
+        bf.create_time depthEvaluationTime
         from enterprise_info ei
         left join industry_category ic on (ei.industry_id=ic.id and ic.valid=1)
-        left join enterprise_mapping_technique emt on (ei.id=emt.ent_id and emt.valid=1)
+        left join enterprise_mapping_technique emt on (
+        <if test="queryParam.techniqueId != null and queryParam.techniqueId != ''">
+            emt.tech_id = #{queryParam.techniqueId} and
+        </if>
+        ei.id=emt.ent_id and emt.valid=1)
         left join technique t on (emt.tech_id=t.id and t.valid=1)
+        left join (select source_id, create_time from base_fileupload where stype = 'final_report' and valid = 1 limit 1) bf on bf.source_id=ei.id
         left join sys_dictionary sd on (sd.type_code = 'canton' and ei.canton_code = sd.code and sd.valid=1)
+        <if test="queryParam.mainProductId != null and queryParam.mainProductId != ''">
+            left join enterprise_mapping_product emp on (ei.id=emp.ent_id and
+              emp.prod_id = #{queryParam.mainProductId} and emp.is_main_product = 1 and emt.valid=1
+            )
+        </if>
         where
         <if test="queryParam.comparatorFlag == 'lt'
                  and queryParam.status != null and queryParam.status != ''">
@@ -71,6 +82,18 @@
         </if>
         <if test="queryParam.riskLevel != null and queryParam.riskLevel != ''">
             ei.risk_level = #{queryParam.riskLevel} and
+        </if>
+        <if test="queryParam.enterpriseName != null and queryParam.enterpriseName != ''">
+            ei.name like '%' + #{queryParam.riskLevel} + '%' and
+        </if>
+        <if test="queryParam.socialCreditCode != null and queryParam.socialCreditCode != ''">
+            ei.social_credit_code = #{queryParam.socialCreditCode} and
+        </if>
+        <if test="queryParam.cantonCode != null and queryParam.cantonCode != ''">
+            ei.canton_code = #{queryParam.cantonCode} and
+        </if>
+        <if test="queryParam.industryId != null and queryParam.industryId != ''">
+            ei.industry_id = #{queryParam.industryId} and
         </if>
         ei.valid=1
         ORDER by ei.update_time desc
@@ -178,5 +201,14 @@
           select id entId, latitude, longitude
         from enterprise_info
         where valid =1  and latitude is not null and longitude is not null
+    </select>
+
+    <select id="surveyDemote" parameterType="com.shencai.eil.policy.entity.EnterpriseInfo">
+        update enterprise_info
+        set
+            need_survey_upgrade = NULL,
+            risk_level = #{riskLevel},
+            update_time = #{updateTime}
+        where id = #{id}
     </select>
 </mapper>

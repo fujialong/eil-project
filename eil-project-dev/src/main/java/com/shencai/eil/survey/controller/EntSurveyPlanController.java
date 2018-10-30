@@ -49,6 +49,16 @@ public class EntSurveyPlanController {
         return Result.ok();
     }
 
+    /**
+     * demote survey
+     */
+    @ResponseBody
+    @RequestMapping("surveyDemote")
+    public Result surveyDemote(@RequestBody EnterpriseParam param) {
+        entSurveyPlanService.surveyDemote(param);
+        return Result.ok();
+    }
+
     @ResponseBody
     @RequestMapping("pageBasicSurveyPlan")
     public Result pageBasicSurveyPlan(EntSurveyPlanQueryParam queryParam) {
@@ -75,8 +85,8 @@ public class EntSurveyPlanController {
 
     @ResponseBody
     @RequestMapping("getSurveyUploadFileStatus")
-    public Result getSurveyUploadFileStatus(String enterpriseId) {
-       return Result.ok(entSurveyPlanService.getSurveyUploadFileStatus(enterpriseId));
+    public Result getSurveyUploadFileStatus(String enterpriseId, String sourceType) {
+       return Result.ok(entSurveyPlanService.getSurveyUploadFileStatus(enterpriseId, sourceType));
     }
 
     @ResponseBody

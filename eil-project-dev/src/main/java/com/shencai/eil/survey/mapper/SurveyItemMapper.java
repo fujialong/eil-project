@@ -18,4 +18,5 @@ import java.util.List;
 public interface SurveyItemMapper extends BaseMapper<SurveyItem> {
     List<SurveyItemVO> listSurveyItem(SurveyItemQueryParam queryParam);
     List<SurveyItemVO> listSurveyItemByCategory(SurveyItemQueryParam queryParam);
+    void deleteIntensivePlan(SurveyItemVO surveyItem);
 }

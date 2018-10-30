@@ -41,7 +41,7 @@ public class EntSurveyResultController {
 
     @ResponseBody
     @RequestMapping("getFinalSurveyReport")
-    public Result getFinalSurveyReport(String enterpriseId) {
+    public Result getFinalSurveyReport(String enterpriseId) throws Exception {
         return Result.ok(finalReportService.getFinalReport(enterpriseId));
     }
 }

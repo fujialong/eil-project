@@ -3,18 +3,18 @@ package com.shencai.eil.survey.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.shencai.eil.common.constants.BaseEnum;
 import com.shencai.eil.common.constants.FileSourceType;
-import com.shencai.eil.common.constants.GradeTemplateParamType;
 import com.shencai.eil.common.utils.CommonsUtil;
 import com.shencai.eil.common.utils.DateUtil;
 import com.shencai.eil.common.utils.StringUtil;
 import com.shencai.eil.exception.BusinessException;
-import com.shencai.eil.survey.constants.FinalReportParam;
+import com.shencai.eil.policy.entity.EnterpriseInfo;
+import com.shencai.eil.policy.mapper.EnterpriseInfoMapper;
 import com.shencai.eil.survey.entity.EntSurveyExtendInfo;
 import com.shencai.eil.survey.entity.EntSurveyPhoto;
 import com.shencai.eil.survey.mapper.EntSurveyExtendInfoMapper;
 import com.shencai.eil.survey.mapper.EntSurveyPhotoMapper;
 import com.shencai.eil.survey.mapper.EntSurveyPlanMapper;
-import com.shencai.eil.survey.mapper.GradeTemplateParamMapper;
+import com.shencai.eil.survey.mapper.ReportTemplateParamMapper;
 import com.shencai.eil.survey.model.*;
 import com.shencai.eil.survey.service.IEntSurveyExtendInfoService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -43,7 +43,7 @@ import java.util.List;
 public class EntSurveyExtendInfoServiceImpl extends ServiceImpl<EntSurveyExtendInfoMapper, EntSurveyExtendInfo> implements IEntSurveyExtendInfoService {
 
     @Autowired
-    private GradeTemplateParamMapper gradeTemplateParamMapper;
+    private ReportTemplateParamMapper reportTemplateParamMapper;
     @Autowired
     private EntSurveyPlanMapper entSurveyPlanMapper;
     @Autowired
@@ -54,6 +54,8 @@ public class EntSurveyExtendInfoServiceImpl extends ServiceImpl<EntSurveyExtendI
     private IEntSurveyPhotoService entSurveyPhotoService;
     @Autowired
     private BaseFileuploadMapper baseFileuploadMapper;
+    @Autowired
+    private EnterpriseInfoMapper enterpriseInfoMapper;
 
     private static final String COMPONENT_LOCATION_VALID = "地下";
     private static final List<String> COMPONENT_TYPE_OF_STORAGE_LIST
@@ -151,7 +153,6 @@ public class EntSurveyExtendInfoServiceImpl extends ServiceImpl<EntSurveyExtendI
         CommonsUtil.cloneObj(info, entSurveyExtendInfo);
         entSurveyExtendInfo.setId(StringUtil.getUUID());
         entSurveyExtendInfo.setEntId(info.getEnterpriseId());
-        entSurveyExtendInfo.setSurveyTime(DateUtil.getNowTimestamp());
         entSurveyExtendInfo.setCreateTime(DateUtil.getNowTimestamp());
         entSurveyExtendInfo.setUpdateTime(DateUtil.getNowTimestamp());
         entSurveyExtendInfo.setValid((Integer) BaseEnum.VALID_YES.getCode());
@@ -188,7 +189,7 @@ public class EntSurveyExtendInfoServiceImpl extends ServiceImpl<EntSurveyExtendI
 
     private void checkStatus(String enterpriseId, SurveyExtendItemVO surveyExtendItemVO) {
         HashMap<String, Integer> needSpecialHandleMap = new HashMap<>();
-        List<GradeTemplateParamVO> paramList = gradeTemplateParamMapper.listParamOfSceneSurvey(enterpriseId);
+        List<GradeTemplateParamVO> paramList = reportTemplateParamMapper.listParamOfSceneSurvey(enterpriseId);
         for (GradeTemplateParamVO param: paramList) {
             if (CHAIN_EFFECTIVE.equals(param.getCode())) {
                 if (YES.equals(param.getResultCode())) {
@@ -210,24 +211,37 @@ public class EntSurveyExtendInfoServiceImpl extends ServiceImpl<EntSurveyExtendI
         }
         setIntensiveParam(enterpriseId, needSpecialHandleMap);
         if (needSpecialHandleMap.containsKey(RISK_LEVEL_FLAG)
-                && needSpecialHandleMap.get(RISK_LEVEL_FLAG) >= RISK_LEVEL_HIDDEN_LIMIT) {
+                && needSpecialHandleMap.get(RISK_LEVEL_FLAG) < RISK_LEVEL_HIDDEN_LIMIT) {
             surveyExtendItemVO.setHasRiskLevel(HIDDEN);
         }
         if (needSpecialHandleMap.containsKey(CONTROL_RISK_LEVEL_FLAG)
-                && needSpecialHandleMap.get(CONTROL_RISK_LEVEL_FLAG) >= CONTROL_RISK_LEVEL_HIDDEN_LIMIT) {
-            surveyExtendItemVO.setHasRiskLevel(HIDDEN);
+                && needSpecialHandleMap.get(CONTROL_RISK_LEVEL_FLAG) < CONTROL_RISK_LEVEL_HIDDEN_LIMIT) {
+            surveyExtendItemVO.setHasControlRiskLevel(HIDDEN);
         }
-        if (needSpecialHandleMap.containsKey(RECEPTOR_RISK_LEVEL_FLAG)
-                && needSpecialHandleMap.get(RECEPTOR_RISK_LEVEL_FLAG) >= RECEPTOR_RISK_LEVEL_HIDDEN_LIMIT) {
-            surveyExtendItemVO.setHasRiskLevel(HIDDEN);
+        if (!needSpecialHandleMap.containsKey(RECEPTOR_RISK_LEVEL_FLAG)
+                || needSpecialHandleMap.get(RECEPTOR_RISK_LEVEL_FLAG) < RECEPTOR_RISK_LEVEL_HIDDEN_LIMIT) {
+            surveyExtendItemVO.setHasReceptorRiskLevel(HIDDEN);
         }
-        int fileCount = baseFileuploadMapper.selectCount(new QueryWrapper<BaseFileupload>()
-                .eq("stype", FileSourceType.LICENCE.getCode())
-                .eq("source_id", enterpriseId)
-                .eq("valid", BaseEnum.VALID_YES.getCode()));
-        if (fileCount > 0) {
+        int licenceFileCount = getFileCount(enterpriseId, FileSourceType.LICENCE.getCode());
+        if (licenceFileCount > 0) {
             surveyExtendItemVO.setHasLicence(HIDDEN);
         }
+        EnterpriseInfo enterpriseInfo = enterpriseInfoMapper.selectById(enterpriseId);
+        if (BaseEnum.VALID_YES.getCode().equals(enterpriseInfo.getHasRisksReport())) {
+            int reportFileCount = getFileCount(enterpriseId, FileSourceType.EVALUATION_REPORT.getCode());
+            if (reportFileCount > 0) {
+                surveyExtendItemVO.setHasEvaluationReport(HIDDEN);
+            }
+        } else {
+            surveyExtendItemVO.setHasEvaluationReport(HIDDEN);
+        }
+    }
+
+    private int getFileCount(String enterpriseId, String sourceType) {
+        return baseFileuploadMapper.selectCount(new QueryWrapper<BaseFileupload>()
+                .eq("stype", sourceType)
+                .eq("source_id", enterpriseId)
+                .eq("valid", BaseEnum.VALID_YES.getCode()));
     }
 
     private SurveyExtendItemVO initSurveyExtendItem() {
@@ -237,6 +251,7 @@ public class EntSurveyExtendInfoServiceImpl extends ServiceImpl<EntSurveyExtendI
         surveyExtendItemVO.setHasControlRiskLevel(SHOW);
         surveyExtendItemVO.setHasReceptorRiskLevel(SHOW);
         surveyExtendItemVO.setHasLicence(SHOW);
+        surveyExtendItemVO.setHasEvaluationReport(SHOW);
         return surveyExtendItemVO;
     }
 

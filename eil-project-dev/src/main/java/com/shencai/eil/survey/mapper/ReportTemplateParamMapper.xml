@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.shencai.eil.survey.mapper.GradeTemplateParamMapper">
+<mapper namespace="com.shencai.eil.survey.mapper.ReportTemplateParamMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="com.shencai.eil.survey.entity.GradeTemplateParam">
+    <resultMap id="BaseResultMap" type="com.shencai.eil.survey.entity.ReportTemplateParam">
         <id column="id" property="id" />
         <result column="code" property="code" />
         <result column="target_weight_id" property="targetWeightId" />
@@ -28,7 +28,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             case when gtp.param_content is null then FORMAT(erar.assess_value, 2) else gtp.param_content end paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
             inner join ent_risk_assess_result erar on erar.target_weight_id = gtp.target_weight_id and erar.valid = 1
             inner join target_weight_grade_line twgl on twgl.id = erar.grade_line_id and gtp.result_code = twgl.result_code and twgl.valid = 1
             left join target_weight tw on tw.id = twgl.target_weight_id and tw.valid = 1
@@ -41,7 +41,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where code = 'risk-level' and result_code = (
             select case when risk_level = '001' then '0' else '1' end result_code from enterprise_info
             where id = #{enterpriseId}
@@ -54,7 +54,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where code = 'R0' and result_code = (
             select case when count(1) = 1 then '0' else '1' end result_code from ent_mapping_target_type
             where id = #{enterpriseId}
@@ -67,10 +67,10 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where code = 'R1' and result_code = (
                 select case when count(1) = 2 then '0' else '1' end result_code
-            from grade_template_param gtp
+            from report_template_param gtp
             inner join ent_risk_assess_result erar on erar.target_weight_id = gtp.target_weight_id and erar.valid = 1
             inner join target_weight_grade_line twgl on twgl.id = erar.grade_line_id and gtp.result_code = twgl.result_code and twgl.valid = 1
             inner join target_weight tw on tw.id = twgl.target_weight_id and tw.valid = 1
@@ -85,10 +85,10 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where code = 'R3' and result_code = (
                 select case when count(1) = 2 then '0' else '1' end result_code
-            from grade_template_param gtp
+            from report_template_param gtp
             inner join ent_risk_assess_result erar on erar.target_weight_id = gtp.target_weight_id and erar.valid = 1
             inner join target_weight_grade_line twgl on twgl.id = erar.grade_line_id and gtp.result_code = twgl.result_code and twgl.valid = 1
             inner join target_weight tw on tw.id = twgl.target_weight_id and tw.valid = 1
@@ -102,7 +102,7 @@
         select
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasGradualRisk' and gtp.result_code = (
             select case when count(1) = 2 then 1 else 0 end total from ent_mapping_target_type
             where ent_id = #{enterpriseId} and valid = 1
@@ -111,7 +111,7 @@
         select
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasIntensiveTable' and gtp.result_code = (
             select case when risk_level = '002' then 1 else 0 end riskLevel from enterprise_info
             where id = #{enterpriseId} and valid = 1
@@ -124,7 +124,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'entHappened' and gtp.result_code = (
             select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
                 select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -144,7 +144,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'locationHappened' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -164,7 +164,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'entExisted' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -184,7 +184,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'involvedRiskMaterial' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -206,7 +206,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasHighPressureDevice' and gtp.result_code = (
         select case when sum(total) >0 then 1 else 0 end from (
         select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
@@ -226,7 +226,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'unloadInvolved' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -246,7 +246,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasSafeBasin' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -266,7 +266,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'autoInBasin' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -286,7 +286,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasCofferdam' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -306,7 +306,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasStorage' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -326,7 +326,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasAlarmSystem' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -346,7 +346,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'professionalHandled' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -366,7 +366,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'empSpecify' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -386,18 +386,18 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasSurfaceWater' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
-        where si.code = 'S215' and plan.ent_id = #{enterpriseId} and result = '是'
+        where si.code = 'S304' and plan.ent_id = #{enterpriseId} and result = '是'
         union ALL
         select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
-        where si.code = 'S215' and plan.ent_id = #{enterpriseId} and result = '否'
+        where si.code = 'S304' and plan.ent_id = #{enterpriseId} and result = '否'
         ) a
         )
         union ALL
@@ -406,7 +406,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasHospital' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -426,7 +426,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasSchool' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -446,7 +446,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasCommunity' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -466,7 +466,7 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasFarm' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
@@ -486,12 +486,12 @@
             gtp.result_code resultCode,
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'envRiskCount' and gtp.result_code = (
         select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
-        where si.code in ('S215', 'S221', 'S220', 'S222', 'S231') and plan.ent_id = #{enterpriseId}
+        where si.code in ('S304', 'S221', 'S220', 'S222', 'S231') and plan.ent_id = #{enterpriseId}
         )
     </select>
 
@@ -500,7 +500,7 @@
         select
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasCleaned' and gtp.result_code = (
         select
         case when sum(total) = 110 then 3
@@ -510,36 +510,36 @@
         select case when count(1) > 0 then 100 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
-        where si.code = 'M48' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342' and result = '是'
+        where si.code = 'M48' and plan.ent_id = #{enterpriseId} and result = '是'
         union ALL
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
-        where si.code = 'M49' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342' and result = '是'
+        where si.code = 'M49' and plan.ent_id = #{enterpriseId} and result = '是'
         union ALL
         select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
-        where si.code = 'M50' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342' and result = '是'
+        where si.code = 'M50' and plan.ent_id = #{enterpriseId} and result = '是'
         ) a
         )
         union ALL
         select
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'involvedRiskMaterial' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
-        where si.code = 'M56' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342'
+        where si.code = 'M56' and plan.ent_id = #{enterpriseId}
         and result in ('腐蚀性','毒性','易燃易爆性','辐射性','感染性')
         union ALL
         select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
-        where si.code = 'M56' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342'
+        where si.code = 'M56' and plan.ent_id = #{enterpriseId}
         and result in ('涉水性')
         ) a
         )
@@ -547,30 +547,30 @@
         select
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasBigFarm' and gtp.result_code = (
         select case when sum(total) >= 10 then 1 when sum(total) > 0 then 0 else 2 end from (
         select case when count(1) > 0 then 10 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
-        where si.code = 'M53' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342' and result = '是'
+        where si.code = 'M53' and plan.ent_id = #{enterpriseId} and result = '是'
         union ALL
         select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
-        where si.code = 'M53' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342' and result = '否'
+        where si.code = 'M53' and plan.ent_id = #{enterpriseId} and result = '否'
         ) a
         )
         union ALL
         select
             gtp.param_code paramCode,
             gtp.param_content paramContent
-        from grade_template_param gtp
+        from report_template_param gtp
         where gtp.code = 'hasIllegal' and gtp.result_code = (
         select case when count(1) > 0 then 1 else 0 end total from ent_survey_result result
         left join ent_survey_plan plan on plan.id = result.survey_plan_id
         left join survey_item si on si.id = plan.survey_item_id
-        where si.code = 'M51' and plan.ent_id = '3b0d6013850f4dc4a8679bf842de9342' and result > 0
+        where si.code = 'M51' and plan.ent_id = #{enterpriseId} and result > 0
         )
 
     </select>

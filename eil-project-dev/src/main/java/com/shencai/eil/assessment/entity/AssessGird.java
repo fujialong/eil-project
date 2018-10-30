@@ -8,10 +8,6 @@ import java.util.Date;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
  * @author fanhj
  * @since 2018-10-21
  */
@@ -21,16 +17,20 @@ public class AssessGird extends Model<AssessGird> {
     private static final long serialVersionUID = 1L;
 
     private String id;
+
     @TableField("ent_id")
     private String entId;
 
     private Double x;
 
     private Double y;
+
+    private Double z;
+
+    private Double t;
+
     @TableField("bis_code")
     private String bisCode;
-    @TableField("grid_use_type")
-    private String gridUseType;
 
     @TableField("point_sort_num")
     private Integer pointSortNum;
@@ -42,13 +42,25 @@ public class AssessGird extends Model<AssessGird> {
     private String waterType;
 
     @TableField("sand_rate")
-    private String sandRate;
+    private Double sandRate;
 
     @TableField("clay_rate")
-    private String clayRate;
+    private Double clayRate;
 
     @TableField("powder_rate")
-    private String powderRate;
+    private Double powderRate;
+
+    @TableField("fishery_area")
+    private Double fisheryArea;
+
+    @TableField("agricultural_area")
+    private Double agriculturalArea;
+
+    @TableField("forestry_area")
+    private Double forestryArea;
+
+    @TableField("water_quality")
+    private String waterQuality;
 
     private Double lon;
 
@@ -56,13 +68,12 @@ public class AssessGird extends Model<AssessGird> {
 
     private Double pop;
     @TableField("sensitive_area")
-    private Integer sensitiveArea;
-    @TableField("water_zoning")
-    private String waterZoning;
+    private Double sensitiveArea;
+
     @TableField("acreage")
     private Double acreage;
     @TableField("eco_value")
-    private String ecoValue;
+    private Double ecoValue;
     private String remark;
 
     @TableField("create_user_id")

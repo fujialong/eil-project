@@ -1,6 +1,6 @@
 package com.shencai.eil.survey.service;
 
-import com.shencai.eil.survey.entity.GradeTemplateParam;
+import com.shencai.eil.survey.entity.ReportTemplateParam;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @author fanhj
  * @since 2018-10-04
  */
-public interface IGradeTemplateParamService extends IService<GradeTemplateParam> {
+public interface IReportTemplateParamService extends IService<ReportTemplateParam> {
 
 }

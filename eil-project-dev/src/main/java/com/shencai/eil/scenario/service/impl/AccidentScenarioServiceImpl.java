@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -48,8 +49,16 @@ public class AccidentScenarioServiceImpl extends ServiceImpl<AccidentScenarioMap
     @Autowired
     private EnterpriseInfoMapper enterpriseInfoMapper;
 
+    private static final List<String> PART_TYPE_BELONGING_TO_STORAGE_TANK =
+            Arrays.asList("反应釜、工艺储罐、气体储罐、塔器", "常压单包容储罐", "常压储罐");
+    private static final List<String> PIPE_SCENARIO_CODE = Arrays.asList("S5");
+
     @Override
     public List<AccidentScenarioVO> listAccidentScenario(AccidentScenarioQueryParam queryParam) {
+        if (PART_TYPE_BELONGING_TO_STORAGE_TANK.contains(queryParam.getPartType())) {
+            queryParam.setIsStorageTank(true);
+            queryParam.setPipeScenarioCodeList(PIPE_SCENARIO_CODE);
+        }
         return accidentScenarioMapper.listAccidentScenario(queryParam);
     }
 

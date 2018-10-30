@@ -7,8 +7,6 @@ import com.shencai.eil.common.utils.ObjectUtil;
 import com.shencai.eil.exception.BusinessException;
 import com.shencai.eil.grading.mapper.RiskMaterialParamValueMapper;
 import com.shencai.eil.grading.model.RiskMaterialParamValueQueryParam;
-import com.shencai.eil.grading.service.IRiskMaterialParamValueService;
-import com.shencai.eil.grading.service.IRiskMaterialService;
 import com.shencai.eil.scenario.entity.AccidentScenario;
 import com.shencai.eil.scenario.entity.AccidentScenarioParam;
 import com.shencai.eil.scenario.entity.HazardousReleaseRate;
@@ -55,10 +53,6 @@ public class AccidentScenarioParamServiceImpl extends ServiceImpl<AccidentScenar
     @Autowired
     private IEntSurveyPlanService entSurveyPlanService;
     @Autowired
-    private IRiskMaterialService riskMaterialService;
-    @Autowired
-    private IRiskMaterialParamValueService riskMaterialParamValueService;
-    @Autowired
     private IAccidentScenarioService accidentScenarioService;
 
     private static final double BASE_TEMPERATURE = 273.15;
@@ -79,22 +73,23 @@ public class AccidentScenarioParamServiceImpl extends ServiceImpl<AccidentScenar
     private static final List<String> SURVEY_ITEM_CODE_OF_PIPE_VALVE_NUMBER = Arrays.asList("S4", "S54");
     private static final List<String> SURVEY_ITEM_CODE_OF_PIPE_LENGTH = Arrays.asList("S5", "S55");
     private static final List<String> SURVEY_ITEM_CODE_OF_PIPE_LIFE = Arrays.asList("S259", "S261");
+    private static final List<String> SURVEY_ITEM_CODE_OF_HAS_DETECTION_SYSTEM = Arrays.asList("S13", "S66");
+    private static final List<String> SURVEY_ITEM_CODE_OF_HAS_ISOLATION_SYSTEM = Arrays.asList("S15", "S68");
+    private static final String DETECTION_SYSTEM_DEFAULTED_VALUE = "外观检查、照相机，或带远距功能的探测器";
+    private static final String ISOLATION_SYSTEM_DEFAULTED_VALUE = "手动操作阀启动的隔离系统;";
 
     @Override
     public List<AccidentScenarioParamVO> listScenarioParam(AccidentScenarioParamQueryParam queryParam) {
         ScenarioSelectionInfo scenarioSelectionInfo = getScenarioSelectionInfo(queryParam.getScenarioSelectionInfoId());
         String scenarioId = queryParam.getScenarioId();
         String scenarioCode = getScenarioCode(scenarioId);
-        switch (scenarioCode) {
-            case ScenarioCode.S_ONE:
-                return trashDischarge(scenarioSelectionInfo);
-            case ScenarioCode.S_TWO:
-                return fireOrexplosion(scenarioSelectionInfo, scenarioCode, scenarioId);
-            case ScenarioCode.S_FIVE:
-                return liquidDrip(scenarioSelectionInfo, scenarioId);
-            default:
-                return listScenarioParamForGasOrLiquidLeakage(scenarioSelectionInfo, scenarioCode, scenarioId);
-        }
+        return listAccidentScenarioParamVO(scenarioSelectionInfo, scenarioId, scenarioCode);
+    }
+
+    @Override
+    public List<AccidentScenarioParamVO> listScenarioParam(ScenarioSelectionInfo scenarioSelectionInfo, String scenarioId) {
+        String scenarioCode = getScenarioCode(scenarioId);
+        return listAccidentScenarioParamVO(scenarioSelectionInfo, scenarioId, scenarioCode);
     }
 
     @Override
@@ -111,6 +106,19 @@ public class AccidentScenarioParamServiceImpl extends ServiceImpl<AccidentScenar
             throw new BusinessException("hazardous_release_rate not exits");
         }
         return hazardousReleaseRate.getRate();
+    }
+
+    private List<AccidentScenarioParamVO> listAccidentScenarioParamVO(ScenarioSelectionInfo scenarioSelectionInfo, String scenarioId, String scenarioCode) {
+        switch (scenarioCode) {
+            case ScenarioCode.S_ONE:
+                return trashDischarge(scenarioSelectionInfo);
+            case ScenarioCode.S_TWO:
+                return fireOrexplosion(scenarioSelectionInfo, scenarioCode, scenarioId);
+            case ScenarioCode.S_FIVE:
+                return liquidDrip(scenarioSelectionInfo, scenarioId);
+            default:
+                return listScenarioParamForGasOrLiquidLeakage(scenarioSelectionInfo, scenarioCode, scenarioId);
+        }
     }
 
     /**
@@ -156,9 +164,17 @@ public class AccidentScenarioParamServiceImpl extends ServiceImpl<AccidentScenar
             } else if (code.equals(ScenarioParamEnum.GAS_TEMPERATURE.getCode())) {
                 scenarioParam.setValue(String.valueOf(entSurveyResultVO.getTemperature() + BASE_TEMPERATURE));
             } else if (code.equals(ScenarioParamEnum.DETECTION_SYSTEM_CLASSIFICATION.getCode())) {
-                scenarioParam.setValue(entSurveyResultVO.getDetectionSystemClassification());
+                if (entSurveyResultVO.getHasDetectionSystem().equals(BaseEnum.YES.getChineseName())) {
+                    scenarioParam.setValue(entSurveyResultVO.getDetectionSystemClassification());
+                } else {
+                    scenarioParam.setValue(DETECTION_SYSTEM_DEFAULTED_VALUE);
+                }
             } else if (code.equals(ScenarioParamEnum.ISOLATION_SYSTEM_CLASSIFICATION.getCode())) {
-                scenarioParam.setValue(entSurveyResultVO.getIsolationSystemClassification());
+                if (entSurveyResultVO.getHasIsolationSystem().equals(BaseEnum.YES.getChineseName())) {
+                    scenarioParam.setValue(entSurveyResultVO.getIsolationSystemClassification());
+                } else {
+                    scenarioParam.setValue(ISOLATION_SYSTEM_DEFAULTED_VALUE);
+                }
             } else if (code.equals(ScenarioParamEnum.LIQUID_HEIGHT.getCode())) {
                 scenarioParam.setValue(entSurveyResultVO.getHeight());
             } else if (code.equals(ScenarioParamEnum.INTERNAL_DIAMETER_OF_PIPELINE.getCode())) {
@@ -203,6 +219,10 @@ public class AccidentScenarioParamServiceImpl extends ServiceImpl<AccidentScenar
                         if (!isStorageTank) {
                             surveyResult.setTemperature(Double.valueOf(result));
                         }
+                    } else if (SURVEY_ITEM_CODE_OF_HAS_DETECTION_SYSTEM.contains(surveyItemCode)) {
+                        surveyResult.setHasDetectionSystem(result);
+                    } else if (SURVEY_ITEM_CODE_OF_HAS_ISOLATION_SYSTEM.contains(surveyItemCode)) {
+                        surveyResult.setHasIsolationSystem(result);
                     } else if (SURVEY_ITEM_CODE_OF_DETECTION_SYSTEM.contains(surveyItemCode)) {
                         surveyResult.setDetectionSystemClassification(result);
                     } else if (SURVEY_ITEM_CODE_OF_ISOLATION_SYSTEM.contains(surveyItemCode)) {

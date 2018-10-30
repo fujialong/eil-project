@@ -50,6 +50,10 @@ public class EntSurveyResultVO implements Serializable {
 
     private String internalDiameterOfPipeline;
 
+    private String hasDetectionSystem;
+
+    private String hasIsolationSystem;
+
     private String detectionSystemClassification;
 
     private String isolationSystemClassification;

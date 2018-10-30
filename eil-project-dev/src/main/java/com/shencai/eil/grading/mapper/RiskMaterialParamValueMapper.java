@@ -17,5 +17,6 @@ public interface RiskMaterialParamValueMapper extends BaseMapper<RiskMaterialPar
 
     String getParamValue(RiskMaterialParamValueQueryParam queryParam);
     List<RiskMaterialParamValueVO> listRiskMaterialParamValue(RiskMaterialParamValueQueryParam queryParam);
+    List<RiskMaterialParamValueVO> listPollutantParamValue(RiskMaterialParamValueQueryParam queryParam);
     List<RiskMaterialVO> listRiskMaterial(RiskMaterialQueryParam queryParam);
 }

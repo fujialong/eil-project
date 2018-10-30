@@ -46,7 +46,12 @@ public enum StatusEnum {
 
     SCENARIO_SELECTION("1080", "情景选择中"),
 
-    PENDING_DAMAGE_ASSESSMENT("1090", "待损害评估");
+    PENDING_DAMAGE_ASSESSMENT("1090", "待损害评估"),
+
+    IN_DAMAGE_ASSESSMENT("1100", "损害评估中"),
+
+    FINISH_ASSESSMENT("1200", "评估完成"),
+    ;
 
 
     private String code;

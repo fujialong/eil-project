@@ -19,12 +19,12 @@ import java.util.concurrent.ExecutionException;
 public class GradingController {
 
     @Autowired
-    private IGradingService gradingService2;
+    private IGradingService gradingService;
 
     @ResponseBody
     @RequestMapping("/getGradingResult")
     public Result getGradingResult(GradingQueryParam queryParam) throws ExecutionException, InterruptedException {
-        GradingVO gradingVO = gradingService2.getGradingResult2(queryParam);
+        GradingVO gradingVO = gradingService.getGradingResult(queryParam);
         return Result.ok(gradingVO);
     }
 }

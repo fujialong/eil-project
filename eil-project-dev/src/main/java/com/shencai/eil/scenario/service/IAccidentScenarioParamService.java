@@ -2,6 +2,7 @@ package com.shencai.eil.scenario.service;
 
 import com.shencai.eil.scenario.entity.AccidentScenarioParam;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.shencai.eil.scenario.entity.ScenarioSelectionInfo;
 import com.shencai.eil.scenario.model.AccidentScenarioParamQueryParam;
 import com.shencai.eil.scenario.model.AccidentScenarioParamVO;
 
@@ -14,6 +15,8 @@ import java.util.List;
 public interface IAccidentScenarioParamService extends IService<AccidentScenarioParam> {
 
     List<AccidentScenarioParamVO> listScenarioParam(AccidentScenarioParamQueryParam queryParam);
+
+    List<AccidentScenarioParamVO> listScenarioParam(ScenarioSelectionInfo scenarioSelectionInfo, String scenarioId);
 
     String calculateRelatedParam(AccidentScenarioParamQueryParam queryParam);
 }

@@ -10,13 +10,20 @@
         <result column="y" property="y" />
         <result column="bis_code" property="bisCode" />
         <result column="grid_use_type" property="gridUseType" />
+        <result column="water_type" property="waterType" />
         <result column="lon" property="lon" />
         <result column="lat" property="lat" />
         <result column="pop" property="pop" />
         <result column="sensitive_area" property="sensitiveArea" />
-        <result column="water_zoning" property="waterZoning" />
         <result column="acreage" property="acreage" />
         <result column="eco_value" property="ecoValue" />
+        <result column="sand_rate" property="sandRate" />
+        <result column="clay_rate" property="clayRate" />
+        <result column="powder_rate" property="powderRate" />
+        <result column="fishery_area" property="fisheryArea" />
+        <result column="agricultural_area" property="agriculturalArea" />
+        <result column="forestry_area" property="forestryArea" />
+        <result column="water_quality" property="waterQuality" />
         <result column="remark" property="remark" />
         <result column="create_user_id" property="createUserId" />
         <result column="create_time" property="createTime" />

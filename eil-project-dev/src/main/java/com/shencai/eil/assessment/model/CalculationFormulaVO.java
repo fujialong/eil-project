@@ -9,4 +9,5 @@ import lombok.Data;
 public class CalculationFormulaVO {
     private String code;
     private String formula;
+    private String usedCondition;
 }

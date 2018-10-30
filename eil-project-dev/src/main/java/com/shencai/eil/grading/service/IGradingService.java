@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutionException;
  */
 public interface IGradingService {
 
-    GradingVO getGradingResult2(GradingQueryParam queryParam) throws ExecutionException, InterruptedException;
+    GradingVO getGradingResult(GradingQueryParam queryParam) throws ExecutionException, InterruptedException;
 
 
 }

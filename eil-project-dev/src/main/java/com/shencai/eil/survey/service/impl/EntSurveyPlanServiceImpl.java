@@ -72,17 +72,11 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
     @Override
     @Transactional(rollbackFor = Exception.class)
     public EnterpriseVO getEntSurveyInfo(String enterpriseId) {
-        EnterpriseVO enterprise = getEnterpriseOfSurvey(enterpriseId);
-        if (ObjectUtil.isEmpty(enterprise)) {
-            throw new BusinessException("The enterprise had been removed!");
-        }
-        if (StringUtil.isBlank(enterprise.getRiskLevel())) {
-            judgeRiskLevel(enterpriseId);
-        }
         return getEnterpriseOfSurvey(enterpriseId);
     }
 
-    private void judgeRiskLevel(String enterpriseId) {
+    @Override
+    public void initSurveyPlan(String enterpriseId) {
         List<EntRiskAssessResultVO> riskResultList = listEnterpriseGeneralCommentLevel(enterpriseId);
         if (CollectionUtils.isEmpty(riskResultList)) {
             throw new BusinessException("general comment did not been calculated!");
@@ -97,11 +91,11 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
         for (EntRiskAssessResultVO entRiskAssessResultVO : riskResultList) {
             if (!GradeLineResultCode.LOW.getCode().equals(entRiskAssessResultVO.getGradeLineCode())) {
                 enterpriseInfo.setRiskLevel(RiskLevel.HIGH.getCode());
+//                enterpriseInfo.setNeedSurveyUpgrade((Integer) BaseEnum.YES.getCode());
                 generateIntensiveSurveyPlan(enterpriseId);
                 break;
             }
         }
-        enterpriseInfo.setStatus(StatusEnum.I_SURVEY.getCode());
         enterpriseInfo.setId(enterpriseId);
         enterpriseInfo.setUpdateTime(DateUtil.getNowTimestamp());
         enterpriseInfoMapper.updateById(enterpriseInfo);
@@ -113,7 +107,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
         EnterpriseInfo enterpriseInfo = new EnterpriseInfo();
         enterpriseInfo.setId(param.getId());
         enterpriseInfo.setNeedSurveyUpgrade(param.getNeedSurveyUpgrade());
-        if (BaseEnum.VALID_YES.getCode() == param.getNeedSurveyUpgrade()) {
+        if (BaseEnum.VALID_YES.getCode().equals(param.getNeedSurveyUpgrade())) {
             enterpriseInfo.setRiskLevel(RiskLevel.HIGH.getCode());
             generateIntensiveSurveyPlan(param.getId());
         }
@@ -121,10 +115,43 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
         enterpriseInfoMapper.updateById(enterpriseInfo);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void surveyDemote(EnterpriseParam param) {
+        demoteEntRiskLevel(param);
+        deleteIntensivePlan(param);
+    }
+
+    private void demoteEntRiskLevel(EnterpriseParam param) {
+        EnterpriseInfo enterpriseInfo = new EnterpriseInfo();
+        enterpriseInfo.setId(param.getId());
+        enterpriseInfo.setRiskLevel(RiskLevel.LOW.getCode());
+        enterpriseInfo.setUpdateTime(DateUtil.getNowTimestamp());
+        enterpriseInfoMapper.surveyDemote(enterpriseInfo);
+    }
+
+    private void deleteIntensivePlan(EnterpriseParam param) {
+        SurveyItemVO surveyItemVO = new SurveyItemVO();
+        surveyItemVO.setEntId(param.getId());
+        surveyItemVO.setUpdateTime(DateUtil.getNowTimestamp());
+        surveyItemMapper.deleteIntensivePlan(surveyItemVO);
+    }
+
     private EnterpriseVO getEnterpriseOfSurvey(String enterpriseId) {
         EnterpriseQueryParam queryParam = new EnterpriseQueryParam();
         queryParam.setEnterpriseId(enterpriseId);
-        return enterpriseInfoMapper.getEnterpriseInfoOfSurvey(queryParam);
+        EnterpriseVO enterprise = enterpriseInfoMapper.getEnterpriseInfoOfSurvey(queryParam);
+        if (ObjectUtil.isEmpty(enterprise)) {
+            throw new BusinessException("The enterprise had been removed!");
+        }
+        if (StatusEnum.W_SURVEY.getCode().equals(enterprise.getStatus())) {
+            EnterpriseInfo enterpriseInfo = new EnterpriseInfo();
+            enterpriseInfo.setStatus(StatusEnum.I_SURVEY.getCode());
+            enterpriseInfo.setId(enterpriseId);
+            enterpriseInfo.setUpdateTime(DateUtil.getNowTimestamp());
+            enterpriseInfoMapper.updateById(enterpriseInfo);
+        }
+        return enterprise;
     }
 
     private List<EntRiskAssessResultVO> listEnterpriseGeneralCommentLevel(String enterpriseId) {
@@ -157,32 +184,33 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
     }
 
     @Override
-    public SurveyFileVO getSurveyUploadFileStatus(String enterpriseId) {
+    public SurveyFileVO getSurveyUploadFileStatus(String enterpriseId, String sourceType) {
         SurveyFileVO resultVO = new SurveyFileVO();
-        List<BaseFileupload> fileList = listIntensiveUploadFile(enterpriseId);
+        List<BaseFileupload> fileList = listIntensiveUploadFile(enterpriseId, sourceType);
         if (CollectionUtils.isEmpty(fileList)) {
             resultVO.setStatus(ExcelImportStatus.NOT_UPLOAD.getCode());
         } else {
             resultVO.setFileId(fileList.get(0).getId());
             resultVO.setFileName(fileList.get(0).getFileName());
-            List<EntSurveyExtendInfo> surveyExtendInfoList = entSurveyExtendInfoMapper
-                    .selectList(new QueryWrapper<EntSurveyExtendInfo>()
-                            .eq("ent_id", enterpriseId)
-                            .eq("valid", BaseEnum.VALID_YES.getCode()));
-            if (CollectionUtils.isNotEmpty(surveyExtendInfoList)) {
-                resultVO.setStatus(ExcelImportStatus.COMPLETED.getCode());
-            } else {
-                resultVO.setStatus(ExcelImportStatus.UPLOADED.getCode());
+            resultVO.setStatus(ExcelImportStatus.UPLOADED.getCode());
+            if (FileSourceType.INTENSIVE_SURVEY_PLAN_UPLOAD.getCode().equals(sourceType)) {
+                List<EntSurveyExtendInfo> surveyExtendInfoList = entSurveyExtendInfoMapper
+                        .selectList(new QueryWrapper<EntSurveyExtendInfo>()
+                                .eq("ent_id", enterpriseId)
+                                .eq("valid", BaseEnum.VALID_YES.getCode()));
+                if (CollectionUtils.isNotEmpty(surveyExtendInfoList)) {
+                    resultVO.setStatus(ExcelImportStatus.COMPLETED.getCode());
+                }
             }
         }
         return resultVO;
     }
 
-    private List<BaseFileupload> listIntensiveUploadFile(String enterpriseId) {
+    private List<BaseFileupload> listIntensiveUploadFile(String enterpriseId, String sourceType) {
         return baseFileuploadMapper
                 .selectList(new QueryWrapper<BaseFileupload>()
                         .eq("source_id", enterpriseId)
-                        .eq("stype", FileSourceType.INTENSIVE_SURVEY_PLAN_UPLOAD.getCode())
+                        .eq("stype", sourceType)
                         .eq("valid", BaseEnum.VALID_YES.getCode()));
     }
 
@@ -446,6 +474,7 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
 
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void finishSurvey(String enterpriseId) {
         EnterpriseInfo enterpriseInfo = enterpriseInfoMapper.selectById(enterpriseId);
         if (ObjectUtil.isEmpty(enterpriseInfo)) {
@@ -472,8 +501,13 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
                 throw new BusinessException("please complete extend survey info!");
             }
         }
-        updateEnterpriseStatus(enterpriseId, enterpriseInfo);
-        scenarioSelectionInfoService.initScenarioSelectionInfo(enterpriseId);
+        boolean isComputeScenario = RiskLevel.HIGH.getCode().equals(enterpriseInfo.getRiskLevel());
+        if (isComputeScenario) {
+            updateEnterpriseStatus(enterpriseId, enterpriseInfo, StatusEnum.IN_DEPTH_EVALUATION.getCode());
+        } else {
+            updateEnterpriseStatus(enterpriseId, enterpriseInfo, StatusEnum.FINISH_ASSESSMENT.getCode());
+        }
+        scenarioSelectionInfoService.initScenarioSelectionInfo(enterpriseId, isComputeScenario);
     }
 
     @Override
@@ -495,8 +529,8 @@ public class EntSurveyPlanServiceImpl extends ServiceImpl<EntSurveyPlanMapper, E
         return value;
     }
 
-    private void updateEnterpriseStatus(String enterpriseId, EnterpriseInfo enterpriseInfo) {
-        enterpriseInfo.setStatus(StatusEnum.IN_DEPTH_EVALUATION.getCode());
+    private void updateEnterpriseStatus(String enterpriseId, EnterpriseInfo enterpriseInfo, String status) {
+        enterpriseInfo.setStatus(status);
         enterpriseInfo.setUpdateTime(DateUtil.getNowTimestamp());
         enterpriseInfoMapper.update(enterpriseInfo, new QueryWrapper<EnterpriseInfo>().eq("id", enterpriseId));
     }

@@ -6,7 +6,9 @@ package com.shencai.eil.common.constants;
 public enum DataModelType {
     WATER_TYPE("water", "水模型"),
     SOIL_TYPE("soil", "土壤模型"),
-    ;
+    SINGLE("single", "single"),
+    DOUBLE("double", "double"),
+    LAKER("lake", "lake");
 
     private String code;
     private String name;

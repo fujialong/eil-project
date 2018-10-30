@@ -1,4 +1,4 @@
-package com.shencai.eil.survey.entity;
+package com.shencai.eil.scenario.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
@@ -8,30 +8,26 @@ import java.util.Date;
 import java.io.Serializable;
 
 /**
- * <p>
- * 
- * </p>
- *
- * @author fanhj
- * @since 2018-10-04
+ * @author zhoujx
+ * @since 2018-10-30
  */
 @Data
-public class GradeTemplateParam extends Model<GradeTemplateParam> {
+public class ScenarioMappingMatter extends Model<ScenarioMappingMatter> {
 
     private static final long serialVersionUID = 1L;
 
     private String id;
 
-    private String code;
-    @TableField("target_weight_id")
-    private String targetWeightId;
-    @TableField("result_code")
-    private String resultCode;
-    @TableField("param_code")
-    private String paramCode;
-    @TableField("param_content")
-    private String paramContent;
-    private String type;
+    @TableField("scenario_id")
+    private String scenarioId;
+
+    @TableField("technique_cell")
+    private String techniqueCell;
+
+    @TableField("matter_name")
+    private String matterName;
+
+    private String remark;
 
     @TableField("create_user_id")
     private String createUserId;
@@ -54,13 +50,12 @@ public class GradeTemplateParam extends Model<GradeTemplateParam> {
 
     @Override
     public String toString() {
-        return "GradeTemplateParam{" +
+        return "ScenarioMappingMatter{" +
         "id=" + id +
-        ", code=" + code +
-        ", targetWeightId=" + targetWeightId +
-        ", resultCode=" + resultCode +
-        ", paramCode=" + paramCode +
-        ", paramContent=" + paramContent +
+        ", scenarioId=" + scenarioId +
+        ", techniqueCell=" + techniqueCell +
+        ", matterName=" + matterName +
+        ", remark=" + remark +
         ", createUserId=" + createUserId +
         ", createTime=" + createTime +
         ", updateUserId=" + updateUserId +

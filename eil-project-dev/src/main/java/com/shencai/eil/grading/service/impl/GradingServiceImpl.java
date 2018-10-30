@@ -22,6 +22,7 @@ import com.shencai.eil.policy.model.EnterpriseVO;
 import com.shencai.eil.risk.entity.RiskControlPollutionValue;
 import com.shencai.eil.risk.mapper.RiskControlPollutionValueMapper;
 import com.shencai.eil.risk.service.IRiskControlPollutionValueService;
+import com.shencai.eil.survey.service.IEntSurveyPlanService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,8 +86,12 @@ public class GradingServiceImpl implements IGradingService {
     private GisValueMapper gisValueMapper;
     @Autowired
     private ITargetWeightGradeLineService targetWeightGradeLineService;
+    @Autowired
+    private IEntSurveyPlanService entSurveyPlanService;
 
-    public GradingVO getGradingResult2(GradingQueryParam queryParam) {
+    List<GradingCalculateParamHeadVO> gradingCalculateParamHeadVOList = new ArrayList<>();
+
+    public GradingVO getGradingResult(GradingQueryParam queryParam) {
         EnterpriseVO enterpriseInfo = getEnterpriseInfo(queryParam.getEnterpriseId());
         List<String> riskTypeList;
         if (StatusEnum.VERIFIED.getCode().equals(enterpriseInfo.getStatus())) {
@@ -145,8 +150,6 @@ public class GradingServiceImpl implements IGradingService {
     }
 
     private void calculateTarget(EnterpriseVO enterpriseInfo, List<String> riskTypeList, List<TargetResultVO> targetList) {
-        log.info("********************计算开始************************");
-        long start = System.currentTimeMillis();
         //use code+type as key,weight as value
         Map<String, TargetResultVO> targetMap = castTargetListToMap(enterpriseInfo.getId(), targetList);
         List<CodeAndValueUseDouble> containsCodeValues = computeConstantService.listCodeValue(BaseConstants.FAST_GRADING);
@@ -217,9 +220,7 @@ public class GradingServiceImpl implements IGradingService {
 //            log.error("the thread was interrupted",e);
 //        }
         updateEnterpriseStatus(enterpriseInfo, StatusEnum.W_SURVEY.getCode());
-        long end = System.currentTimeMillis();
-        long time = (end - start) / 1000;
-        log.info("********************计算结束************************,用时：" + time);
+        entSurveyPlanService.initSurveyPlan(enterpriseInfo.getId());
     }
 
     private void calculateSingleTarget(TargetResultVO target, EnterpriseVO enterprise, List<String> riskTypeList, Map<String, TargetResultVO> targetMap, Map<String, Double> computeMap) throws InterruptedException {
@@ -227,7 +228,6 @@ public class GradingServiceImpl implements IGradingService {
         if (CollectionUtils.isNotEmpty(children)) {
             double value = 0.0;
             List<TargetResultVO> remainingTargetList = new ArrayList<>(children);
-            log.info("***********开始计算父指标，指标编码：" + target.getTargetCode() + "，指标类型：" + target.getTargetType() + "*******");
             while (remainingTargetList.size() > 0) {
                 for (Iterator<TargetResultVO> it = remainingTargetList.iterator(); it.hasNext(); ) {
                     TargetResultVO child = it.next();
@@ -241,12 +241,10 @@ public class GradingServiceImpl implements IGradingService {
                     }
                 }
                 if (remainingTargetList.size() > 0) {
-                    log.info("***********计算父指标，指标编码：" + target.getTargetCode() + "，指标类型：" + target.getTargetType() + "*******，仍有部分子指标未完成计算，数量为：" + remainingTargetList.size());
                     Thread.sleep(SLEEP_TIME);
                 }
             }
             saveParentTarget(value, target, enterprise, targetMap);
-            log.info("***********计算完成父指标，指标编码：" + target.getTargetCode() + "，指标类型：" + target.getTargetType() + "*******");
         }
     }
 
@@ -336,6 +334,9 @@ public class GradingServiceImpl implements IGradingService {
     private double calculateROnePointOneForProgressiveRisk(EnterpriseVO enterprise,
                                                            List<EntRiskParamValueVO> entRiskParamValueList,
                                                            List<RiskMaterialVO> riskMaterialList, Map<String, Double> computeMap) {
+        GradingCalculateParamHeadVO gradingCalculateParamHeadVO = new GradingCalculateParamHeadVO();
+        Map<String, Double> childMap = new HashMap<>();
+
         double k1 = computeMap.get(ComputeConstantEnum.K_ONE.getCode());
         Double yield = enterprise.getYield();
         double progressiveSecondaryIndicatorsOfRiskFactors = 0;
@@ -372,6 +373,12 @@ public class GradingServiceImpl implements IGradingService {
                 progressiveSecondaryIndicatorsOfRiskFactors = mainProductQty / k1 * mainProductBioavailability
                         * mainProductBiologicalEnrichment / mainProductCarcinogenicity;
             }
+
+           /* childMap.putIfAbsent("mainProductQty", mainProductQty);
+            childMap.putIfAbsent("mainProductStability", mainProductStability);
+            childMap.putIfAbsent("mainProductCarcinogenicity", mainProductCarcinogenicity);
+            childMap.putIfAbsent("mainProductBiologicalEnrichment", mainProductBiologicalEnrichment);
+            childMap.putIfAbsent("mainProductBioavailability", mainProductBioavailability);*/
         }
         for (EntRiskParamValueVO riskParamValue : entRiskParamValueList) {
             if (riskParamValue.getStability() == 1
@@ -382,6 +389,13 @@ public class GradingServiceImpl implements IGradingService {
                                 * riskParamValue.getBiologicalEnrichment() / riskParamValue.getCarcinogenicity();
             }
         }
+
+        gradingCalculateParamHeadVO.setRiskType(TargetWeightType.PROGRESSIVE_RISK.getCode());
+        gradingCalculateParamHeadVO.setTargetType(TargetCodeConstants.R_ONE_POINT_ONE);
+        childMap.putIfAbsent(ComputeConstantEnum.K_ONE.getCode(), k1);
+        childMap.putIfAbsent("yield", yield);
+       // gradingCalculateParamHeadVO.setChildParams(childMap);
+        gradingCalculateParamHeadVOList.add(gradingCalculateParamHeadVO);
         return progressiveSecondaryIndicatorsOfRiskFactors;
     }
 
@@ -391,14 +405,18 @@ public class GradingServiceImpl implements IGradingService {
     private double calculateROnePointOneForSuddenRisk(EnterpriseVO enterprise,
                                                       List<EntRiskParamValueVO> entRiskParamValueList,
                                                       List<RiskMaterialVO> riskMaterialList, Map<String, Double> computeMap) {
+
+        GradingCalculateParamHeadVO gradingCalculateParamHeadVO = new GradingCalculateParamHeadVO();
+        Map<String, Double> childMap = new HashMap<>();
         double k1 = computeMap.get(ComputeConstantEnum.K_ONE.getCode());
         Double yield = enterprise.getYield();
         double suddenSecondaryIndicatorsOfRiskFactors = 0;
+        double mainProductCriticalQuantity = 0;
+        Double mainProductQty = null;
         //If the raw materials are less than five, the main product is added to the calculation
         if (entRiskParamValueList.size() < 5) {
             String mainProductName = enterprise.getMainProductName();
-            Double mainProductQty = enterprise.getMainProductQty() * yield;
-            double mainProductCriticalQuantity = 0;
+            mainProductQty = enterprise.getMainProductQty() * yield;
             for (RiskMaterialVO riskMaterialVO : riskMaterialList) {
                 if (mainProductName.equals(riskMaterialVO.getName())) {
                     if (TemplateEnum.CRITICAL_QUANTITY.getCode().equals(riskMaterialVO.getTemplateParamCode())) {
@@ -411,13 +429,40 @@ public class GradingServiceImpl implements IGradingService {
                 suddenSecondaryIndicatorsOfRiskFactors = mainProductQty / k1 / mainProductCriticalQuantity;
             }
         }
+
         for (EntRiskParamValueVO riskParamValue : entRiskParamValueList) {
             if (riskParamValue.getCriticalQuantity() != null && riskParamValue.getCriticalQuantity() != 0) {
                 suddenSecondaryIndicatorsOfRiskFactors +=
                         (riskParamValue.getValue() * yield) / k1 / riskParamValue.getCriticalQuantity();
+                saveOnePointOneCalculateParamOfRiskParamValue(riskParamValue, enterprise.getId());
             }
         }
+        saveOnePointOneSuddenParams(k1, mainProductCriticalQuantity, mainProductQty, enterprise.getId());
         return suddenSecondaryIndicatorsOfRiskFactors;
+    }
+
+    private void saveOnePointOneSuddenParams(double k1, double mainProductCriticalQuantity, Double mainProductQty, String entId) {
+        GradingCalculateParamHeadVO gradingCalculateParamHeadVO = new GradingCalculateParamHeadVO();
+        gradingCalculateParamHeadVO.setEntId(entId);
+        gradingCalculateParamHeadVO.setTargetType(TargetWeightType.SUDDEN_RISK.getCode());
+        gradingCalculateParamHeadVO.setTargetType(TargetCodeConstants.R_ONE_POINT_ONE);
+        //TODO insert
+    }
+
+    /**
+     * The variables needed to hold the value of the risk parameter
+     *
+     * @param riskParamValue
+     */
+    private void saveOnePointOneCalculateParamOfRiskParamValue(EntRiskParamValueVO riskParamValue, String entId) {
+        CalculateParamOfRiskParamValue calculateParamOfRiskParamValue = new CalculateParamOfRiskParamValue();
+        calculateParamOfRiskParamValue.setId(StringUtil.getUUID());
+        calculateParamOfRiskParamValue.setRiskType(TargetWeightType.SUDDEN_RISK.getCode());
+        calculateParamOfRiskParamValue.setValue(riskParamValue.getValue());
+        calculateParamOfRiskParamValue.setEntId(entId);
+        calculateParamOfRiskParamValue.setCriticalQuantity(riskParamValue.getCriticalQuantity());
+        calculateParamOfRiskParamValue.setTargetType(TargetEnum.R_FOUR_ONE_ONE.getCode());
+        //TODO insert
     }
 
     /**
@@ -499,6 +544,17 @@ public class GradingServiceImpl implements IGradingService {
         double r2201Value = computeMap.getOrDefault(GisValueEnum.R_TWO_TWO_ZERO_ONE.getCode(), DOUBLE_DEFAULT_VALUE);
         double r2202Value = computeMap.getOrDefault(GisValueEnum.R_TWO_TWO_ZERO_TWO.getCode(), DOUBLE_DEFAULT_VALUE);
         double result = (r2201Value * sw1Value + r2202Value * sw2Value) / ba2Value;
+        GradingCalculateParamHeadVO gradingCalculateParamHeadVO = new GradingCalculateParamHeadVO();
+        Map<String, Double> childMap = new HashMap<>();
+        gradingCalculateParamHeadVO.setTargetType(TargetWeightType.PROGRESSIVE_RISK.getCode());
+        childMap.putIfAbsent("sw1Value", sw1Value);
+        childMap.putIfAbsent("sw2Value", sw2Value);
+        childMap.putIfAbsent("ba2Value", ba2Value);
+        childMap.putIfAbsent("r2201Value", r2201Value);
+        childMap.putIfAbsent("r2202Value", r2202Value);
+       // gradingCalculateParamHeadVO.setChildParams(childMap);
+        gradingCalculateParamHeadVO.setEntId(enterprise.getId());
+        gradingCalculateParamHeadVOList.add(gradingCalculateParamHeadVO);
         saveCommonLeafTarget(result, TargetCodeConstants.R_TWO_POINT_TWO, enterprise, riskTypeList, targetMap);
     }
 
@@ -514,6 +570,15 @@ public class GradingServiceImpl implements IGradingService {
             throw new BusinessException("the area risk control capacity is null");
         }
         double result = riskControlPollutionValue.getRiskControl();
+        GradingCalculateParamHeadVO gradingCalculateParamHeadVO = new GradingCalculateParamHeadVO();
+        Map<String, Double> childMap = new HashMap<>();
+
+        gradingCalculateParamHeadVO.setTargetType(TargetWeightType.PROGRESSIVE_RISK.getCode());
+        childMap.putIfAbsent("RiskControl", result);
+        //gradingCalculateParamHeadVO.setChildParams(childMap);
+        gradingCalculateParamHeadVO.setEntId(enterprise.getId());
+        gradingCalculateParamHeadVOList.add(gradingCalculateParamHeadVO);
+
         saveCommonLeafTarget(result, TargetCodeConstants.R_THREE_POINT_ONE, enterprise, riskTypeList, targetMap);
     }
 
@@ -530,6 +595,15 @@ public class GradingServiceImpl implements IGradingService {
             for (int i = 0; i < riskTypeList.size() - 1; i++) {
                 valueArray[i] = value;
             }
+            GradingCalculateParamHeadVO gradingCalculateParamHeadVO = new GradingCalculateParamHeadVO();
+            Map<String, Double> childMap = new HashMap<>();
+
+            gradingCalculateParamHeadVO.setTargetType(TargetWeightType.PROGRESSIVE_RISK.getCode());
+            childMap.putIfAbsent(GisValueEnum.R_THREE_TWO_ONE.getCode(), value);
+          //  gradingCalculateParamHeadVO.setChildParams(childMap);
+            gradingCalculateParamHeadVO.setTargetType(TargetCodeConstants.R_THREE_POINT_TWO_POINT_ONE);
+            gradingCalculateParamHeadVO.setEntId(enterprise.getId());
+            gradingCalculateParamHeadVOList.add(gradingCalculateParamHeadVO);
             saveSpecialLeafTarget(valueArray, TargetCodeConstants.R_THREE_POINT_TWO_POINT_ONE, enterprise, riskTypeList, targetMap);
         }
 
@@ -553,6 +627,15 @@ public class GradingServiceImpl implements IGradingService {
             for (int i = 0; i < riskTypeList.size() - 1; i++) {
                 valueArray[i] = value;
             }
+            GradingCalculateParamHeadVO gradingCalculateParamHeadVO = new GradingCalculateParamHeadVO();
+            Map<String, Double> childMap = new HashMap<>();
+
+            gradingCalculateParamHeadVO.setTargetType(TargetWeightType.PROGRESSIVE_RISK.getCode());
+            childMap.putIfAbsent("landPollutionIndex", value);
+           // gradingCalculateParamHeadVO.setChildParams(childMap);
+            gradingCalculateParamHeadVO.setTargetType(TargetCodeConstants.R_THREE_POINT_TWO_POINT_TWO);
+            gradingCalculateParamHeadVO.setEntId(enterprise.getId());
+            gradingCalculateParamHeadVOList.add(gradingCalculateParamHeadVO);
             saveSpecialLeafTarget(valueArray, TargetCodeConstants.R_THREE_POINT_TWO_POINT_TWO, enterprise, riskTypeList, targetMap);
         }
     }
@@ -574,6 +657,18 @@ public class GradingServiceImpl implements IGradingService {
         double dem = computeMap.get(GisValueEnum.DEM.getCode());
         double r33101 = computeMap.getOrDefault(GisValueEnum.R_THREE_THREE_ONE_ZERO_ONE.getCode(), DOUBLE_DEFAULT_VALUE);
         double value = dem * r33101;
+        GradingCalculateParamHeadVO gradingCalculateParamHeadVO = new GradingCalculateParamHeadVO();
+        Map<String, Double> childMap = new HashMap<>();
+        for (String riskType : riskTypeList) {
+            gradingCalculateParamHeadVO.setTargetType(riskType);
+            childMap.putIfAbsent(GisValueEnum.R_THREE_THREE_ONE_ZERO_ONE.getCode(), r33101);
+            childMap.putIfAbsent(GisValueEnum.DEM.getCode(), dem);
+          //  gradingCalculateParamHeadVO.setChildParams(childMap);
+            gradingCalculateParamHeadVO.setTargetType(TargetCodeConstants.R_THREE_POINT_THREE_POINT_ONE);
+            gradingCalculateParamHeadVO.setEntId(enterprise.getId());
+            gradingCalculateParamHeadVOList.add(gradingCalculateParamHeadVO);
+        }
+
         saveCommonLeafTarget(value, TargetCodeConstants.R_THREE_POINT_THREE_POINT_ONE, enterprise, riskTypeList, targetMap);
     }
 
@@ -592,6 +687,23 @@ public class GradingServiceImpl implements IGradingService {
         double d2 = computeMap.getOrDefault(ComputeConstantEnum.D_TWO.getCode(), DOUBLE_DEFAULT_VALUE);
         double d3 = computeMap.getOrDefault(ComputeConstantEnum.D_THREE.getCode(), DOUBLE_DEFAULT_VALUE);
         double value = dem * (r33201 * d1 + r33202 * d2 + r33203 * d3);
+
+        GradingCalculateParamHeadVO gradingCalculateParamHeadVO = new GradingCalculateParamHeadVO();
+        Map<String, Double> childMap = new HashMap<>();
+        for (String riskType : riskTypeList) {
+            gradingCalculateParamHeadVO.setTargetType(riskType);
+            childMap.putIfAbsent(GisValueEnum.R_THREE_THREE_TWO_ZERO_ONE.getCode(), r33201);
+            childMap.putIfAbsent(GisValueEnum.R_THREE_THREE_TWO_ZERO_TWO.getCode(), r33202);
+            childMap.putIfAbsent(GisValueEnum.R_THREE_THREE_TWO_ZERO_THREE.getCode(), r33203);
+            childMap.putIfAbsent(GisValueEnum.R_THREE_THREE_TWO_ZERO_THREE.getCode(), r33203);
+            childMap.putIfAbsent(GisValueEnum.R_THREE_THREE_TWO_ZERO_THREE.getCode(), r33203);
+            childMap.putIfAbsent(GisValueEnum.R_THREE_THREE_TWO_ZERO_THREE.getCode(), r33203);
+            childMap.putIfAbsent(GisValueEnum.DEM.getCode(), value);
+          //  gradingCalculateParamHeadVO.setChildParams(childMap);
+            gradingCalculateParamHeadVO.setTargetType(TargetCodeConstants.R_THREE_POINT_THREE_POINT_ONE);
+            gradingCalculateParamHeadVO.setEntId(enterprise.getId());
+            gradingCalculateParamHeadVOList.add(gradingCalculateParamHeadVO);
+        }
         saveCommonLeafTarget(value, TargetCodeConstants.R_THREE_POINT_THREE_POINT_TWO, enterprise, riskTypeList, targetMap);
     }
 
@@ -781,16 +893,11 @@ public class GradingServiceImpl implements IGradingService {
 
 
     private void getGisValueUntilHaveValue(GisValueQueryParam queryParam, Map<String, Double> computeMap) throws InterruptedException {
-        log.info("**************开始获取gis数据，gis分类：" + queryParam.getClassCode());
-        long start = System.currentTimeMillis();
         List<GisValueVO> gisValueList = gisValueMapper.getGisValueByEntIdAndClassCode(queryParam);
         while (CollectionUtils.isEmpty(gisValueList)) {
-            log.info("**************gis数据等待中，gis分类：" + queryParam.getClassCode());
             Thread.sleep(SLEEP_TIME);
             gisValueList = gisValueMapper.getGisValueByEntIdAndClassCode(queryParam);
         }
-        long end = System.currentTimeMillis();
-        log.info("**************gis数据获取成功，gis分类：" + queryParam.getClassCode() + "，用时：" + (end - start) / 1000 + "秒");
         Map<String, Double> codeAndValueMap = CommonsUtil.castGisValueListToMap(gisValueList);
         computeMap.putAll(codeAndValueMap);
     }

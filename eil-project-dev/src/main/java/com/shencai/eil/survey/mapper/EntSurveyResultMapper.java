@@ -25,4 +25,5 @@ public interface EntSurveyResultMapper extends BaseMapper<EntSurveyResult> {
     List<EntSurveyResultVO> listEntSurveyResultForModelMatching(EntSurveyResultQueryParam queryParam);
 
     String getSingleValueBySurveyItemCode(EntSurveyResultQueryParam queryParam);
+
 }

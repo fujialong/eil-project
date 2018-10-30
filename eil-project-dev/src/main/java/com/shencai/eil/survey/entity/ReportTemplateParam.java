@@ -1,4 +1,4 @@
-package com.shencai.eil.assessment.entity;
+package com.shencai.eil.survey.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
@@ -13,26 +13,25 @@ import java.io.Serializable;
  * </p>
  *
  * @author fanhj
- * @since 2018-10-21
+ * @since 2018-10-04
  */
 @Data
-public class EntAssessResult extends Model<EntAssessResult> {
+public class ReportTemplateParam extends Model<ReportTemplateParam> {
 
     private static final long serialVersionUID = 1L;
 
     private String id;
-    @TableField("ent_id")
-    private String entId;
 
-    private Double bi;
-
-    private Double esv;
-
-    private Double pi;
-
-    private Double cost;
-
-    private String remark;
+    private String code;
+    @TableField("target_weight_id")
+    private String targetWeightId;
+    @TableField("result_code")
+    private String resultCode;
+    @TableField("param_code")
+    private String paramCode;
+    @TableField("param_content")
+    private String paramContent;
+    private String type;
 
     @TableField("create_user_id")
     private String createUserId;
@@ -55,13 +54,13 @@ public class EntAssessResult extends Model<EntAssessResult> {
 
     @Override
     public String toString() {
-        return "EntAssessResult{" +
+        return "ReportTemplateParam{" +
         "id=" + id +
-        ", bi=" + bi +
-        ", esv=" + esv +
-        ", pi=" + pi +
-        ", cost=" + cost +
-        ", remark=" + remark +
+        ", code=" + code +
+        ", targetWeightId=" + targetWeightId +
+        ", resultCode=" + resultCode +
+        ", paramCode=" + paramCode +
+        ", paramContent=" + paramContent +
         ", createUserId=" + createUserId +
         ", createTime=" + createTime +
         ", updateUserId=" + updateUserId +

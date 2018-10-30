@@ -21,22 +21,36 @@ public class GridCalculationValue extends Model<GridCalculationValue> {
     private static final long serialVersionUID = 1L;
 
     private String id;
-    @TableField("grid_id")
-    private String gridId;
+    @TableField("ent_id")
+    private String entId;
+    @TableField("grid_code")
+    private String gridCode;
     @TableField("bis_code")
     private String bisCode;
-    @TableField("cr_cwg")
-    private Double crCwg;
-    @TableField("cr_dgw")
-    private Double crDgw;
-    @TableField("hq_cwg")
-    private Double hqCwg;
-    @TableField("hq_dgw")
-    private Double hqDgw;
-
-    private Double cr;
-
-    private Double hi;
+    @TableField("cr_cwg_s")
+    private Double crCwgS;
+    @TableField("cr_cwg_i")
+    private Double crCwgI;
+    @TableField("cr_dgw_s")
+    private Double crDgwS;
+    @TableField("cr_dgw_i")
+    private Double crDgwI;
+    @TableField("hq_cwg_s")
+    private Double hqCwgS;
+    @TableField("hq_cwg_i")
+    private Double hqCwgI;
+    @TableField("hq_dgw_s")
+    private Double hqDgwS;
+    @TableField("hq_dgw_i")
+    private Double hqDgwI;
+    @TableField("cr_s")
+    private Double crS;
+    @TableField("cr_i")
+    private Double crI;
+    @TableField("hi_s")
+    private Double hiS;
+    @TableField("hi_i")
+    private Double hiI;
     @TableField("loss_cr")
     private Double lossCr;
     @TableField("loss_hi")
@@ -67,31 +81,5 @@ public class GridCalculationValue extends Model<GridCalculationValue> {
     @Override
     protected Serializable pkVal() {
         return this.id;
-    }
-
-    @Override
-    public String toString() {
-        return "GridCalculationValue{" +
-        "id=" + id +
-        ", gridId=" + gridId +
-        ", bisCode=" + bisCode +
-        ", crCwg=" + crCwg +
-        ", crDgw=" + crDgw +
-        ", hqCwg=" + hqCwg +
-        ", hqDgw=" + hqDgw +
-        ", cr=" + cr +
-        ", hi=" + hi +
-        ", lossCr=" + lossCr +
-        ", lossHi=" + lossHi +
-        ", esv=" + esv +
-        ", bi=" + bi +
-        ", cost=" + cost +
-        ", remark=" + remark +
-        ", createUserId=" + createUserId +
-        ", createTime=" + createTime +
-        ", updateUserId=" + updateUserId +
-        ", updateTime=" + updateTime +
-        ", valid=" + valid +
-        "}";
     }
 }
